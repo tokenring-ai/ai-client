@@ -1,0 +1,41 @@
+{
+  "name": "@token-ring/ai-client",
+  "version": "0.1.0",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.12",
+    "@ai-sdk/cerebras": "^0.2.14",
+    "@ai-sdk/deepseek": "^0.2.14",
+    "@ai-sdk/google": "^1.2.19",
+    "@ai-sdk/groq": "^1.2.9",
+    "@ai-sdk/openai": "^1.3.22",
+    "@ai-sdk/perplexity": "^1.1.9",
+    "@ai-sdk/xai": "^1.2.16",
+    "@kubernetes/client-node": "^1.3.0",
+    "@openrouter/ai-sdk-provider": "^0.7.2",
+    "@token-ring/chat": "0.1.0",
+    "@token-ring/eslint-config": "0.0.0",
+    "@token-ring/registry": "0.1.0",
+    "ai": "^4.3.16",
+    "lodash-es": "^4.17.21",
+    "next-auth": "^4.24.11",
+    "ollama-ai-provider": "^1.2.0",
+    "qwen-ai-provider": "^0.1.0",
+    "react-syntax-highlighter": "^5.8.0",
+    "vite": "6.3.5",
+    "zod": "^3.25.64"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./*": "./*.js"
+  },
+  "private": true,
+  "scripts": {
+    "lint": "eslint ",
+    "test": "vitest run",
+    "eslint": "eslint --fix ./"
+  },
+  "type": "module"
+}
