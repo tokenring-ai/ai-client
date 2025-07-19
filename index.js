@@ -6,6 +6,6 @@ export * as chatCommands from "./chatCommands.js";
 export { createChatRequest } from "./chatRequestBuilder/createChatRequest.js";
 
 export const name = "@token-ring/ai-client";
-export const description = "Service that routes chat messages to different providers.";
+export const description =
+	"Service that routes chat messages to different providers.";
 export const version = "0.1.0";
-

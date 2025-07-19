@@ -1,9 +1,8 @@
 import ChatMessageStorage from "../ChatMessageStorage.js";
-import {addMemories} from "./addMemories.js";
-import {addPersonaParameters} from "./addPersonaParameters.js";
-import {addTools} from "./addTools.js";
-import {addAttentionItems} from "./addAttentionItems.js";
-
+import { addMemories } from "./addMemories.js";
+import { addPersonaParameters } from "./addPersonaParameters.js";
+import { addTools } from "./addTools.js";
+import { addAttentionItems } from "./addAttentionItems.js";
 
 /**
  * Creates a chat request object.
@@ -16,75 +15,86 @@ import {addAttentionItems} from "./addAttentionItems.js";
  * @param {TokenRingRegistry} registry - The registry instance.
  * @returns {Promise<Object>} The chat request object.
  */
-export async function createChatRequest({input, systemPrompt, includeMemories = true, includeTools = true, includePriorMessages = true}, registry) {
- if (typeof input === 'string') {
-  input = [{
-   role: 'user',
-   content: input
-  }];
- }
+export async function createChatRequest(
+	{
+		input,
+		systemPrompt,
+		includeMemories = true,
+		includeTools = true,
+		includePriorMessages = true,
+	},
+	registry,
+) {
+	if (typeof input === "string") {
+		input = [
+			{
+				role: "user",
+				content: input,
+			},
+		];
+	}
 
- if (! Array.isArray(input)) {
-  input = [input];
- }
+	if (!Array.isArray(input)) {
+		input = [input];
+	}
 
- if (! input?.length > 0) {
-  throw new Error('The input: parameter must be an array with a length greater than 0');
- }
+	if (!input?.length > 0) {
+		throw new Error(
+			"The input: parameter must be an array with a length greater than 0",
+		);
+	}
 
- if (typeof systemPrompt === 'string') {
-  systemPrompt = {
-   role: 'system',
-   content: systemPrompt
-  };
- }
+	if (typeof systemPrompt === "string") {
+		systemPrompt = {
+			role: "system",
+			content: systemPrompt,
+		};
+	}
 
- const chatMessageStorage = registry.requireFirstServiceByType(ChatMessageStorage);
+	const chatMessageStorage =
+		registry.requireFirstServiceByType(ChatMessageStorage);
 
- const previousMessage = chatMessageStorage.getCurrentMessage();
+	const previousMessage = chatMessageStorage.getCurrentMessage();
 
- let messages = [];
- if (systemPrompt) {
-  messages.push(systemPrompt);
- }
+	let messages = [];
+	if (systemPrompt) {
+		messages.push(systemPrompt);
+	}
 
- if (includePriorMessages && previousMessage) {
-  let previousRequestMessages = previousMessage?.request?.messages ?? [];
-  if (previousRequestMessages?.[0]?.role === 'system') {
-   previousRequestMessages = previousRequestMessages.slice(1);
-  }
+	if (includePriorMessages && previousMessage) {
+		let previousRequestMessages = previousMessage?.request?.messages ?? [];
+		if (previousRequestMessages?.[0]?.role === "system") {
+			previousRequestMessages = previousRequestMessages.slice(1);
+		}
 
-  let previousResponseMessages = previousMessage?.response?.messages ?? [];
+		let previousResponseMessages = previousMessage?.response?.messages ?? [];
 
-  messages.push(
-   ...previousRequestMessages,
-   ...previousResponseMessages
-  );
- } else {
-  if (includeMemories) {
-   await addMemories(messages,registry);
-  }
- }
+		messages.push(...previousRequestMessages, ...previousResponseMessages);
+	} else {
+		if (includeMemories) {
+			await addMemories(messages, registry);
+		}
+	}
 
- messages.push(...input);
+	messages.push(...input);
 
- if (includeMemories) {
-  const lastMessage = messages.pop();
-  await addAttentionItems(messages, registry);
-  messages.push(lastMessage);
- }
+	if (includeMemories) {
+		const lastMessage = messages.pop();
+		await addAttentionItems(messages, registry);
+		messages.push(lastMessage);
+	}
 
- //messages = compactMessageContext(messages);
+	//messages = compactMessageContext(messages);
 
- const request = {
-  maxSteps: 15,
-  messages,
-  tools: {}
- };
+	const request = {
+		maxSteps: 15,
+		messages,
+		tools: {},
+	};
 
- addPersonaParameters(request, registry);
+	addPersonaParameters(request, registry);
 
- await addTools(request, registry);
+	await addTools(request, registry);
 
- return request;
+	return request;
 }
