@@ -371,6 +371,3 @@ This is a simplified illustration of how these commands might be integrated and 
 // // await handleCommand('/model gpt-4-turbo');
 // // await handleCommand('/chat Hello, how are you?');
 ```
-
-This detailed draft should cover the core functionalities. I've tried to make examples illustrative.
-```
