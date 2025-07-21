@@ -194,7 +194,7 @@ export default class AIChatClient {
 				}
 				case "error": {
 					chatService.emit("outputType", null);
-					throw new Error(part.error);
+					throw new Error(part.error.message);
 				}
 			}
 		}
