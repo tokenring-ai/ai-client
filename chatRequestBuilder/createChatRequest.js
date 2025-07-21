@@ -78,7 +78,7 @@ export async function createChatRequest(
 
 	messages.push(...input);
 
-	if (includeMemories) {
+	if (includeMemories && !includePriorMessages) {
 		const lastMessage = messages.pop();
 		await addAttentionItems(messages, registry);
 		messages.push(lastMessage);
@@ -94,7 +94,9 @@ export async function createChatRequest(
 
 	addPersonaParameters(request, registry);
 
-	await addTools(request, registry);
+	if (includeTools) {
+		await addTools(request, registry);
+	}
 
 	return request;
 }

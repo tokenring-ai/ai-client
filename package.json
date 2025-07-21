@@ -26,16 +26,20 @@
 		"zod": "^3.25.64"
 	},
 	"devDependencies": {
-		"vitest": "^3.2.4"
+		"vitest": "^3.2.4",
+		"@vitest/coverage-v8": "^3.2.4"
 	},
 	"exports": {
 		".": "./index.js",
-		"./*": "./*.js"
+		"./ChatMessageStorage": "./ChatMessageStorage.js",
+		"./EphemeralChatMessageStorage": "./EphemeralChatMessageStorage.js"
 	},
 	"license": "MIT",
 	"scripts": {
 		"lint": "eslint ",
 		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
 		"eslint": "eslint --fix ./"
 	},
 	"type": "module"
