@@ -31,8 +31,7 @@
 	},
 	"exports": {
 		".": "./index.js",
-		"./ChatMessageStorage": "./ChatMessageStorage.js",
-		"./EphemeralChatMessageStorage": "./EphemeralChatMessageStorage.js"
+		"./*": "./*.js"
 	},
 	"license": "MIT",
 	"scripts": {
