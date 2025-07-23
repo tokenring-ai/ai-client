@@ -33,6 +33,18 @@ export async function init(modelRegistry, config) {
 	 * @type {Object<string,ChatModelSpec>}
 	 */
 	const chatModels = {
+		"qwen3-coder-plus": {
+			provider,
+			impl: qwen("qwen3-coder-plus"),
+			isAvailable,
+			costPerMillionInputTokens: 1.8,
+			costPerMillionOutputTokens: 9,
+			reasoning: 0,
+			intelligence: 6,
+			tools: 6,
+			speed: 6,
+			contextLength: 1048576,
+		},
 		"qwen-max": {
 			provider,
 			impl: qwen("qwen-max"),
