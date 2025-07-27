@@ -70,7 +70,14 @@ export default class ModelRegistry extends Service {
 					`Invalid model provider configuration for '${providerName}': unknown provider '${providerCode}'`,
 				);
 			}
-			await provider.init(this, providerConfig);
+			try {
+				await provider.init(this, providerConfig);
+			} catch (err) {
+				console.error(
+					`Error initializing model provider '${providerCode}', skipping provider:`,
+					err.message || err,
+				);
+			}
 		}
 	}
 }

@@ -8,9 +8,6 @@ export async function init(modelRegistry, config) {
 	if (!baseURL) {
 		throw new Error("No config.baseURL provided for VLLM provider.");
 	}
-	if (!apiKey) {
-		throw new Error("No apiKey provided for VLLM provider.");
-	}
 	if (!generateModelSpec) {
 		throw new Error("No config.generateModelSpec provided for VLLM provider.");
 	}

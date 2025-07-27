@@ -53,8 +53,9 @@ export async function execute({ input, systemPrompt, model }, registry) {
 				response.usage.totalTokens ||
 				(response.usage.promptTokens ?? 0) +
 					(response.usage.completionTokens ?? 0);
-			if (elapsedMs > 0 && totalTokens !== undefined) {
-				tokensPerSec = totalTokens / (elapsedMs / 1000);
+			if (elapsedMs > 0 && response.usage.completionTokens > 0) {
+				//totalTokens !== undefined) {
+				tokensPerSec = response.usage.completionTokens / (elapsedMs / 1000);
 			}
 		}
 		response.timing = {
