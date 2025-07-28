@@ -1,5 +1,6 @@
 import cachedDataRetriever from "../util/cachedDataRetriever.js";
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import fetch from "node-fetch";
 
 const providerName = "VLLM";
 
@@ -15,7 +16,11 @@ export async function init(modelRegistry, config) {
 	const chatModelSpecs = {};
 	const embeddingModelSpecs = {};
 
-	const openai = createOpenAI({ baseURL, apiKey, compatibility: "strict" });
+	const openai = createOpenAICompatible({
+		baseURL,
+		apiKey,
+		compatibility: "strict",
+	});
 
 	const getModelList = cachedDataRetriever(baseURL + "/models", {
 		headers: {
@@ -38,7 +43,7 @@ export async function init(modelRegistry, config) {
 			chatModelSpecs[modelInfo.id] = {
 				provider: config.provider ?? providerName,
 				name: modelInfo.id,
-				impl: openai.chat(modelInfo.id),
+				impl: openai.chatModel(modelInfo.id),
 				isAvailable: () => getModelList().then((data) => !!data),
 				isHot: () => true,
 				//mangleRequest,
@@ -48,7 +53,7 @@ export async function init(modelRegistry, config) {
 			embeddingModelSpecs[modelInfo.model] = {
 				provider: providerName,
 				name: modelInfo.model,
-				impl: openai.embedding(modelInfo.model),
+				impl: openai.textEmbeddingModel(modelInfo.model),
 				isAvailable: () => getModelList().then((data) => !!data),
 				isHot: () => true,
 			};
