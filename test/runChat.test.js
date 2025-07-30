@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Registry } from "@token-ring/registry";
-import runChat from "../runChat.js";
-import ModelRegistry from "../ModelRegistry.js";
-import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.js";
 import ChatService from "@token-ring/chat/ChatService";
+import { Registry } from "@token-ring/registry";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.js";
+import ModelRegistry from "../ModelRegistry.js";
+import runChat from "../runChat.js";
 
 // Mock AI client for testing
 class MockAIChatClient {

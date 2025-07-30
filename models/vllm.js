@@ -1,6 +1,6 @@
-import cachedDataRetriever from "../util/cachedDataRetriever.js";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import fetch from "node-fetch";
+import cachedDataRetriever from "../util/cachedDataRetriever.js";
 
 const providerName = "VLLM";
 
@@ -36,7 +36,7 @@ export async function init(modelRegistry, config) {
 	const modelList = await getModelList();
 	if (!modelList?.data) return;
 
-	for (let modelInfo of modelList.data) {
+	for (const modelInfo of modelList.data) {
 		const { type, capabilities = {} } = generateModelSpec(modelInfo);
 
 		if (type === "chat") {

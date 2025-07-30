@@ -63,18 +63,18 @@ export class ModelTypeRegistry {
 	 * @returns {Promise<Array<{status: string, name: string, modelSpecs: Array<{available: boolean, hot: boolean, modelSpec: T}>}>>} Array of model specs with online status
 	 */
 	async getAllModelsWithOnlineStatus() {
-		let ret = [];
+		const ret = [];
 		for (const name in this.modelSpecs) {
 			const specs = this.modelSpecs[name];
 
-			let specRows = [];
+			const specRows = [];
 			let status = "offline";
 			for (const spec of specs) {
-				let available =
+				const available =
 					spec.isAvailable instanceof Function
 						? await spec.isAvailable()
 						: false; //true;
-				let hot = spec.isHot ? await spec.isHot() : true;
+				const hot = spec.isHot ? await spec.isHot() : true;
 				specRows.push({ available, hot, modelSpec: spec });
 				if (available) {
 					if (hot) {
@@ -135,11 +135,11 @@ export class ModelTypeRegistry {
 
 		// Find first hot model
 		for (const modelSpec of modelSpecs) {
-			let available = modelSpec.isAvailable
+			const available = modelSpec.isAvailable
 				? await modelSpec.isAvailable()
 				: true;
 			if (available) {
-				let isHot = modelSpec.isHot ? await modelSpec.isHot() : true;
+				const isHot = modelSpec.isHot ? await modelSpec.isHot() : true;
 				if (isHot) {
 					return new this.AIClient(modelSpec);
 				}
@@ -148,7 +148,7 @@ export class ModelTypeRegistry {
 
 		// Fallback to a cold model
 		for (const modelSpec of modelSpecs) {
-			let available = modelSpec.isAvailable
+			const available = modelSpec.isAvailable
 				? await modelSpec.isAvailable()
 				: true;
 			if (available) {

@@ -16,7 +16,7 @@ function parsePricing(priceString) {
 	) {
 		return 0;
 	}
-	const price = parseFloat(priceString);
+	const price = Number.parseFloat(priceString);
 	return isNaN(price) ? 0 : price * 1000000;
 }
 

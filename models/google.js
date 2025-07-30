@@ -1,6 +1,6 @@
 import { google } from "@ai-sdk/google";
-import cachedDataRetriever from "../util/cachedDataRetriever.js";
 import { openai } from "@ai-sdk/openai";
+import cachedDataRetriever from "../util/cachedDataRetriever.js";
 
 /**
  * The name of the AI provider.

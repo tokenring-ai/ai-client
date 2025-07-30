@@ -1,8 +1,8 @@
 import ChatMessageStorage from "../ChatMessageStorage.js";
+import { addAttentionItems } from "./addAttentionItems.js";
 import { addMemories } from "./addMemories.js";
 import { addPersonaParameters } from "./addPersonaParameters.js";
 import { addTools } from "./addTools.js";
-import { addAttentionItems } from "./addAttentionItems.js";
 
 /**
  * Creates a chat request object.
@@ -56,7 +56,7 @@ export async function createChatRequest(
 
 	const previousMessage = chatMessageStorage.getCurrentMessage();
 
-	let messages = [];
+	const messages = [];
 	if (systemPrompt) {
 		messages.push(systemPrompt);
 	}
@@ -67,7 +67,7 @@ export async function createChatRequest(
 			previousRequestMessages = previousRequestMessages.slice(1);
 		}
 
-		let previousResponseMessages = previousMessage?.response?.messages ?? [];
+		const previousResponseMessages = previousMessage?.response?.messages ?? [];
 
 		messages.push(...previousRequestMessages, ...previousResponseMessages);
 	} else {

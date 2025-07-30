@@ -1,7 +1,7 @@
 import ChatService from "@token-ring/chat/ChatService";
-import { ModelRegistry } from "./index.js";
 import ChatMessageStorage from "./ChatMessageStorage.js";
 import { createChatRequest } from "./chatRequestBuilder/createChatRequest.js";
+import { ModelRegistry } from "./index.js";
 
 /**
  * runChat tool: Runs a chat with the AI model, combining streamChat and runChat functionality.

@@ -1,5 +1,5 @@
-import ChatService from "@token-ring/chat/ChatService";
 import { HumanInterfaceService } from "@token-ring/chat";
+import ChatService from "@token-ring/chat/ChatService";
 import ModelRegistry from "../ModelRegistry.js";
 
 export const description =

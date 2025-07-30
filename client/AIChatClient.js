@@ -87,8 +87,8 @@ export default class AIChatClient {
 		) {
 			return undefined;
 		}
-		let promptRate = this.modelSpec.costPerMillionInputTokens / 1000000;
-		let completionRate = this.modelSpec.costPerMillionOutputTokens / 1000000;
+		const promptRate = this.modelSpec.costPerMillionInputTokens / 1000000;
+		const completionRate = this.modelSpec.costPerMillionOutputTokens / 1000000;
 
 		const inputCost = promptTokens * promptRate;
 		const outputCost = completionTokens * completionRate;
@@ -125,7 +125,7 @@ export default class AIChatClient {
 			this.modelSpec.mangleRequest(request);
 		}
 
-		let isHot = this.modelSpec.isHot ? await this.modelSpec.isHot() : true;
+		const isHot = this.modelSpec.isHot ? await this.modelSpec.isHot() : true;
 
 		if (!isHot) {
 			chatService.systemLine(

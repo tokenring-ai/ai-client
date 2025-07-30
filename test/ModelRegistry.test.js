@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Registry } from "@token-ring/registry";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import ModelRegistry from "../ModelRegistry.js";
 import * as providers from "../models.js";
 

@@ -7,7 +7,8 @@ function compactMessageContext(messages) {
 	// TODO: Replace message count with token count for more accurate compaction in the future.
 	const defaultMaxContextMessages = 20;
 	const MAX_CONTEXT_MESSAGES =
-		parseInt(process.env.MAX_CONTEXT_MESSAGES, 10) || defaultMaxContextMessages;
+		Number.parseInt(process.env.MAX_CONTEXT_MESSAGES, 10) ||
+		defaultMaxContextMessages;
 
 	if (messages.length > MAX_CONTEXT_MESSAGES) {
 		const systemMessages = messages.filter((msg) => msg.role === "system");

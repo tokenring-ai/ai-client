@@ -31,7 +31,7 @@ export async function init(modelRegistry, config) {
 	const modelList = await getModelList();
 	if (!modelList?.models) return;
 
-	for (let modelInfo of modelList.models) {
+	for (const modelInfo of modelList.models) {
 		const { type, capabilities = {} } = generateModelSpec(modelInfo);
 
 		if (type === "chat") {

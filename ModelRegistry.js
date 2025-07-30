@@ -1,8 +1,8 @@
-import AIChatClient from "./client/AIChatClient.js";
 import { Service } from "@token-ring/registry";
+import { ModelTypeRegistry } from "./ModelTypeRegistry.js";
+import AIChatClient from "./client/AIChatClient.js";
 import AIEmbeddingClient from "./client/AIEmbeddingClient.js";
 import AIImageGenerationClient from "./client/AIImageGenerationClient.js";
-import { ModelTypeRegistry } from "./ModelTypeRegistry.js";
 
 /**
  * @typedef {Object} ModelConfig
@@ -141,7 +141,7 @@ function chatRequirementsFilter(requirements) {
 
 			// Then check all other metadata criteria
 			for (const [key, condition] of Object.entries(requirements)) {
-				let [, operator, value] =
+				const [, operator, value] =
 					condition.match(/^([<>]?[=<>]?)([^=<>].*)$/) ?? [];
 				switch (operator) {
 					case ">":

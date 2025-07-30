@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import * as providers from "../models.js";
 import { Registry } from "@token-ring/registry";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import ModelRegistry from "../ModelRegistry.js";
+import * as providers from "../models.js";
 
 // Mock axios for HTTP requests
 vi.mock("axios", () => ({
