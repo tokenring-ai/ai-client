@@ -13,7 +13,7 @@ export async function execute(remainder, registry) {
 	}
 
 	const currentInput = [{ role: "user", content: remainder }];
-	const [output, response] = await runChat(
+	const [_output, response] = await runChat(
 		{
 			input: currentInput,
 			systemPrompt: chatService.getInstructions(),

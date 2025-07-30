@@ -1,5 +1,4 @@
 import { google } from "@ai-sdk/google";
-import { openai } from "@ai-sdk/openai";
 import cachedDataRetriever from "../util/cachedDataRetriever.js";
 
 /**
@@ -108,7 +107,7 @@ export async function init(modelRegistry, config) {
 
 		delete model.webSearch;
 
-		chatModels[modelName + "-web-search"] = newModel;
+		chatModels[`${modelName}-web-search`] = newModel;
 	}
 
 	await modelRegistry.chat.registerAllModelSpecs(chatModels);

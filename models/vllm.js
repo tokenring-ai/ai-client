@@ -1,5 +1,4 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import fetch from "node-fetch";
 import cachedDataRetriever from "../util/cachedDataRetriever.js";
 
 const providerName = "VLLM";
@@ -22,7 +21,7 @@ export async function init(modelRegistry, config) {
 		compatibility: "strict",
 	});
 
-	const getModelList = cachedDataRetriever(baseURL + "/models", {
+	const getModelList = cachedDataRetriever(`${baseURL}/models`, {
 		headers: {
 			Authorization: `Bearer ${apiKey}`,
 			"Content-Type": "application/json",
@@ -75,7 +74,7 @@ export async function init(modelRegistry, config) {
  *
  * @param {{ messages: Array<{role: string, content: string}>}} request - Array of OpenAI chat messages ({role, content} objects)
  */
-function mangleRequest(request) {
+function _mangleRequest(request) {
 	const { messages } = request;
 	if (!messages || messages.length === 0) return;
 

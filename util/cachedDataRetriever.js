@@ -14,7 +14,7 @@ export default function cachedDataRetriever(
 				lastResponse = res.data;
 
 				lastOnlineCheck = Date.now();
-			} catch (err) {
+			} catch (_err) {
 				lastResponse = null;
 			}
 		}

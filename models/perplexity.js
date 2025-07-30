@@ -7,7 +7,7 @@ import cachedDataRetriever from "../util/cachedDataRetriever.js";
  */
 const providerName = "Perplexity";
 
-function enableWebSearch(request) {}
+function enableWebSearch(_request) {}
 //(request.tools ??= {}).web_search_preview = openai.tools.webSearchPreview();
 
 export async function init(modelRegistry, config) {

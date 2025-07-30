@@ -44,9 +44,9 @@ export async function execute({ input, systemPrompt, model }, registry) {
 
 		// Calculate timing and tokens/sec if possible
 		const elapsedMs = endTime - startTime;
-		let tokensPerSec = undefined;
-		let totalTokens = undefined;
-		if (response && response.usage) {
+		let tokensPerSec;
+		let totalTokens;
+		if (response?.usage) {
 			totalTokens =
 				response.usage.totalTokens ||
 				(response.usage.promptTokens ?? 0) +

@@ -18,7 +18,7 @@ export async function addTools(request, registry) {
 			description,
 			parameters,
 
-			execute: async (args, meta) => {
+			execute: async (args, _meta) => {
 				const chatService = registry.requireFirstServiceByType(ChatService);
 
 				try {

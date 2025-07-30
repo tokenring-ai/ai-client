@@ -2,7 +2,7 @@
  * @typedef {{ role: string, content: string}} ChatInput
  */
 
-function compactMessageContext(messages) {
+function _compactMessageContext(messages) {
 	// Context Compaction Logic
 	// TODO: Replace message count with token count for more accurate compaction in the future.
 	const defaultMaxContextMessages = 20;

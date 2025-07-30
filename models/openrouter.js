@@ -17,7 +17,7 @@ function parsePricing(priceString) {
 		return 0;
 	}
 	const price = Number.parseFloat(priceString);
-	return isNaN(price) ? 0 : price * 1000000;
+	return Number.isNaN(price) ? 0 : price * 1000000;
 }
 
 async function fetchAndRegisterOpenRouterModels(modelRegistry, config) {

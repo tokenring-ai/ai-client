@@ -1,8 +1,8 @@
 import { Service } from "@token-ring/registry";
-import { ModelTypeRegistry } from "./ModelTypeRegistry.js";
 import AIChatClient from "./client/AIChatClient.js";
 import AIEmbeddingClient from "./client/AIEmbeddingClient.js";
 import AIImageGenerationClient from "./client/AIImageGenerationClient.js";
+import { ModelTypeRegistry } from "./ModelTypeRegistry.js";
 
 /**
  * @typedef {Object} ModelConfig
@@ -173,7 +173,7 @@ function chatRequirementsFilter(requirements) {
 						} else {
 							// Type coercion is ok for this check, because we allow strings and numbers to coexist
 							// noinspection EqualityComparisonWithCoercionJS
-							if (metadata[key] != value) {
+							if (metadata[key] !== value) {
 								eligible = false;
 							}
 						}

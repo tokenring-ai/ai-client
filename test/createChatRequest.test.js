@@ -1,8 +1,8 @@
 import ChatService from "@token-ring/chat/ChatService";
 import { Registry } from "@token-ring/registry";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createChatRequest } from "../chatRequestBuilder/createChatRequest.js";
+import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.js";
 
 // Minimal mock ChatService for persona parameter injection
 class MockChatService extends ChatService {

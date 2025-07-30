@@ -15,7 +15,7 @@ class MockAIChatClient {
 		return this.modelSpec.impl?.modelId || "mock-model";
 	}
 
-	async streamChat(request, registry) {
+	async streamChat(_request, _registry) {
 		const mockResponse = {
 			messages: [{ role: "assistant", content: "Mock response" }],
 			usage: {
@@ -181,7 +181,7 @@ describe("runChat Integration Tests", () => {
 		});
 
 		it("should maintain conversation chain", async () => {
-			const [response1] = await runChat(
+			const [_response1] = await runChat(
 				{
 					input: "First message",
 					systemPrompt: "System prompt",
@@ -190,7 +190,7 @@ describe("runChat Integration Tests", () => {
 				registry,
 			);
 
-			const [response2] = await runChat(
+			const [_response2] = await runChat(
 				{
 					input: "Second message",
 					systemPrompt: "System prompt",

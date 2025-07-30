@@ -18,11 +18,11 @@ export async function init(modelRegistry, config) {
 	const embeddingModelSpecs = {};
 
 	const ollama = createOllama({ baseURL });
-	const getModelList = cachedDataRetriever(baseURL + "/tags", {
+	const getModelList = cachedDataRetriever(`${baseURL}/tags`, {
 		cacheTime: 60000,
 		timeout: 1000,
 	});
-	const getRunningModels = cachedDataRetriever(baseURL + "/ps", {
+	const getRunningModels = cachedDataRetriever(`${baseURL}/ps`, {
 		cacheTime: 60000,
 		timeout: 1000,
 	});

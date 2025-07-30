@@ -72,7 +72,7 @@ export default class ChatMessageStorage extends Service {
 	 * @param {import('@token-ring/chat/ChatService').Response} response - The response object
 	 * @returns {Promise<ChatMessage>}
 	 */
-	storeChat(currentMessage, request, response) {
+	storeChat(_currentMessage, _request, _response) {
 		throw new Error("Not implemented");
 	}
 
@@ -83,7 +83,7 @@ export default class ChatMessageStorage extends Service {
 	 * @param {number|string} id - The message ID
 	 * @returns {Promise<ChatMessage>} The retrieved message
 	 */
-	async retrieveMessageById(id) {
+	async retrieveMessageById(_id) {
 		throw new Error("Not implemented");
 	}
 }

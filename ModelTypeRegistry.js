@@ -44,7 +44,7 @@ export class ModelTypeRegistry {
 		setTimeout(async () => {
 			try {
 				await this.getAllModelsWithOnlineStatus();
-			} catch (error) {
+			} catch (_error) {
 				/* empty */
 			}
 		}, 0);

@@ -1,4 +1,4 @@
-import { createOpenAI, openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import cachedDataRetriever from "../util/cachedDataRetriever.js";
 
 /**
@@ -157,7 +157,7 @@ export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 
 			delete model.webSearch;
 
-			chatModels[modelName + "-web-search"] = newModel;
+			chatModels[`${modelName}-web-search`] = newModel;
 		}
 	}
 
