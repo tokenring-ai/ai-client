@@ -35,7 +35,6 @@ const storedResultKeys = [
  * @property {number} costPerMillionInputTokens - Cost per million input tokens (in some currency unit)
  * @property {number} costPerMillionOutputTokens - Cost per million output tokens (in some currency unit)
  * @property {import("ai").CoreModel} impl - The AI SDK model implementation
- * @property {undefined|function(import("ai").ChatRequest): void} [enableWebSearch] - A callback that enables web search for the model
  * @property {function(): Promise<any>} isAvailable - A callback that checks whether the model is online and available for use
  * @property {function(): Promise<any>} [isHot] - A callback that checks whether the model is hot, or will need to be loaded
  * @property {function(ChatRequest): void} [mangleRequest] - A callback that modifies the request, if the provider requires different input vs classic openai
@@ -63,7 +62,6 @@ export default class AIChatClient {
 	 */
 	constructor(modelSpec) {
 		this.modelSpec = modelSpec;
-		this.webSearchEnabled = false;
 	}
 
 	/**
@@ -72,20 +70,6 @@ export default class AIChatClient {
 	 */
 	getModelId() {
 		return this.modelSpec.impl.modelId;
-	}
-
-	/**
-	 * Enable web search for the model.
-	 */
-	enableWebSearch() {
-		this.webSearchEnabled = true;
-	}
-
-	/**
-	 * Disable web search for the model.
-	 */
-	disableWebSearch() {
-		this.webSearchEnabled = false;
 	}
 
 	/**

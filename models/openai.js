@@ -7,10 +7,6 @@ import cachedDataRetriever from "../util/cachedDataRetriever.js";
  */
 const providerName = "OpenAI";
 
-function enableWebSearch(request) {
-	(request.tools ??= {}).web_search_preview = openai.tools.webSearchPreview();
-}
-
 export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 	if (!apiKey) {
 		throw new Error("No config.apiKey provided for OpenAI provider.");
@@ -36,11 +32,13 @@ export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 	 * @type {Object<string,ChatModelSpec>}
 	 */
 	const chatModels = {
-		"gpt-4.1": {
+		"gpt-4.1-web-search": {
 			provider,
 			impl: openai("gpt-4.1"),
 			isAvailable,
-			enableWebSearch,
+			mangleRequest(req) {
+				req.tools.web_search_preview = openai.tools.webSearchPreview();
+			},
 			costPerMillionInputTokens: 2.0,
 			costPerMillionOutputTokens: 8.0,
 			reasoning: 3,
@@ -50,11 +48,13 @@ export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 			webSearch: 1,
 			contextLength: 1000000,
 		},
-		"gpt-4.1-mini": {
+		"gpt-4.1-mini-web-search": {
 			provider,
 			impl: openai("gpt-4.1-mini"),
 			isAvailable,
-			enableWebSearch,
+			mangleRequest(req) {
+				req.tools.web_search_preview = openai.tools.webSearchPreview();
+			},
 			costPerMillionInputTokens: 0.4,
 			costPerMillionOutputTokens: 1.6,
 			reasoning: 2,
@@ -62,6 +62,30 @@ export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 			tools: 4,
 			speed: 4,
 			webSearch: 1,
+			contextLength: 1000000,
+		},
+		"gpt-4.1": {
+			provider,
+			impl: openai("gpt-4.1"),
+			isAvailable,
+			costPerMillionInputTokens: 2.0,
+			costPerMillionOutputTokens: 8.0,
+			reasoning: 3,
+			intelligence: 5,
+			tools: 5,
+			speed: 3,
+			contextLength: 1000000,
+		},
+		"gpt-4.1-mini": {
+			provider,
+			impl: openai("gpt-4.1-mini"),
+			isAvailable,
+			costPerMillionInputTokens: 0.4,
+			costPerMillionOutputTokens: 1.6,
+			reasoning: 2,
+			intelligence: 4,
+			tools: 4,
+			speed: 4,
 			contextLength: 1000000,
 		},
 		"gpt-4.1-nano": {
@@ -80,7 +104,7 @@ export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 			provider,
 			impl: openai("o3"),
 			isAvailable,
-			enableWebSearch,
+
 			costPerMillionInputTokens: 10.0,
 			costPerMillionOutputTokens: 40.0,
 			reasoning: 6,
@@ -94,7 +118,6 @@ export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 			provider,
 			impl: openai("o4-mini"),
 			isAvailable,
-			enableWebSearch,
 			costPerMillionInputTokens: 1.1,
 			costPerMillionOutputTokens: 4.4,
 			reasoning: 5,
@@ -108,7 +131,7 @@ export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 			provider,
 			impl: openai("o1-pro"),
 			isAvailable,
-			enableWebSearch,
+
 			costPerMillionInputTokens: 150.0,
 			costPerMillionOutputTokens: 600.0,
 			reasoning: 7,
@@ -119,6 +142,24 @@ export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 			contextLength: 200000,
 		},
 	};
+
+	for (const modelName of Object.keys(chatModels)) {
+		const model = chatModels[modelName];
+		if (model.webSearch) {
+			const newModel = {
+				...model,
+				mangleRequest(req) {
+					req.tools.web_search_preview = openai.tools.webSearchPreview();
+				},
+				costPerMillionInputTokens: model.costPerMillionInputTokens + 0.001, // Adjust the cost slightly so that these models are only used for search
+				costPerMillionOutputTokens: model.costPerMillionOutputTokens + 0.001,
+			};
+
+			delete model.webSearch;
+
+			chatModels[modelName + "-web-search"] = newModel;
+		}
+	}
 
 	/**
 	 * A collection of OpenAI image generation model specifications.

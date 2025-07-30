@@ -19,9 +19,7 @@ export async function execute({ input, systemPrompt, model }, registry) {
 	const modelRegistry = registry.requireFirstServiceByType(ModelRegistry);
 
 	if (!model) {
-		throw new Error(
-			"[runChat] No model parameter received, using the chatService model",
-		);
+		throw new Error("[runChat] No model parameter received");
 	}
 
 	const currentMessage = chatMessageStorage.getCurrentMessage();
