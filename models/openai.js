@@ -169,7 +169,7 @@ export async function init(modelRegistry, { apiKey, baseURL, provider }) {
 	const imageGenerationModels = {
 		"gpt-image-1": {
 			provider,
-			impl: openai("gpt-image-1"),
+			impl: openai.imageModel("gpt-image-1"),
 			isAvailable,
 			costPerMillionInputTokens: 5.0,
 			costPerMillionOutputTokens: 40.0,

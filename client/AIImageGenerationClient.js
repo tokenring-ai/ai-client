@@ -3,7 +3,7 @@ import ChatService from "@token-ring/chat/ChatService";
 import { experimental_generateImage as generateImage } from "ai";
 
 /**
- * @typedef {Object} ModelSpec
+ * @typedef {Object} ImageModelSpec
  * @property {string} provider - The model provider code.
  * @property {number} [contextLength] - Maximum context length in tokens (may not be applicable for image models).
  * @property {number} [costPerMillionInputTokens] - Cost per million input tokens (may be used for prompt processing).
@@ -11,6 +11,7 @@ import { experimental_generateImage as generateImage } from "ai";
  * @property {number} [costPerImage] - Cost per generated image (common pricing model for image generation).
  * @property {import("ai").ImageGenerationModel} impl - The AI SDK image generation model implementation.
  * @property {function(): Promise<any>} isAvailable - A callback that checks whether the model is online and available for use.
+ * @property {function(object): number} calculateImageCost - A callback to calculate the image cost
  * @property {function(): Promise<any>} [isHot] - A callback that checks whether the model is hot, or will need to be loaded.
  */
 
@@ -20,16 +21,14 @@ import { experimental_generateImage as generateImage } from "ai";
 export default class AIImageGenerationClient {
 	/**
 	 * Creates an instance of AIImageGenerationClient.
-	 * @param {object} cfg - Configuration object.
-	 * @param {ModelSpec} cfg.modelSpec  – The image generation model specification to use.
+	 * @param {ImageModelSpec} modelSpec  – The image generation model specification to use.
 	 */
-	constructor({ modelSpec }) {
+	constructor(modelSpec) {
 		this.modelSpec = modelSpec;
-		this.webSearchEnabled = false; // Note: webSearch is generally not applicable for image generation clients
 	}
 
 	/**
-	 * Gets the model ID from the model specification.
+	 * Get the model ID.
 	 * @returns {string} The model ID.
 	 */
 	getModelId() {
@@ -38,45 +37,17 @@ export default class AIImageGenerationClient {
 
 	/**
 	 * Calculates the token cost. For image models, this might be an approximation
-	 * or based on prompt tokens if applicable. Often, cost is per image.
-	 * @param {object} params - Parameters for cost calculation.
-	 * @param {number} params.promptTokens - The number of prompt tokens.
-	 * @param {number} [params.completionTokens] - The number of completion tokens (optional, often not applicable).
-	 * @returns {string} The formatted token cost (e.g., "$0.0010") or "Unknown" if not applicable/calculable.
-	 *                   Returns cost per image if `costPerImage` is in `modelSpec`.
+	 * or based on prompt tokens if applicable. Because there is no standard, we always defer to the model to calculate it
+	 * @param {object} usage - The usage object from the response
+	 * @returns {number|undefined} The calculated cost.
 	 */
-	getTokenCost({ promptTokens, completionTokens = 0 }) {
-		if (!this.modelSpec) return "Unknown";
-
-		if (this.modelSpec.costPerImage !== undefined) {
-			return `$${this.modelSpec.costPerImage.toFixed(4)} per image`;
-		}
-
-		if (
-			promptTokens === undefined ||
-			!this.modelSpec.costPerMillionInputTokens
-		) {
-			return "Unknown"; // Not enough info for token-based cost
-		}
-
-		const inputCost =
-			(promptTokens * this.modelSpec.costPerMillionInputTokens) / 1000000;
-		// Output cost might not be applicable or could be zero
-		const outputCost = this.modelSpec.costPerMillionOutputTokens
-			? (completionTokens * this.modelSpec.costPerMillionOutputTokens) / 1000000
-			: 0;
-		const totalCost = inputCost + outputCost;
-
-		return `$${totalCost.toFixed(4)}`;
+	getTokenCost(usage) {
+		return this.modelSpec?.calculateImageCost?.(usage);
 	}
 
 	/**
 	 * Generates an image based on a prompt using the specified model.
 	 * @param {object} request - The image generation request parameters.
-	 * @param {string} request.prompt - The prompt to generate an image from.
-	 * @param {`${number}x${number}`} [request.size] - The size of the image to generate (e.g., '1024x1024').
-	 * @param {number} [request.n] - The number of images to generate.
-	 * @param {number} [request.seed] - Seed for deterministic image generation.
 	 * @param {TokenRingRegistry} registry - The package registry
 	 * @returns {Promise<[object, object]>} The generated image data and metadata.
 	 */
@@ -89,39 +60,52 @@ export default class AIImageGenerationClient {
 
 		try {
 			const result = await generateImage({
+				...request,
+				n: 1,
 				model: this.modelSpec.impl,
-				prompt: request.prompt,
-				n: request.n,
-				size: request.size,
-				seed: request.seed,
 				abortSignal: signal,
 			});
 
-			// If multiple images were requested
-			if (result.images) {
-				return [
-					result.images,
-					{
-						type: "ai_sdk_image",
-						status: "success",
-						model: this.getModelId(),
-						count: result.images.length,
-					},
-				];
-			}
-
-			// If a single image was requested
-			return [
-				result.image,
-				{
-					type: "ai_sdk_image",
-					status: "success",
-					model: this.getModelId(),
-				},
-			];
+			return [result.image];
 		} catch (error) {
 			chatService.errorLine("Error generating image: ", error);
 			throw error;
 		}
+	}
+
+	/**
+	 * Generates a response object from the result.
+	 * @param {import('ai').ImageModelResponseData} ulResponse - The underlying response object
+	 * @returns {Promise<object>} The generated response object.
+	 */
+	async generateResponseObject(ulResponse) {
+		const { timestamp, model, messages } = ulResponse;
+
+		const response = {
+			timestamp,
+			model,
+			messages,
+		};
+
+		for (const key of storedResultKeys) {
+			const value = await ulResponse[key];
+			if (value) {
+				response[key] = value;
+			}
+		}
+
+		const { usage } = response;
+
+		if (
+			usage &&
+			usage.promptTokens !== undefined &&
+			usage.completionTokens !== undefined
+		) {
+			usage.cost = this.calculateCost({
+				promptTokens: usage.promptTokens,
+				completionTokens: usage.completionTokens,
+			});
+		}
+		return response;
 	}
 }
