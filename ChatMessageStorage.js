@@ -8,7 +8,7 @@ import { Service } from "@token-ring/registry";
  * @property {number} cumulativeInputLength - The byte length of the input, including the output length from prior messages
  * @property {import('@token-ring/chat/ChatService').Response} [response] - The response from AI
  * @property {number} updatedAt - The update time in milliseconds since the epoch format
- * @property {number} [previousMessageId] - The ID of the previous message in the conversation chain
+ * @property {number|string|null} [previousMessageId] - The ID of the previous message in the conversation chain
  */
 
 /**
@@ -21,15 +21,15 @@ import { Service } from "@token-ring/registry";
 export default class ChatMessageStorage extends Service {
 	session;
 
-	/** @type {Array<import('core/ai-client/ChatMessageStorage.js').ChatMessage>} */
+	/** @type {Array<import('./ChatMessageStorage.js').ChatMessage>} */
 	previousMessages = [];
 
-	/** @type {import('core/ai-client/ChatMessageStorage.js').ChatMessage|null} */
+	/** @type {import('./ChatMessageStorage.js').ChatMessage|null} */
 	currentMessage = null;
 
 	/**
 	 * Gets the current active message.
-	 * @returns {import('core/ai-client/ChatMessageStorage.js').ChatMessage|null} The current message or null if no message is active
+	 * @returns {import('./ChatMessageStorage.js').ChatMessage|null} The current message or null if no message is active
 	 */
 	getCurrentMessage() {
 		return this.currentMessage;
@@ -39,7 +39,7 @@ export default class ChatMessageStorage extends Service {
 	 * Sets the current active message, moving the previous current message to history if it exists.
 	 * This allows for maintaining a stack of messages for undo/redo operations.
 	 *
-	 * @param {import('core/ai-client/ChatMessageStorage.js').ChatMessage} message - The message to set as current
+	 * @param {import('./ChatMessageStorage.js').ChatMessage} message - The message to set as current
 	 * @returns {void}
 	 */
 	setCurrentMessage(message) {
@@ -67,12 +67,13 @@ export default class ChatMessageStorage extends Service {
 	 * Stores a new chat request, typically starting a new conversation session.
 	 *
 	 * @abstract
-	 * @param {import('core/ai-client/ChatMessageStorage.js').ChatMessage|null} currentMessage - The current message
+	 * @param {import('./ChatMessageStorage.js').ChatMessage|null} currentMessage - The current message
 	 * @param {import('@token-ring/chat/ChatService').Body} request - The request object
 	 * @param {import('@token-ring/chat/ChatService').Response} response - The response object
 	 * @returns {Promise<ChatMessage>}
 	 */
-	storeChat(_currentMessage, _request, _response) {
+	storeChat(currentMessage, request, response) {
+		// eslint-disable-line no-unused-vars
 		throw new Error("Not implemented");
 	}
 
@@ -83,7 +84,8 @@ export default class ChatMessageStorage extends Service {
 	 * @param {number|string} id - The message ID
 	 * @returns {Promise<ChatMessage>} The retrieved message
 	 */
-	async retrieveMessageById(_id) {
+	async retrieveMessageById(id) {
+		// eslint-disable-line no-unused-vars
 		throw new Error("Not implemented");
 	}
 }

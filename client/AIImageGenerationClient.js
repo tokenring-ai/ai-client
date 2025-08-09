@@ -48,7 +48,7 @@ export default class AIImageGenerationClient {
 	/**
 	 * Generates an image based on a prompt using the specified model.
 	 * @param {object} request - The image generation request parameters.
-	 * @param {TokenRingRegistry} registry - The package registry
+	 * @param {import('@token-ring/registry').Registry} registry - The package registry
 	 * @returns {Promise<[object, object]>} The generated image data and metadata.
 	 */
 	async generateImage(request, registry) {
@@ -71,41 +71,5 @@ export default class AIImageGenerationClient {
 			chatService.errorLine("Error generating image: ", error);
 			throw error;
 		}
-	}
-
-	/**
-	 * Generates a response object from the result.
-	 * @param {import('ai').ImageModelResponseData} ulResponse - The underlying response object
-	 * @returns {Promise<object>} The generated response object.
-	 */
-	async generateResponseObject(ulResponse) {
-		const { timestamp, model, messages } = ulResponse;
-
-		const response = {
-			timestamp,
-			model,
-			messages,
-		};
-
-		for (const key of storedResultKeys) {
-			const value = await ulResponse[key];
-			if (value) {
-				response[key] = value;
-			}
-		}
-
-		const { usage } = response;
-
-		if (
-			usage &&
-			usage.promptTokens !== undefined &&
-			usage.completionTokens !== undefined
-		) {
-			usage.cost = this.calculateCost({
-				promptTokens: usage.promptTokens,
-				completionTokens: usage.completionTokens,
-			});
-		}
-		return response;
 	}
 }
