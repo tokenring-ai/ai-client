@@ -17,7 +17,7 @@
 		"@token-ring/eslint-config": "0.0.0",
 		"@token-ring/registry": "0.1.0",
 		"ai": "^4.3.16",
-	  "async-es": "^3.2.6",
+  "async-es": "^3.2.6",
 		"axios": "^1.10.0",
 		"lodash-es": "^4.17.21",
 		"next-auth": "^4.24.11",
