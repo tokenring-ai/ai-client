@@ -14,7 +14,7 @@
 		"@kubernetes/client-node": "^1.3.0",
 		"@openrouter/ai-sdk-provider": "^0.7.2",
 		"@token-ring/chat": "0.1.0",
-		"@token-ring/eslint-config": "0.0.0",
+
 		"@token-ring/registry": "0.1.0",
 		"ai": "^4.3.16",
   "async-es": "^3.2.6",
@@ -33,18 +33,18 @@
 		"typescript": "^5.6.3"
 	},
 	"exports": {
-		".": "./index.js",
-		"./*": "./*.js"
+		".": "./index.ts",
+		"./*": "./*.ts"
 	},
-	"types": "./index.d.ts",
+	"types": "./index.ts",
 	"license": "MIT",
 	"scripts": {
-		"lint": "eslint ",
-		"build": "tsc -p tsconfig.json",
+
+		"build": "tsc -p tsconfig.tson",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:coverage": "vitest run --coverage",
-		"eslint": "eslint --fix ./"
+		"test:coverage": "vitest run --coverage"
+
 	},
 	"type": "module"
 }

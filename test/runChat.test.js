@@ -1,9 +1,9 @@
 import ChatService from "@token-ring/chat/ChatService";
 import { Registry } from "@token-ring/registry";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.js";
-import ModelRegistry from "../ModelRegistry.js";
-import runChat from "../runChat.js";
+import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.ts";
+import ModelRegistry from "../ModelRegistry.ts";
+import runChat from "../runChat.ts";
 
 // Mock AI client for testing
 class MockAIChatClient {
@@ -30,7 +30,49 @@ class MockAIChatClient {
 			},
 		};
 
-		return ["Mock response", mockResponse];
+		/** @type {[string, object]} */
+		const result = ["Mock response", mockResponse];
+		return result;
+	}
+
+	calculateCost() {
+		return 0.001;
+	}
+
+	getTokenCost({ promptTokens, completionTokens }) {
+		return "$0.0010";
+	}
+
+	async textChat(_request, _registry) {
+		const mockResponse = {
+			messages: [{ role: "assistant", content: "Mock response" }],
+			usage: {
+				promptTokens: 10,
+				completionTokens: 5,
+				totalTokens: 15,
+				cost: 0.001,
+			},
+		};
+		/** @type {[string, object]} */
+		const result = ["Mock response", mockResponse];
+		return result;
+	}
+
+	async generateObject(_request, _registry) {
+		const mockResponse = {
+			object: { result: "mock" },
+			usage: { totalTokens: 10, cost: 0.001 },
+		};
+		/** @type {[string, object]} */
+		const result = [JSON.stringify(mockResponse.object), mockResponse];
+		return result;
+	}
+
+	async generateResponseObject(_request, _registry) {
+		return {
+			object: { result: "mock" },
+			usage: { totalTokens: 10, cost: 0.001 },
+		};
 	}
 }
 
@@ -48,7 +90,9 @@ class MockChatService extends ChatService {
 	getInstructions() {
 		return this.instructions;
 	}
-	emit() {}
+	emit() {
+		return true;
+	}
 	systemLine() {}
 	warningLine() {}
 }
@@ -135,7 +179,7 @@ describe("runChat Integration Tests", () => {
 					{
 						input: "Test",
 						systemPrompt: "System prompt",
-						// Missing model parameter
+						model: undefined, // Missing model parameter
 					},
 					registry,
 				),

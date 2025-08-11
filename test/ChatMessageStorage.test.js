@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.js";
+import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.ts";
 
 describe("EphemeralChatMessageStorage Integration Tests", () => {
 	let storage;

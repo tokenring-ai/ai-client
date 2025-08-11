@@ -1,24 +1,25 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "Bundler",
-    "allowJs": true,
-    "checkJs": true,
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "outDir": ".",
-    "rootDir": ".",
-    "strict": false,
-    "skipLibCheck": true,
-    "jsx": "react-jsx"
-  },
-  "include": ["**/*.js"],
-  "exclude": [
-    "node_modules",
-    "test",
-    "tests",
-    "vitest.config.js",
-    "eslint.config.js"
-  ]
+ "compilerOptions": {
+  "target": "ES2022",
+  "module": "NodeNext",
+  "moduleResolution": "NodeNext",
+  "resolveJsonModule": true,
+  "esModuleInterop": true,
+  "skipLibCheck": true,
+  "strict": true,
+  "allowJs": true,
+  "checkJs": true,
+  "allowImportingTsExtensions": true,
+  "types": ["node", "vitest"],
+  "outDir": "dist-ts",
+  "rootDir": "."
+ },
+ "include": [
+  "**/*.ts"
+ ],
+ "exclude": [
+  "node_modules",
+  "dist-ts",
+  "**/vitest.config.*"
+ ]
 }

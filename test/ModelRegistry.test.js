@@ -1,7 +1,7 @@
 import { Registry } from "@token-ring/registry";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import ModelRegistry from "../ModelRegistry.js";
-import * as providers from "../models.js";
+import ModelRegistry from "../ModelRegistry.ts";
+import * as providers from "../models.ts";
 
 // Mock axios for HTTP requests
 vi.mock("axios", () => ({
@@ -11,6 +11,9 @@ vi.mock("axios", () => ({
 }));
 
 import axios from "axios";
+
+/** @type {import('vitest').MockedFunction<typeof axios.get>} */
+const mockedAxiosGet = /** @type {any} */ (axios.get);
 
 describe("ModelRegistry Integration Tests", () => {
 	let registry;
@@ -22,7 +25,7 @@ describe("ModelRegistry Integration Tests", () => {
 		registry.services.addServices(modelRegistry);
 
 		// Mock successful API responses
-		axios.get.mockResolvedValue({ data: { data: [] } });
+		mockedAxiosGet.mockResolvedValue({ data: { data: [] } });
 	});
 
 	describe("Provider Registration", () => {
