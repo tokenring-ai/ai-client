@@ -142,7 +142,7 @@ function nameRequirementsFilter(
     if (typeof requirements === "string") {
         requirements = { model: requirements };
     }
-    const model = (requirements as any)?.model;
+    const model = requirements.model;
     return model ? this.modelSpecs[model] ?? [] : [];
 }
 
@@ -171,7 +171,8 @@ function chatRequirementsFilter(
                     const match = filter.match(/^([a-zA-Z0-9_]+)([><]?[><=])(.+)$/);
                     if (match) {
                         const [_, key, operator, value] = match;
-                        (requirements as any)[key] = `${operator}${value}`;
+                        // @ts-ignore
+                        requirements[key] = `${operator}${value}`;
                     }
                 }
             } else {

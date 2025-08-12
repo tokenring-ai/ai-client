@@ -1,5 +1,5 @@
 import { ChatService } from "@token-ring/chat";
-import { Registry as TokenRingRegistry } from "@token-ring/registry";
+import {Registry} from "@token-ring/registry";
 
 interface Request {
     temperature?: number;
@@ -22,7 +22,7 @@ interface Personas {
  * @param request - The request object to modify
  * @param registry - The TokenRing registry
  */
-export function addPersonaParameters(request: Request, registry: TokenRingRegistry): void {
+export function addPersonaParameters(request: Request, registry: Registry): void {
     const chatService = registry.requireFirstServiceByType(ChatService);
 
     const persona = chatService.getPersona();

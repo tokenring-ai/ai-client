@@ -15,7 +15,7 @@ const providerName = "OpenAI";
  */
 import type ModelRegistry from "../ModelRegistry.ts";
 import type { ModelConfig } from "../ModelRegistry.ts";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 export async function init(modelRegistry: ModelRegistry, { apiKey, baseURL, provider }: ModelConfig) {
 	if (!apiKey) {
@@ -46,8 +46,8 @@ export async function init(modelRegistry: ModelRegistry, { apiKey, baseURL, prov
 			provider,
 			impl: openai("gpt-4.1"),
 			isAvailable,
-			mangleRequest(req: any) {
-				req.tools.web_search_preview = openai.tools.webSearchPreview();
+			mangleRequest(req: ChatRequest) {
+                (req.tools ??= {}).web_search_preview = openai.tools.webSearchPreview();
 				return undefined;
 			},
 			costPerMillionInputTokens: 2.0,

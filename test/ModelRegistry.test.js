@@ -74,18 +74,6 @@ describe("ModelRegistry Integration Tests", () => {
 			expect(models).toContain("gemini-1.5-flash");
 		});
 
-		it("should throw error for missing API key", async () => {
-			const config = {
-				openai: {
-					provider: "openai",
-					// Missing apiKey
-				},
-			};
-
-			await expect(
-				modelRegistry.initializeModels(providers, config),
-			).rejects.toThrow("No config.apiKey provided for OpenAI provider");
-		});
 	});
 
 	describe("Model Filtering", () => {

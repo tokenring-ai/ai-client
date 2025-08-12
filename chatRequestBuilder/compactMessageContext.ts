@@ -1,17 +1,12 @@
-/**
- * Type definition for chat messages
- */
-type ChatInput = {
-    role: string;
-    content: string;
-};
+import {ChatInputMessage} from "../client/AIChatClient.js";
+
 
 /**
  * Compacts message context to stay within maximum allowed message count
  * @param messages Array of chat messages to compact
  * @returns Compacted array of messages
  */
-function compactMessageContext(messages: ChatInput[]): ChatInput[] {
+function compactMessageContext(messages: ChatInputMessage[]): ChatInputMessage[] {
     // Context Compaction Logic
     // TODO: Replace message count with token count for more accurate compaction in the future.
     const defaultMaxContextMessages = 20;
@@ -41,4 +36,4 @@ function compactMessageContext(messages: ChatInput[]): ChatInput[] {
     return messages;
 }
 
-export { compactMessageContext, type ChatInput };
+export { compactMessageContext };

@@ -1,6 +1,7 @@
 import { HumanInterfaceService } from "@token-ring/chat";
 import ChatService from "@token-ring/chat/ChatService";
 import ModelRegistry from "../ModelRegistry.ts";
+import {Registry} from "@token-ring/registry";
 
 interface ModelInfo {
     name: string;
@@ -17,7 +18,7 @@ interface TreeNode {
 export const description: string =
     "/model [model_name] - Set or show the target model for chat";
 
-export async function execute(remainder: string | undefined, registry: any): Promise<void> {
+export async function execute(remainder: string, registry: Registry): Promise<void> {
     const chatService = registry.requireFirstServiceByType(ChatService);
     const humanInterfaceService = registry.getFirstServiceByType(
         HumanInterfaceService,
@@ -35,7 +36,7 @@ export async function execute(remainder: string | undefined, registry: any): Pro
     // If no remainder provided, show interactive tree selection grouped by provider
     chatService.emit("waiting", "Checking online status of models...");
     const modelsByProvider: Record<string, ModelInfo[]> = await modelRegistry.chat.getModelsByProvider();
-    chatService.emit("doneWaiting");
+    chatService.emit("doneWaiting", null);
 
     // Build tree structure for model selection
     const buildModelTree = (): TreeNode => {
@@ -91,10 +92,13 @@ export async function execute(remainder: string | undefined, registry: any): Pro
 
     // Interactive tree selection if no model name is provided in the command
     try {
-        const selectedModel = await humanInterfaceService.askForTreeSelection({
+        if (!humanInterfaceService) {
+            chatService.errorLine("No HumanInterfaceService found, cannot select model.");
+            return;
+        }
+        const selectedModel = await humanInterfaceService.askForSingleTreeSelection({
             message: `Current model: ${chatService.getModel() ?? "auto"}. Choose a new model:`,
             tree: buildModelTree(),
-            multiple: false,
             allowCancel: true,
         });
 

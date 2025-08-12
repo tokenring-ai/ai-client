@@ -1,21 +1,19 @@
 import ChatService from "@token-ring/chat/ChatService";
 
 import { generateObject, generateText, streamText, type LanguageModel, type Tool, type CoreMessage, type Message } from "ai";
+import {Registry} from "@token-ring/registry";
 
-type TokenRingRegistry = import('@token-ring/registry').Registry;
+export type ChatInputMessage = Omit<Message,'id'>;
 
 export type ChatRequest = {
-    tools: Record<string, Tool>;
-    maxSteps: number;
-    messages?: Array<CoreMessage> | Array<Omit<Message, 'id'>>;
+    tools?: Record<string, Tool>;
+    maxSteps?: number;
+    messages: ChatInputMessage[];
 };
 
 export type GenerateRequest = {
-    tools: Record<string, Tool>;
-    maxSteps: number;
-    schema: any;
-    messages?: Array<CoreMessage> | Array<Omit<Message, 'id'>>;
-};
+    schema: import('zod').ZodTypeAny;
+} & ChatRequest;
 
 export type ChatModelSpec = {
     provider: string;
@@ -23,9 +21,9 @@ export type ChatModelSpec = {
     costPerMillionInputTokens: number;
     costPerMillionOutputTokens: number;
     impl: LanguageModel;
-    isAvailable: () => Promise<any>;
-    isHot?: () => Promise<any>;
-    mangleRequest?: (req: any) => never | undefined;
+    isAvailable: () => Promise<boolean>;
+    isHot?: () => Promise<boolean>;
+    mangleRequest?: (req: ChatRequest) => void;
     research?: number;
     reasoning?: number;
     tools?: number;
@@ -36,12 +34,17 @@ export type ChatModelSpec = {
 };
 
 export type AIResponse = {
-    timestamp: any;
-    model: any;
-    messages: any;
+    timestamp: number;
+    model: string;
+    messages: Array<CoreMessage>;
     text?: string;
     object?: any;
-    usage?: any;
+    usage?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+        cost?: number;
+    };
     [key: string]: any;
 };
 
@@ -110,14 +113,8 @@ export default class AIChatClient {
     /**
      * Streams a chat completion via `streamText`, relaying every delta
      * back to the `ChatService`.
-     * @param {object} request - The chat request parameters.
-     * @param {TokenRingRegistry} registry - The package registry.
-     * @returns {Promise<[string,object]>} The completed chat response object.
      */
-    async streamChat(request: Record<string, any>, registry: TokenRingRegistry): Promise<[string | undefined, AIResponse]> {
-        if (request.model)
-            throw new Error("streamChat does not accept a model parameter");
-
+    async streamChat(request: ChatRequest, registry: Registry): Promise<[string | undefined, AIResponse]> {
         const chatService = registry.requireFirstServiceByType(ChatService);
         const signal = chatService.getAbortSignal();
 
@@ -171,8 +168,7 @@ export default class AIChatClient {
                 }
                 case "error": {
                     chatService.emit("outputType", null);
-                    const errAny: any = (part as any).error;
-                    throw new Error(String(errAny?.message ?? errAny ?? "Unknown error"));
+                    throw new Error(part.error as any ?? "Unknown error");
                 }
             }
         }
@@ -184,14 +180,8 @@ export default class AIChatClient {
 
     /**
      * Sends a chat completion request and returns the full text response.
-     * @param {object} request - The chat request parameters.
-     * @param {TokenRingRegistry} registry - The package registry.
-     * @returns {Promise<[string, Object]>} The completed chat text and response object.
      */
-    async textChat(request: Record<string, any>, registry: TokenRingRegistry): Promise<[string | undefined, AIResponse]> {
-        if (request.model)
-            throw new Error("textChat does not accept a model parameter");
-
+    async textChat(request: ChatRequest, registry: Registry): Promise<[string, AIResponse]> {
         if (this.modelSpec.mangleRequest) {
             request = { ...request };
             this.modelSpec.mangleRequest(request);
@@ -207,16 +197,13 @@ export default class AIChatClient {
         });
 
         const response = await this.generateResponseObject(result);
-        return [response.text, response];
+        return [response.text as string, response];
     }
 
     /**
      * Sends a chat completion request and returns the generated object response.
-     * @param {GenerateRequest} request - The chat request parameters.
-     * @param {TokenRingRegistry} registry - The package registry.
-     * @returns {Promise<[string,object]>} The generated object.
      */
-    async generateObject(request: GenerateRequest, registry: TokenRingRegistry): Promise<[any, AIResponse]> {
+    async generateObject(request: GenerateRequest, registry: Registry): Promise<[any, AIResponse]> {
         if (this.modelSpec.mangleRequest) {
             request = { ...request };
             this.modelSpec.mangleRequest(request);

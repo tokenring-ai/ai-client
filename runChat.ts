@@ -1,45 +1,31 @@
 import ChatService from "@token-ring/chat/ChatService";
-import ChatMessageStorage from "./ChatMessageStorage.ts";
-import { createChatRequest, type ChatInput } from "./chatRequestBuilder/createChatRequest.ts";
-import { ModelRegistry } from "./index.ts";
-import type { Registry as TokenRingRegistry } from "@token-ring/registry";
+import ChatMessageStorage from "./ChatMessageStorage.js";
+import { createChatRequest } from "./chatRequestBuilder/createChatRequest.js";
+import { ModelRegistry } from "./index.js";
 import {abandon} from "@token-ring/utility/abandon";
+import {Registry} from "@token-ring/registry";
+import {AIResponse, ChatInputMessage} from "./client/AIChatClient.js";
 
 /**
  * Types for the chat parameters
  */
-interface ExecuteParams {
-    input: string | ChatInput | ChatInput[];
-    systemPrompt: string | ChatInput;
+type ExecuteParams = {
+    input: string | ChatInputMessage | ChatInputMessage[];
+    systemPrompt?: string | ChatInputMessage;
     model: string;
 }
 
 
-interface ChatResponse {
-    usage?: {
-        totalTokens?: number;
-        promptTokens?: number;
-        completionTokens?: number;
-    };
-    timing?: {
-        elapsedMs: number;
-        tokensPerSec?: number;
-        totalTokens?: number;
-    };
-    tokenCost?: number;
-    error?: string;
-}
+
 
 
 /**
  * runChat tool: Runs a chat with the AI model, combining streamChat and runChat functionality.
- * @param {ExecuteParams} args Tool arguments: { input, systemPrompt, model }
- * @param {TokenRingRegistry} registry - The package registry
  */
 export async function execute(
     { input, systemPrompt, model }: ExecuteParams,
-    registry: TokenRingRegistry
-): Promise<[string, ChatResponse]> {
+    registry: Registry
+): Promise<[string, AIResponse]> {
     const chatService = registry.requireFirstServiceByType<ChatService>(ChatService);
     const chatMessageStorage = registry.requireFirstServiceByType<ChatMessageStorage>(ChatMessageStorage);
     const modelRegistry = registry.requireFirstServiceByType<ModelRegistry>(ModelRegistry);
@@ -49,6 +35,8 @@ export async function execute(
     }
 
     const currentMessage = chatMessageStorage.getCurrentMessage();
+
+
     const request = await createChatRequest({ input, systemPrompt }, registry);
 
     try {
@@ -99,10 +87,6 @@ export async function execute(
         // Update the current message to follow up to the previous
         chatMessageStorage.setCurrentMessage(chatMessage);
 
-        // Crop token cost to 4 decimal places if present
-        if (response && response.tokenCost !== undefined) {
-            response.tokenCost = Number(response.tokenCost.toFixed(4));
-        }
 
         // Run afterChatComplete hooks for all enabled tools
         for (const tool of registry.tools.iterateActiveTools()) {
@@ -134,7 +118,6 @@ export async function execute(
     }
 }
 
-export default execute;
 
 export const description =
     "Runs a chat with the AI model, combining streamChat and runChat functionality.";

@@ -1,6 +1,22 @@
 import ChatService from "@token-ring/chat/ChatService";
-import { experimental_generateImage as generateImage, type ImageModel } from "ai";
-import { Registry as TokenRingRegistry } from "@token-ring/registry";
+import {
+    experimental_generateImage as generateImage,
+    type Experimental_GenerateImageResult,
+    type ImageModel
+} from "ai";
+import {Registry} from "@token-ring/registry";
+
+
+export type ImageRequest = {
+    prompt: string;
+    size: `${number}x${number}`
+    n: number;
+};
+
+export type ImageResponse = {
+    mimeType: string;
+    uint8Array: Uint8Array
+}
 
 export type ImageModelSpec = {
     /**
@@ -30,7 +46,7 @@ export type ImageModelSpec = {
     /**
      * - A callback that checks whether the model is online and available for use.
      */
-    isAvailable: () => Promise<any>;
+    isAvailable: () => Promise<boolean>;
     /**
      * - A callback to calculate the image cost
      */
@@ -38,7 +54,7 @@ export type ImageModelSpec = {
     /**
      * - A callback that checks whether the model is hot, or will need to be loaded.
      */
-    isHot?: () => Promise<any>;
+    isHot?: () => Promise<boolean>;
 };
 
 /**
@@ -75,14 +91,8 @@ export default class AIImageGenerationClient {
 
     /**
      * Generates an image based on a prompt using the specified model.
-     * @param {object} request - The image generation request parameters.
-     * @param {TokenRingRegistry} registry - The package registry
-     * @returns {Promise<[object, object]>} The generated image data and metadata.
      */
-    async generateImage(request: { prompt: string } & Record<string, any>, registry: TokenRingRegistry): Promise<[any, any]> {
-        if ((request as any).model)
-            throw new Error("generateImage does not accept a model parameter");
-
+    async generateImage(request: ImageRequest, registry: Registry): Promise<[ImageResponse, Experimental_GenerateImageResult]> {
         const chatService = registry.requireFirstServiceByType(ChatService);
         const signal = chatService.getAbortSignal();
 
@@ -94,20 +104,10 @@ export default class AIImageGenerationClient {
                 abortSignal: signal,
             });
 
-            return [result.image, result];
+            return [result.image as ImageResponse, result];
         } catch (error) {
             chatService.errorLine("Error generating image: ", error);
             throw error;
         }
-    }
-
-    /**
-     * Generates a response object from the result.
-     * @param {ImageModelResponseData} ulResponse - The underlying response object
-     * @returns {Promise<object>} The generated response object.
-     */
-    async generateResponseObject(ulResponse: any): Promise<object> {
-        // Implementation for this method was not provided in the original JS file
-        return {};
     }
 }

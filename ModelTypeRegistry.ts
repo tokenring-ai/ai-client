@@ -1,3 +1,11 @@
+import {ChatModelRequirements} from "./ModelRegistry.js";
+
+interface ModelSpec {
+    isAvailable: () => Promise<boolean>;
+    isHot: () => Promise<boolean>;
+    [x: string]: any;
+}
+
 /**
  * Registry for AI model specifications that uses a templated type for ModelSpec
  * @template {new (modelSpec: T) => any} C - The AIClient class type
@@ -5,7 +13,7 @@
  *   with optional fields used by the registry helper methods
  *   (e.g., isAvailable, isHot, provider)
  */
-export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends object> {
+export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends ModelSpec> {
     /**
      * @param {C} AIClient - The AIClient class constructor
      * @param {function(any): Array<T>} filterModelSpecs - Function to filter model specs
@@ -86,12 +94,8 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends ob
             let status = "offline";
             for (const spec of specs) {
                 const available =
-                    (spec as any).isAvailable instanceof Function
-                        ? await (spec as any).isAvailable()
-                        : false;
-                const hot = (spec as any).isHot
-                    ? await (spec as any).isHot()
-                    : true;
+                    spec.isAvailable ? await spec.isAvailable() : false;
+                const hot = spec.isHot ? await spec.isHot() : true;
                 specRows.push({ available, hot, modelSpec: spec });
                 if (available) {
                     if (hot) {
@@ -135,7 +139,7 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends ob
         for (const model of allModels) {
             // Get provider from the first model spec (they should all have the same provider)
             const provider =
-                (model.modelSpecs[0]?.modelSpec as any)?.provider ||
+                (model.modelSpecs[0]?.modelSpec )?.provider ||
                 "unknown";
 
             if (!modelsByProvider[provider]) {
@@ -167,17 +171,17 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends ob
      * @returns {Promise<InstanceType<C>>} A client instance that uses the selected model
      * @throws {Error} If no available model is found for the intent
      */
-    async getFirstOnlineClient(requirements: any): Promise<InstanceType<C>> {
+    async getFirstOnlineClient(requirements: ChatModelRequirements | string): Promise<InstanceType<C>> {
         const modelSpecs = this.filterModelSpecs(requirements);
 
         // Find first hot model
         for (const modelSpec of modelSpecs) {
-            const available = (modelSpec as any).isAvailable
-                ? await (modelSpec as any).isAvailable()
+            const available = modelSpec.isAvailable
+                ? await modelSpec.isAvailable()
                 : true;
             if (available) {
-                const isHot = (modelSpec as any).isHot
-                    ? await (modelSpec as any).isHot()
+                const isHot = modelSpec.isHot
+                    ? await modelSpec.isHot()
                     : true;
                 if (isHot) {
                     return new this.AIClient(modelSpec);
@@ -187,8 +191,8 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends ob
 
         // Fallback to a cold model
         for (const modelSpec of modelSpecs) {
-            const available = (modelSpec as any).isAvailable
-                ? await (modelSpec as any).isAvailable()
+            const available = modelSpec.isAvailable
+                ? await modelSpec.isAvailable()
                 : true;
             if (available) {
                 return new this.AIClient(modelSpec);

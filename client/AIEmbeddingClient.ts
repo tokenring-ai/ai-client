@@ -1,4 +1,3 @@
-// AIEmbeddingClient.ts
 import { embed, type EmbeddingModel, type EmbedResult } from "ai";
 
 export type ModelSpec = {
@@ -7,8 +6,8 @@ export type ModelSpec = {
     costPerMillionInputTokens: number;
     costPerMillionOutputTokens?: number;
     impl: EmbeddingModel<string>;
-    isAvailable: () => Promise<any>;
-    isHot?: () => Promise<any>;
+    isAvailable: () => Promise<boolean>;
+    isHot?: () => Promise<boolean>;
 };
 
 /**
@@ -16,7 +15,6 @@ export type ModelSpec = {
  */
 export default class AIEmbeddingClient {
     public readonly modelSpec: ModelSpec;
-    public webSearchEnabled: boolean;
 
     /**
      * Creates an instance of AIEmbeddingClient.
@@ -24,7 +22,6 @@ export default class AIEmbeddingClient {
      */
     constructor({ modelSpec }: { modelSpec: ModelSpec }) {
         this.modelSpec = modelSpec;
-        this.webSearchEnabled = false; // Note: webSearch is not relevant for embeddings
     }
 
     /**

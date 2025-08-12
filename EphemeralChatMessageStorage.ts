@@ -1,5 +1,5 @@
 import { v4 as uuid } from "uuid";
-import ChatMessageStorage, { ChatMessage } from "./ChatMessageStorage.js";
+import ChatMessageStorage, { StoredChatMessage } from "./ChatMessageStorage.js";
 import type { Body, Response } from "@token-ring/chat/ChatService";
 
 /**
@@ -24,7 +24,7 @@ export default class EphemeralChatMessageStorage extends ChatMessageStorage {
     session: Session | null = null;
 
     /** In-memory storage for chat messages */
-    messages: Map<string, import('./ChatMessageStorage.js').ChatMessage> = new Map();
+    messages: Map<string, StoredChatMessage> = new Map();
 
     /**
      * Creates a new chat session with a unique identifier.
@@ -45,10 +45,10 @@ export default class EphemeralChatMessageStorage extends ChatMessageStorage {
      * @returns The stored message.
      */
     async storeChat(
-        currentMessage: ChatMessage | null,
+        currentMessage: StoredChatMessage | null,
         request: Body,
         response: Response
-    ): Promise<ChatMessage> {
+    ): Promise<StoredChatMessage> {
         let sessionId = currentMessage?.sessionId;
 
         // Create a new session if we don't have one
@@ -60,21 +60,13 @@ export default class EphemeralChatMessageStorage extends ChatMessageStorage {
             sessionId = this.session.id;
         }
 
-        // Calculate cumulative input length
-        let cumulativeInputLength = JSON.stringify(request.messages).length;
-        if (currentMessage) {
-            cumulativeInputLength +=
-                currentMessage.cumulativeInputLength +
-                JSON.stringify(currentMessage.response || {}).length;
-        }
-
         // Create the new message
         const message = {
             id: uuid(),
             sessionId,
             request,
             response,
-            cumulativeInputLength,
+            createdAt: Date.now(),
             updatedAt: Date.now(),
             previousMessageId: currentMessage?.id || null,
         };
@@ -96,9 +88,9 @@ export default class EphemeralChatMessageStorage extends ChatMessageStorage {
      * @throws Error When message is not found.
      */
     async retrieveMessageById(
-        id: number | string
-    ): Promise<ChatMessage> {
-        const message = this.messages.get(id.toString());
+        id: string
+    ): Promise<StoredChatMessage> {
+        const message = this.messages.get(id);
         if (!message) {
             throw new Error(`Message with id ${id} not found`);
         }

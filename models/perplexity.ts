@@ -1,10 +1,10 @@
 import { perplexity } from "@ai-sdk/perplexity";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-/**
- * The name of the AI provider.
- * @type {string}
- */
+import type ModelRegistry from "../ModelRegistry.ts";
+import type { ModelConfig } from "../ModelRegistry.ts";
+import type {ChatInputMessage, ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
+
 const providerName = "Perplexity";
 
 /**
@@ -17,9 +17,6 @@ const providerName = "Perplexity";
  * @throws {Error} If no API key is provided in the config
  * @returns {Promise<void>} A promise that resolves when initialization is complete
  */
-import type ModelRegistry from "../ModelRegistry.ts";
-import type { ModelConfig } from "../ModelRegistry.ts";
-import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
 export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 	if (!config.apiKey) {
 		throw new Error("No config.apiKey provided for Perplexity provider.");
@@ -125,15 +122,13 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 /**
  * Mangles OpenAI-style chat input messages to ensure they follow the required alternating pattern.
  * This function combines consecutive messages from the same role and ensures user/assistant roles alternate.
- *
- * @param {import('../client/AIChatClient.ts').ChatRequest} request - Array of OpenAI chat messages ({role, content} objects)
- */
-function mangleRequest(request: ChatRequest): undefined {
+  */
+function mangleRequest(request: ChatRequest) : void {
 	const { messages } = request;
-	if (!messages || messages.length === 0) return undefined;
+	if (!messages || messages.length === 0) return;
 
 	// First, combine consecutive messages from the same role
-	const combinedMessages = messages.reduce((acc: any[], current: any) => {
+	const combinedMessages = messages.reduce((acc: ChatInputMessage[], current: ChatInputMessage) => {
 		if (acc.length === 0 || acc[acc.length - 1].role !== current.role) {
 			// Add the message as is if it's the first one or has a different role from the previous one
 			acc.push({ ...current });
@@ -168,7 +163,7 @@ function mangleRequest(request: ChatRequest): undefined {
 	}
 
 	// Create a properly alternating sequence
-	const alternatingMessages = [];
+	const alternatingMessages : ChatInputMessage[] = [];
 
 	// First add all system messages
 	alternatingMessages.push(...systemMessages);
@@ -202,5 +197,5 @@ function mangleRequest(request: ChatRequest): undefined {
 	}
 
 	request.messages = alternatingMessages;
-	return undefined;
+	return;
 }

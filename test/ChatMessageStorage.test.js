@@ -25,7 +25,6 @@ describe("EphemeralChatMessageStorage Integration Tests", () => {
 			expect(message.sessionId).toBeDefined();
 			expect(message.request).toEqual(request);
 			expect(message.response).toEqual(response);
-			expect(message.cumulativeInputLength).toBeGreaterThan(0);
 		});
 
 		it("should handle new sessions", async () => {
@@ -59,28 +58,6 @@ describe("EphemeralChatMessageStorage Integration Tests", () => {
 			expect(message2.sessionId).toBe(message1.sessionId);
 		});
 
-		it("should calculate cumulative input length correctly", async () => {
-			const request1 = {
-				messages: [{ role: "user", content: "Short message" }],
-			};
-			const response1 = {
-				messages: [{ role: "assistant", content: "Short response" }],
-			};
-
-			const message1 = await storage.storeChat(null, request1, response1);
-			const initialLength = message1.cumulativeInputLength;
-
-			const request2 = {
-				messages: [{ role: "user", content: "Another message" }],
-			};
-			const response2 = {
-				messages: [{ role: "assistant", content: "Another response" }],
-			};
-
-			const message2 = await storage.storeChat(message1, request2, response2);
-
-			expect(message2.cumulativeInputLength).toBeGreaterThan(initialLength);
-		});
 	});
 
 	describe("Message Management", () => {

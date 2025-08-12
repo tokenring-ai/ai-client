@@ -1,24 +1,29 @@
 import { Service } from "@token-ring/registry";
 import { Body, Response } from "@token-ring/chat/ChatService";
 
+export interface StoredChatSession {
+    id: string;
+    title: string;
+    createdAt: number;
+}
 /**
  * Represents a chat message in the storage system
  */
-export interface ChatMessage {
+export interface StoredChatMessage {
     /** The ID of the record */
-    id: number | string;
+    id: string;
     /** The ID of the session */
-    sessionId: number | string;
+    sessionId: string;
     /** The AI request */
     request: Body;
-    /** The byte length of the input, including the output length from prior messages */
-    cumulativeInputLength: number;
     /** The response from AI */
     response?: Response;
+    /** The creation time in milliseconds since the epoch format */
+    createdAt: number;
     /** The update time in milliseconds since the epoch format */
     updatedAt: number;
     /** The ID of the previous message in the conversation chain */
-    previousMessageId?: number | string | null;
+    previousMessageId?: string | null;
 }
 
 /**
@@ -32,16 +37,16 @@ export default abstract class ChatMessageStorage extends Service {
     session: Record<string, unknown> | null = null;
 
     /** History of previous messages */
-    previousMessages: ChatMessage[] = [];
+    previousMessages: StoredChatMessage[] = [];
 
     /** The current active message */
-    currentMessage: ChatMessage | null = null;
+    currentMessage: StoredChatMessage | null = null;
 
     /**
      * Gets the current active message.
      * @returns The current message or null if no message is active
      */
-    getCurrentMessage(): ChatMessage | null {
+    getCurrentMessage(): StoredChatMessage | null {
         return this.currentMessage;
     }
 
@@ -52,7 +57,7 @@ export default abstract class ChatMessageStorage extends Service {
      * @param message - The message to set as current
      * @returns void
      */
-    setCurrentMessage(message: ChatMessage | null): void {
+    setCurrentMessage(message: StoredChatMessage | null): void {
         // Only push to history when replacing an existing message with a new non-null message
         if (this.currentMessage && message) {
             this.previousMessages.push(this.currentMessage);
@@ -84,10 +89,10 @@ export default abstract class ChatMessageStorage extends Service {
      * @returns Promise resolving to the stored chat message
      */
     abstract storeChat(
-        currentMessage: ChatMessage | null,
+        currentMessage: StoredChatMessage | null,
         request: Body,
         response: Response
-    ): Promise<ChatMessage>;
+    ): Promise<StoredChatMessage>;
 
     /**
      * Retrieves a message by its ID.
@@ -96,5 +101,5 @@ export default abstract class ChatMessageStorage extends Service {
      * @param id - The message ID
      * @returns Promise resolving to the retrieved message
      */
-    abstract retrieveMessageById(id: number | string): Promise<ChatMessage>;
+    abstract retrieveMessageById(id: number | string): Promise<StoredChatMessage>;
 }

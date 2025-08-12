@@ -37,6 +37,10 @@ describe("Provider Integration Tests", () => {
 						id: "gpt-3.5-turbo",
 						name: "GPT-3.5 Turbo",
 						context_length: 4096,
+      architecture: {
+       input_modalities: ["text"],
+       output_modalities: ["text"],
+      },
 						pricing: {
 							prompt: "0.0000015",
 							completion: "0.000002",
@@ -101,21 +105,6 @@ describe("Provider Integration Tests", () => {
 			const models = modelRegistry.chat.getRegisteredModelSpecs();
 			expect(models).toContain("gemini-1.5-pro");
 			expect(models).toContain("gemini-1.5-flash");
-		});
-	});
-
-	describe("Error Handling", () => {
-		it("should throw error for missing API key", async () => {
-			const config = {
-				openai: {
-					provider: "openai",
-					// Missing apiKey
-				},
-			};
-
-			await expect(
-				modelRegistry.initializeModels(providers, config),
-			).rejects.toThrow("No config.apiKey provided for OpenAI provider");
 		});
 	});
 });

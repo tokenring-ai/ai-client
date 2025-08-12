@@ -1,9 +1,11 @@
 import ChatService from "@token-ring/chat/ChatService";
-import runChat from "../runChat.ts";
+import * as runChat from "../runChat.js";
+import { ChatInputMessage } from "../client/AIChatClient.js";
+import {Registry} from "@token-ring/registry";
 
 export const description = "/chat [message] - Send a message to the chat service";
 
-export async function execute(remainder: any, registry: any): Promise<void> {
+export async function execute(remainder: any, registry: Registry): Promise<void> {
     const chatService = registry.requireFirstServiceByType(ChatService);
 
     if (!remainder?.trim()) {
@@ -11,8 +13,8 @@ export async function execute(remainder: any, registry: any): Promise<void> {
         return;
     }
 
-    const currentInput = [{ role: "user", content: remainder }];
-    const [_output, response] = await runChat(
+    const currentInput: ChatInputMessage[] = [{ role: "user", content: remainder }];
+    const [_output, response] = await runChat.execute(
         {
             input: currentInput,
             systemPrompt: chatService.getInstructions(),
@@ -22,8 +24,7 @@ export async function execute(remainder: any, registry: any): Promise<void> {
     );
 
     if (response.usage) {
-        const { promptTokens, completionTokens, totalTokens } = response.usage;
-        const cost = response.tokenCost;
+        const { promptTokens, completionTokens, totalTokens, cost } = response.usage;
         chatService.systemLine(
             `[Chat Complete] Token usage - promptTokens: ${promptTokens}, completionTokens: ${completionTokens}, totalTokens: ${totalTokens}, cost: ${cost}`,
         );

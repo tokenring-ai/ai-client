@@ -1,17 +1,12 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
-
-const providerName = "VLLM";
-/**
- * @param {import('../ModelRegistry.ts').default} modelRegistry
- * @param {import("../ModelRegistry.ts").ModelConfig & { generateModelSpec: function}} config
- * @returns {Promise<void>}
- *
- */
 import type ModelRegistry from "../ModelRegistry.ts";
 import type { ModelConfig } from "../ModelRegistry.ts";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import type {ChatInputMessage, ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type { ModelSpec as EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
+
+
+const providerName = "VLLM";
 export async function init(modelRegistry: ModelRegistry, config: ModelConfig & { generateModelSpec: (info: any) => { type: string; capabilities?: any } }) {
 	const { baseURL, apiKey, generateModelSpec } = config;
 	if (!baseURL) {
@@ -84,12 +79,12 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig & {
  *
  * @param {{ messages: Array<{role: string, content: string}>}} request - Array of OpenAI chat messages ({role, content} objects)
  */
-function _mangleRequest(request: { messages: Array<{ role: string; content: string }> }): void {
+function _mangleRequest(request: ChatRequest): void {
 	const { messages } = request;
 	if (!messages || messages.length === 0) return;
 
 	// First, combine consecutive messages from the same role
-	const combinedMessages = messages.reduce((acc: Array<{ role: string; content: string }>, current: { role: string; content: string }) => {
+	const combinedMessages = messages.reduce((acc: ChatInputMessage[], current: ChatInputMessage) => {
 		if (acc.length === 0 || acc[acc.length - 1].role !== current.role) {
 			// Add the message as is if it's the first one or has a different role from the previous one
 			acc.push({ ...current });
@@ -124,7 +119,7 @@ function _mangleRequest(request: { messages: Array<{ role: string; content: stri
 	}
 
 	// Create a properly alternating sequence
-	const alternatingMessages = [];
+	const alternatingMessages: ChatInputMessage[] = [];
 
 	// First add all system messages
 	alternatingMessages.push(...systemMessages);

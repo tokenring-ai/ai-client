@@ -1,26 +1,17 @@
 import ChatMessageStorage from "../ChatMessageStorage.js";
-import { addAttentionItems } from "./addAttentionItems.ts";
-import { addMemories } from "./addMemories.ts";
-import { addPersonaParameters } from "./addPersonaParameters.ts";
-import { addTools } from "./addTools.ts";
+import { addAttentionItems } from "./addAttentionItems.js";
+import { addMemories } from "./addMemories.js";
+import { addPersonaParameters } from "./addPersonaParameters.js";
+import { addTools } from "./addTools.js";
 import {Registry} from "@token-ring/registry";
+import {ChatInputMessage, ChatRequest} from "../client/AIChatClient.js";
 
-export interface ChatInput {
-    role: string;
-    content: string;
-}
-
-export interface ChatRequest {
-    maxSteps: number;
-    messages: ChatInput[];
-    tools: Record<string, any>;
-}
 
 /**
  * Creates a chat request object.
  * @param {Object} params
- * @param {string|ChatInput|ChatInput[]} params.input - The input messages array.
- * @param {string|ChatInput} [params.systemPrompt] - The system prompt
+ * @param {string|ChatInputMessage|ChatInputMessage[]} params.input - The input messages array.
+ * @param {string|ChatInputMessage} [params.systemPrompt] - The system prompt
  * @param {boolean} [params.includePriorMessages] - Whether to include prior messages
  * @param {boolean} [params.includeTools] - Whether to include tools
  * @param {boolean} [params.includeMemories] - Whether to include memories
@@ -35,15 +26,15 @@ export async function createChatRequest(
         includeTools = true,
         includePriorMessages = true,
     }: {
-        input: string | ChatInput | ChatInput[];
-        systemPrompt?: string | ChatInput;
+        input: string | ChatInputMessage | ChatInputMessage[];
+        systemPrompt?: string | ChatInputMessage;
         includeMemories?: boolean;
         includeTools?: boolean;
         includePriorMessages?: boolean;
     },
     registry: Registry
 ): Promise<ChatRequest> {
-    let processedInput: ChatInput[];
+    let processedInput: ChatInputMessage[];
 
     if (typeof input === "string") {
         processedInput = [
@@ -64,7 +55,7 @@ export async function createChatRequest(
         );
     }
 
-    let processedSystemPrompt: ChatInput | undefined;
+    let processedSystemPrompt: ChatInputMessage | undefined;
     if (typeof systemPrompt === "string") {
         processedSystemPrompt = {
             role: "system",
@@ -80,18 +71,18 @@ export async function createChatRequest(
 
     const previousMessage = chatMessageStorage.getCurrentMessage();
 
-    const messages: ChatInput[] = [];
+    const messages: ChatInputMessage[] = [];
     if (processedSystemPrompt) {
         messages.push(processedSystemPrompt);
     }
 
     if (includePriorMessages && previousMessage) {
-        let previousRequestMessages = (previousMessage?.request?.messages as ChatInput[] | undefined) ?? [];
+        let previousRequestMessages = (previousMessage?.request?.messages as ChatInputMessage[] | undefined) ?? [];
         if (previousRequestMessages?.[0]?.role === "system") {
             previousRequestMessages = previousRequestMessages.slice(1);
         }
 
-        const previousResponseMessages = (previousMessage?.response?.messages as ChatInput[] | undefined) ?? [];
+        const previousResponseMessages = (previousMessage?.response?.messages as ChatInputMessage[] | undefined) ?? [];
 
         messages.push(...previousRequestMessages, ...previousResponseMessages);
     } else {
