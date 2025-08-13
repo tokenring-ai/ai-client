@@ -1,7 +1,8 @@
-import { ChatService } from "@token-ring/chat";
-import { tool as aiTool } from "ai";
+import {ChatService} from "@token-ring/chat";
+import {tool as aiTool} from "ai";
 import async from "async";
 import {Registry} from "@token-ring/registry";
+
 /**
  * Builds the AI SDK `tools` object by iterating over the active tool
  * tools registered in the current registry.

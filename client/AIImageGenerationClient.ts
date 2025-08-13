@@ -1,9 +1,5 @@
 import ChatService from "@token-ring/chat/ChatService";
-import {
-    experimental_generateImage as generateImage,
-    type Experimental_GenerateImageResult,
-    type ImageModel
-} from "ai";
+import {experimental_generateImage as generateImage, type Experimental_GenerateImageResult, type ImageModel} from "ai";
 import {Registry} from "@token-ring/registry";
 
 

@@ -1,11 +1,11 @@
-import { createOllama } from "ollama-ai-provider";
+import {createOllama} from "ollama-ai-provider";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+import type ModelRegistry from "../ModelRegistry.ts";
+import type {ModelConfig} from "../ModelRegistry.ts";
+import {abandon} from "@token-ring/utility/abandon";
 
 const providerName = "Ollama";
 
-import type ModelRegistry from "../ModelRegistry.ts";
-import type { ModelConfig } from "../ModelRegistry.ts";
-import {abandon} from "@token-ring/utility/abandon";
 export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 	const { baseURL, generateModelSpec } = config;
 	if (!baseURL) {

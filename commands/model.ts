@@ -1,4 +1,4 @@
-import { HumanInterfaceService } from "@token-ring/chat";
+import {HumanInterfaceService} from "@token-ring/chat";
 import ChatService from "@token-ring/chat/ChatService";
 import ModelRegistry from "../ModelRegistry.ts";
 import {Registry} from "@token-ring/registry";

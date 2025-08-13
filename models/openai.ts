@@ -1,12 +1,5 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import {createOpenAI} from "@ai-sdk/openai";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
-
-/**
- * The name of the AI provider.
- * @type {string}
- */
-const providerName = "OpenAI";
-
 /**
  * @param {import('../ModelRegistry.ts').default} modelRegistry
  * @param {import("../ModelRegistry.ts").ModelConfig} config
@@ -14,9 +7,16 @@ const providerName = "OpenAI";
  *
  */
 import type ModelRegistry from "../ModelRegistry.ts";
-import type { ModelConfig } from "../ModelRegistry.ts";
+import type {ModelConfig} from "../ModelRegistry.ts";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
-import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
+import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
+
+/**
+ * The name of the AI provider.
+ * @type {string}
+ */
+const providerName = "OpenAI";
+
 export async function init(modelRegistry: ModelRegistry, { apiKey, baseURL, provider }: ModelConfig) {
 	if (!apiKey) {
 		throw new Error("No config.apiKey provided for OpenAI provider.");

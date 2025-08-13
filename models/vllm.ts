@@ -1,9 +1,9 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 import type ModelRegistry from "../ModelRegistry.ts";
-import type { ModelConfig } from "../ModelRegistry.ts";
+import type {ModelConfig} from "../ModelRegistry.ts";
 import type {ChatInputMessage, ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
-import type { ModelSpec as EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
+import type {ModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
 
 
 const providerName = "VLLM";

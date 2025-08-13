@@ -1,8 +1,8 @@
-import { perplexity } from "@ai-sdk/perplexity";
+import {perplexity} from "@ai-sdk/perplexity";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 import type ModelRegistry from "../ModelRegistry.ts";
-import type { ModelConfig } from "../ModelRegistry.ts";
+import type {ModelConfig} from "../ModelRegistry.ts";
 import type {ChatInputMessage, ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 
 const providerName = "Perplexity";

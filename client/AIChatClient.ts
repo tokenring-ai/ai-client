@@ -1,6 +1,14 @@
 import ChatService from "@token-ring/chat/ChatService";
 
-import { generateObject, generateText, streamText, type LanguageModel, type Tool, type CoreMessage, type Message } from "ai";
+import {
+    type CoreMessage,
+    generateObject,
+    generateText,
+    type LanguageModel,
+    type Message,
+    streamText,
+    type Tool
+} from "ai";
 import {Registry} from "@token-ring/registry";
 
 export type ChatInputMessage = Omit<Message,'id'>;

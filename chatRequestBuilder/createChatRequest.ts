@@ -1,8 +1,8 @@
 import ChatMessageStorage from "../ChatMessageStorage.js";
-import { addAttentionItems } from "./addAttentionItems.js";
-import { addMemories } from "./addMemories.js";
-import { addPersonaParameters } from "./addPersonaParameters.js";
-import { addTools } from "./addTools.js";
+import {addAttentionItems} from "./addAttentionItems.js";
+import {addMemories} from "./addMemories.js";
+import {addPersonaParameters} from "./addPersonaParameters.js";
+import {addTools} from "./addTools.js";
 import {Registry} from "@token-ring/registry";
 import {ChatInputMessage, ChatRequest} from "../client/AIChatClient.js";
 

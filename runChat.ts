@@ -1,7 +1,7 @@
 import ChatService from "@token-ring/chat/ChatService";
 import ChatMessageStorage from "./ChatMessageStorage.js";
-import { createChatRequest } from "./chatRequestBuilder/createChatRequest.js";
-import { ModelRegistry } from "./index.js";
+import {createChatRequest} from "./chatRequestBuilder/createChatRequest.js";
+import {ModelRegistry} from "./index.js";
 import {abandon} from "@token-ring/utility/abandon";
 import {Registry} from "@token-ring/registry";
 import {AIResponse, ChatInputMessage} from "./client/AIChatClient.js";

@@ -1,5 +1,5 @@
-import { Service } from "@token-ring/registry";
-import { Body, Response } from "@token-ring/chat/ChatService";
+import {Service} from "@token-ring/registry";
+import {Body, Response} from "@token-ring/chat/ChatService";
 
 export interface StoredChatSession {
     id: string;

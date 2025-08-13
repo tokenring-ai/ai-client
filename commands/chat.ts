@@ -1,6 +1,6 @@
 import ChatService from "@token-ring/chat/ChatService";
 import * as runChat from "../runChat.js";
-import { ChatInputMessage } from "../client/AIChatClient.js";
+import {ChatInputMessage} from "../client/AIChatClient.js";
 import {Registry} from "@token-ring/registry";
 
 export const description = "/chat [message] - Send a message to the chat service";

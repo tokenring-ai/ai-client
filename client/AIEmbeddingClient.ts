@@ -1,4 +1,4 @@
-import { embed, type EmbeddingModel, type EmbedResult } from "ai";
+import {embed, type EmbeddingModel, type EmbedResult} from "ai";
 
 export type ModelSpec = {
     provider: string;

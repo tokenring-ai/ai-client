@@ -1,5 +1,14 @@
-import { deepseek, createDeepSeek } from "@ai-sdk/deepseek";
+import {createDeepSeek, deepseek} from "@ai-sdk/deepseek";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+/**
+ * @param {import('../ModelRegistry.ts').default} modelRegistry
+ * @param {import("../ModelRegistry.ts").ModelConfig} config
+ * @returns {Promise<void>}
+ *
+ */
+import type ModelRegistry from "../ModelRegistry.ts";
+import type {ModelConfig} from "../ModelRegistry.ts";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
 
 /**
  * The name of the AI provider.
@@ -19,15 +28,6 @@ function calculateOffPeak() {
 
 calculateOffPeak();
 
-/**
- * @param {import('../ModelRegistry.ts').default} modelRegistry
- * @param {import("../ModelRegistry.ts").ModelConfig} config
- * @returns {Promise<void>}
- *
- */
-import type ModelRegistry from "../ModelRegistry.ts";
-import type { ModelConfig } from "../ModelRegistry.ts";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
 export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 	if (!config.apiKey) {
 		throw new Error("No config.apiKey provided for DeepSeek provider.");

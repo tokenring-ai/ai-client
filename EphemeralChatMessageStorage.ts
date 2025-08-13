@@ -1,6 +1,6 @@
-import { v4 as uuid } from "uuid";
-import ChatMessageStorage, { StoredChatMessage } from "./ChatMessageStorage.js";
-import type { Body, Response } from "@token-ring/chat/ChatService";
+import {v4 as uuid} from "uuid";
+import ChatMessageStorage, {StoredChatMessage} from "./ChatMessageStorage.js";
+import type {Body, Response} from "@token-ring/chat/ChatService";
 
 /**
  * Session object representing a chat session

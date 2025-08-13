@@ -2,6 +2,7 @@ import { Registry } from "@token-ring/registry";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ModelRegistry from "../ModelRegistry.ts";
 import * as providers from "../models.ts";
+import axios from "axios";
 
 // Mock axios for HTTP requests
 vi.mock("axios", () => ({
@@ -9,8 +10,6 @@ vi.mock("axios", () => ({
 		get: vi.fn(),
 	},
 }));
-
-import axios from "axios";
 
 /** @type {import('vitest').MockedFunction<typeof axios.get>} */
 const mockedAxiosGet = /** @type {any} */ (axios.get);

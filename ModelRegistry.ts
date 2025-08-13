@@ -1,8 +1,8 @@
-import { Service } from "@token-ring/registry";
+import {Service} from "@token-ring/registry";
 import AIChatClient from "./client/AIChatClient.js";
 import AIEmbeddingClient from "./client/AIEmbeddingClient.js";
 import AIImageGenerationClient from "./client/AIImageGenerationClient.js";
-import { ModelTypeRegistry } from "./ModelTypeRegistry.js";
+import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
 
 export type ModelConfig = {
     /**

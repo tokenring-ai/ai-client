@@ -1,5 +1,8 @@
-import { openrouter } from "@openrouter/ai-sdk-provider";
+import {openrouter} from "@openrouter/ai-sdk-provider";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+import type ModelRegistry from "../ModelRegistry.ts";
+import type {ModelConfig} from "../ModelRegistry.ts";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
 
 /**
  * The name of the AI provider.
@@ -20,9 +23,6 @@ function parsePricing(priceString: string | null | undefined): number {
 	return Number.isNaN(price) ? 0 : price * 1000000;
 }
 
-import type ModelRegistry from "../ModelRegistry.ts";
-import type { ModelConfig } from "../ModelRegistry.ts";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
 async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, config: ModelConfig & { modelFilter?: (model: any) => boolean }) {
 	const getModels = cachedDataRetriever("https://openrouter.ai/api/v1/models", {
 		headers: {

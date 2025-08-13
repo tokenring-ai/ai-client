@@ -1,12 +1,5 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import {createOpenAI} from "@ai-sdk/openai";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
-
-/**
- * The name of the AI provider.
- * @type {string}
- */
-const providerName = "Llama";
-
 /**
  * @param {import('../ModelRegistry.ts').default} modelRegistry
  * @param {import("../ModelRegistry.ts").ModelConfig} config
@@ -14,8 +7,15 @@ const providerName = "Llama";
  *
  */
 import type ModelRegistry from "../ModelRegistry.ts";
-import type { ModelConfig } from "../ModelRegistry.ts";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import type {ModelConfig} from "../ModelRegistry.ts";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
+
+/**
+ * The name of the AI provider.
+ * @type {string}
+ */
+const providerName = "Llama";
+
 export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 	if (!config.apiKey) {
 		throw new Error("No config.apiKey provided for Llama provider.");

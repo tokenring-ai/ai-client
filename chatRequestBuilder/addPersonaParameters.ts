@@ -1,4 +1,4 @@
-import { ChatService } from "@token-ring/chat";
+import {ChatService} from "@token-ring/chat";
 import {Registry} from "@token-ring/registry";
 
 interface Request {
