@@ -6,7 +6,7 @@ const providerName = "Ollama";
 import type ModelRegistry from "../ModelRegistry.ts";
 import type { ModelConfig } from "../ModelRegistry.ts";
 import {abandon} from "@token-ring/utility/abandon";
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig & { generateModelSpec: (info: any) => { type: string; capabilities?: any } }) {
+export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 	const { baseURL, generateModelSpec } = config;
 	if (!baseURL) {
 		throw new Error("No config.baseURL provided for Ollama provider.");

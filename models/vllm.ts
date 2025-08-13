@@ -7,7 +7,7 @@ import type { ModelSpec as EmbeddingModelSpec } from "../client/AIEmbeddingClien
 
 
 const providerName = "VLLM";
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig & { generateModelSpec: (info: any) => { type: string; capabilities?: any } }) {
+export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 	const { baseURL, apiKey, generateModelSpec } = config;
 	if (!baseURL) {
 		throw new Error("No config.baseURL provided for VLLM provider.");

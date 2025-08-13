@@ -57,7 +57,6 @@ describe("EphemeralChatMessageStorage Integration Tests", () => {
 			expect(message2.previousMessageId).toBe(message1.id);
 			expect(message2.sessionId).toBe(message1.sessionId);
 		});
-
 	});
 
 	describe("Message Management", () => {

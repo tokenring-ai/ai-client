@@ -37,10 +37,10 @@ describe("Provider Integration Tests", () => {
 						id: "gpt-3.5-turbo",
 						name: "GPT-3.5 Turbo",
 						context_length: 4096,
-      architecture: {
-       input_modalities: ["text"],
-       output_modalities: ["text"],
-      },
+						architecture: {
+							input_modalities: ["text"],
+							output_modalities: ["text"],
+						},
 						pricing: {
 							prompt: "0.0000015",
 							completion: "0.000002",

@@ -9,6 +9,8 @@ export type ChatRequest = {
     tools?: Record<string, Tool>;
     maxSteps?: number;
     messages: ChatInputMessage[];
+    temperature?: number;
+    topP?: number;
 };
 
 export type GenerateRequest = {

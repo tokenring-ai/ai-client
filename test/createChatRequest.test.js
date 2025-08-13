@@ -4,25 +4,26 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createChatRequest } from "../chatRequestBuilder/createChatRequest.ts";
 import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.ts";
 
-
 // Use a real ServiceRegistry and add the storage service properly
 const createMockRegistry = () => {
 	const registry = new Registry();
 	const storage = new EphemeralChatMessageStorage();
 	// noinspection JSIgnoredPromiseFromCall
- registry.services.addServices(storage);
+	registry.services.addServices(storage);
 	// Add a mock ChatService so persona parameter code does not throw
 	// noinspection JSIgnoredPromiseFromCall
- registry.services.addServices(new ChatService({
-  personas: {
-    writer: {
-     instructions:
-      "You are an expert news article writer in an interactive chat, with access to a variety of tools to research topics, to write and publish news articles.",
-     model: "gemini-2.5-flash",
-    },
-   },
-   persona: "writer",
- }));
+	registry.services.addServices(
+		new ChatService({
+			personas: {
+				writer: {
+					instructions:
+						"You are an expert news article writer in an interactive chat, with access to a variety of tools to research topics, to write and publish news articles.",
+					model: "gemini-2.5-flash",
+				},
+			},
+			persona: "writer",
+		}),
+	);
 
 	// Patch ServiceRegistry to add getMemories/getAttentionItems on the instance
 	registry.services.getMemories = async function* () {
@@ -66,14 +67,14 @@ describe("createChatRequest Integration Tests", () => {
 				role: "system",
 				content: "You are a helpful assistant",
 			});
-   expect(request.messages[1]).toEqual({
+			expect(request.messages[1]).toEqual({
 				role: "system",
 				content: "Test memory 1",
 			});
-   expect(request.messages[2]).toEqual({
-    role: "user",
-    content: "Test memory 2",
-   })
+			expect(request.messages[2]).toEqual({
+				role: "user",
+				content: "Test memory 2",
+			});
 			expect(request.messages[3]).toEqual({
 				role: "user",
 				content: "Hello world",
@@ -199,28 +200,28 @@ describe("createChatRequest Integration Tests", () => {
 			);
 
 			expect(request.messages).toHaveLength(5);
-   expect(request.messages).toEqual([
-    {
-     "role": "system",
-     "content": "System prompt"
-    },
-    {
-     "role": "system",
-     "content": "Test memory 1"
-    },
-    {
-     "role": "user",
-     "content": "Test memory 2"
-    },
-    {
-     "role": "system",
-     "content": "Attention item"
-    },
-    {
-     "role": "user",
-     "content": "New question"
-    }
-   ]);
+			expect(request.messages).toEqual([
+				{
+					role: "system",
+					content: "System prompt",
+				},
+				{
+					role: "system",
+					content: "Test memory 1",
+				},
+				{
+					role: "user",
+					content: "Test memory 2",
+				},
+				{
+					role: "system",
+					content: "Attention item",
+				},
+				{
+					role: "user",
+					content: "New question",
+				},
+			]);
 		});
 
 		it("should handle system messages in history correctly", async () => {
@@ -375,28 +376,28 @@ describe("createChatRequest Integration Tests", () => {
 			);
 
 			expect(request.messages).toHaveLength(5);
-   expect(request.messages).toEqual([
-    {
-     "role": "system",
-     "content": "System"
-    },
-    {
-     "role": "system",
-     "content": "Test memory 1"
-    },
-    {
-     "role": "user",
-     "content": "Test memory 2"
-    },
-    {
-     "role": "system",
-     "content": "Attention item"
-    },
-    {
-     "role": "user",
-     "content": "New"
-    }
-   ]);
+			expect(request.messages).toEqual([
+				{
+					role: "system",
+					content: "System",
+				},
+				{
+					role: "system",
+					content: "Test memory 1",
+				},
+				{
+					role: "user",
+					content: "Test memory 2",
+				},
+				{
+					role: "system",
+					content: "Attention item",
+				},
+				{
+					role: "user",
+					content: "New",
+				},
+			]);
 		});
 	});
 });

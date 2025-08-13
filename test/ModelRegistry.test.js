@@ -73,7 +73,6 @@ describe("ModelRegistry Integration Tests", () => {
 			expect(models).toContain("gemini-1.5-pro");
 			expect(models).toContain("gemini-1.5-flash");
 		});
-
 	});
 
 	describe("Model Filtering", () => {

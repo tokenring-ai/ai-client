@@ -17,10 +17,8 @@ export type ModelConfig = {
      * The Base URL for the model provider
      */
     baseURL?: string;
-    /**
-     * Additional provider-specific options
-     */
-    options?: Record<string, any>;
+
+    [key: string]: any;
 };
 
 export type ModelProvider = {
