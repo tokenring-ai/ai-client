@@ -9,5 +9,5 @@ export * as openai from "./models/openai.ts";
 export * as openrouter from "./models/openrouter.ts";
 export * as perplexity from "./models/perplexity.ts";
 export * as qwen from "./models/qwen.ts";
-export * as vllm from "./models/vllm.ts";
+export * as openaiCompatible from "./models/openaiCompatible.ts";
 export * as xai from "./models/xai.ts";
