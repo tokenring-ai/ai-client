@@ -42,40 +42,6 @@ export async function init(modelRegistry: ModelRegistry, { apiKey, baseURL, prov
 	 * @type {Object<string,import("../client/AIChatClient.ts").ChatModelSpec>}
 	 */
  const chatModels: Record<string, ChatModelSpec> = {
-		"gpt-4.1-web-search": {
-			provider,
-			impl: openai("gpt-4.1"),
-			isAvailable,
-			mangleRequest(req: ChatRequest) {
-                (req.tools ??= {}).web_search_preview = openai.tools.webSearchPreview();
-				return undefined;
-			},
-			costPerMillionInputTokens: 2.0,
-			costPerMillionOutputTokens: 8.0,
-			reasoning: 3,
-			intelligence: 5,
-			tools: 5,
-			speed: 3,
-			webSearch: 1,
-			contextLength: 1000000,
-		},
-		"gpt-4.1-mini-web-search": {
-			provider,
-			impl: openai("gpt-4.1-mini"),
-			isAvailable,
-			mangleRequest(req: any) {
-				req.tools.web_search_preview = openai.tools.webSearchPreview();
-				return undefined;
-			},
-			costPerMillionInputTokens: 0.4,
-			costPerMillionOutputTokens: 1.6,
-			reasoning: 2,
-			intelligence: 4,
-			tools: 4,
-			speed: 4,
-			webSearch: 1,
-			contextLength: 1000000,
-		},
 		"gpt-4.1": {
 			provider,
 			impl: openai("gpt-4.1"),
@@ -112,11 +78,49 @@ export async function init(modelRegistry: ModelRegistry, { apiKey, baseURL, prov
 			speed: 5,
 			contextLength: 1000000,
 		},
+		"gpt-5": {
+			provider,
+			impl: openai("gpt-5"),
+			isAvailable,
+			costPerMillionInputTokens: 1.25,
+			costPerMillionOutputTokens: 10,
+			reasoning: 4,
+			intelligence: 6,
+			tools: 6,
+			speed: 3,
+			webSearch: 1,
+			contextLength: 400000,
+		},
+		"gpt-5-mini": {
+			provider,
+			impl: openai("gpt-5-mini"),
+			isAvailable,
+			costPerMillionInputTokens: 0.25,
+			costPerMillionOutputTokens: 2,
+			reasoning: 3,
+			intelligence: 5,
+			tools: 5,
+			speed: 4,
+			webSearch: 1,
+			contextLength: 400000,
+		},
+        "gpt-5-nano": {
+            provider,
+            impl: openai("gpt-5-nano"),
+            isAvailable,
+            costPerMillionInputTokens: 0.05,
+            costPerMillionOutputTokens: 0.4,
+            reasoning: 2,
+            intelligence: 3,
+            tools: 3,
+            speed: 5,
+            webSearch: 1,
+            contextLength: 400000,
+        },
 		o3: {
 			provider,
 			impl: openai("o3"),
 			isAvailable,
-
 			costPerMillionInputTokens: 10.0,
 			costPerMillionOutputTokens: 40.0,
 			reasoning: 6,
