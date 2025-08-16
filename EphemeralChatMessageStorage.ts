@@ -1,13 +1,13 @@
+import type {Body, Response} from "@token-ring/chat/ChatService";
 import {v4 as uuid} from "uuid";
 import ChatMessageStorage, {StoredChatMessage} from "./ChatMessageStorage.js";
-import type {Body, Response} from "@token-ring/chat/ChatService";
 
 /**
  * Session object representing a chat session
  */
 interface Session extends Record<string, unknown> {
-    /** Unique session identifier */
-    id: string;
+  /** Unique session identifier */
+  id: string;
 }
 
 /**
@@ -20,80 +20,80 @@ interface Session extends Record<string, unknown> {
  * - Applications that don't require persistent chat history
  */
 export default class EphemeralChatMessageStorage extends ChatMessageStorage {
-    /** Current active session */
-    session: Session | null = null;
+  /** Current active session */
+  session: Session | null = null;
 
-    /** In-memory storage for chat messages */
-    messages: Map<string, StoredChatMessage> = new Map();
+  /** In-memory storage for chat messages */
+  messages: Map<string, StoredChatMessage> = new Map();
 
-    /**
-     * Creates a new chat session with a unique identifier.
-     * @private
-     */
-    private createSession(): void {
-        this.session = {
-            id: uuid(),
-        };
+  /**
+   * Stores a chat message in memory.
+   *
+   * @param currentMessage - The current chat message.
+   * @param request - The request object to store.
+   * @param response - The response object to store.
+   * @returns The stored message.
+   */
+  async storeChat(
+    currentMessage: StoredChatMessage | null,
+    request: Body,
+    response: Response
+  ): Promise<StoredChatMessage> {
+    let sessionId = currentMessage?.sessionId;
+
+    // Create a new session if we don't have one
+    if (!sessionId) {
+      this.createSession();
+      if (!this.session) {
+        throw new Error("Failed to create session");
+      }
+      sessionId = this.session.id;
     }
 
-    /**
-     * Stores a chat message in memory.
-     *
-     * @param currentMessage - The current chat message.
-     * @param request - The request object to store.
-     * @param response - The response object to store.
-     * @returns The stored message.
-     */
-    async storeChat(
-        currentMessage: StoredChatMessage | null,
-        request: Body,
-        response: Response
-    ): Promise<StoredChatMessage> {
-        let sessionId = currentMessage?.sessionId;
+    // Create the new message
+    const message = {
+      id: uuid(),
+      sessionId,
+      request,
+      response,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      previousMessageId: currentMessage?.id || null,
+    };
 
-        // Create a new session if we don't have one
-        if (!sessionId) {
-            this.createSession();
-            if (!this.session) {
-                throw new Error("Failed to create session");
-            }
-            sessionId = this.session.id;
-        }
+    // Store the message in our in-memory map
+    this.messages.set(message.id, message);
 
-        // Create the new message
-        const message = {
-            id: uuid(),
-            sessionId,
-            request,
-            response,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            previousMessageId: currentMessage?.id || null,
-        };
+    // Update the current message
+    this.setCurrentMessage(message);
 
-        // Store the message in our in-memory map
-        this.messages.set(message.id, message);
+    return message;
+  }
 
-        // Update the current message
-        this.setCurrentMessage(message);
-
-        return message;
+  /**
+   * Retrieves a message by its ID from memory.
+   *
+   * @param id - The message ID.
+   * @returns The retrieved message.
+   * @throws Error When message is not found.
+   */
+  async retrieveMessageById(
+    id: string
+  ): Promise<StoredChatMessage> {
+    const message = this.messages.get(id);
+    if (!message) {
+      throw new Error(`Message with id ${id} not found`);
     }
+    return message;
+  }
 
-    /**
-     * Retrieves a message by its ID from memory.
-     *
-     * @param id - The message ID.
-     * @returns The retrieved message.
-     * @throws Error When message is not found.
-     */
-    async retrieveMessageById(
-        id: string
-    ): Promise<StoredChatMessage> {
-        const message = this.messages.get(id);
-        if (!message) {
-            throw new Error(`Message with id ${id} not found`);
-        }
-        return message;
-    }
+  /**
+   * Creates a new chat session with a unique identifier.
+   * @private
+   */
+  private createSession(): void {
+    this.session = {
+      id: uuid(),
+    };
+  }
 }

@@ -1,29 +1,30 @@
-import {Service} from "@token-ring/registry";
 import {Body, Response} from "@token-ring/chat/ChatService";
+import {Service} from "@token-ring/registry";
 
 export interface StoredChatSession {
-    id: string;
-    title: string;
-    createdAt: number;
+  id: string;
+  title: string;
+  createdAt: number;
 }
+
 /**
  * Represents a chat message in the storage system
  */
 export interface StoredChatMessage {
-    /** The ID of the record */
-    id: string;
-    /** The ID of the session */
-    sessionId: string;
-    /** The AI request */
-    request: Body;
-    /** The response from AI */
-    response?: Response;
-    /** The creation time in milliseconds since the epoch format */
-    createdAt: number;
-    /** The update time in milliseconds since the epoch format */
-    updatedAt: number;
-    /** The ID of the previous message in the conversation chain */
-    previousMessageId?: string | null;
+  /** The ID of the record */
+  id: string;
+  /** The ID of the session */
+  sessionId: string;
+  /** The AI request */
+  request: Body;
+  /** The response from AI */
+  response?: Response;
+  /** The creation time in milliseconds since the epoch format */
+  createdAt: number;
+  /** The update time in milliseconds since the epoch format */
+  updatedAt: number;
+  /** The ID of the previous message in the conversation chain */
+  previousMessageId?: string | null;
 }
 
 /**
@@ -33,73 +34,73 @@ export interface StoredChatMessage {
  * @abstract
  */
 export default abstract class ChatMessageStorage extends Service {
-    /** The current session data */
-    session: Record<string, unknown> | null = null;
+  /** The current session data */
+  session: Record<string, unknown> | null = null;
 
-    /** History of previous messages */
-    previousMessages: StoredChatMessage[] = [];
+  /** History of previous messages */
+  previousMessages: StoredChatMessage[] = [];
 
-    /** The current active message */
-    currentMessage: StoredChatMessage | null = null;
+  /** The current active message */
+  currentMessage: StoredChatMessage | null = null;
 
-    /**
-     * Gets the current active message.
-     * @returns The current message or null if no message is active
-     */
-    getCurrentMessage(): StoredChatMessage | null {
-        return this.currentMessage;
+  /**
+   * Gets the current active message.
+   * @returns The current message or null if no message is active
+   */
+  getCurrentMessage(): StoredChatMessage | null {
+    return this.currentMessage;
+  }
+
+  /**
+   * Sets the current active message, moving the previous current message to history if it exists.
+   * This allows for maintaining a stack of messages for undo/redo operations.
+   *
+   * @param message - The message to set as current
+   * @returns void
+   */
+  setCurrentMessage(message: StoredChatMessage | null): void {
+    // Only push to history when replacing an existing message with a new non-null message
+    if (this.currentMessage && message) {
+      this.previousMessages.push(this.currentMessage);
     }
+    this.currentMessage = message;
+  }
 
-    /**
-     * Sets the current active message, moving the previous current message to history if it exists.
-     * This allows for maintaining a stack of messages for undo/redo operations.
-     *
-     * @param message - The message to set as current
-     * @returns void
-     */
-    setCurrentMessage(message: StoredChatMessage | null): void {
-        // Only push to history when replacing an existing message with a new non-null message
-        if (this.currentMessage && message) {
-            this.previousMessages.push(this.currentMessage);
-        }
-        this.currentMessage = message;
+  /**
+   * Restores the most recent message from history as the current message.
+   * This provides undo functionality by popping the last message from the history stack.
+   *
+   * @returns void
+   */
+  popMessage(): void {
+    if (this.previousMessages.length > 0) {
+      this.currentMessage = this.previousMessages.pop() ?? null;
+    } else {
+      this.currentMessage = null;
     }
+  }
 
-    /**
-     * Restores the most recent message from history as the current message.
-     * This provides undo functionality by popping the last message from the history stack.
-     *
-     * @returns void
-     */
-    popMessage(): void {
-        if (this.previousMessages.length > 0) {
-            this.currentMessage = this.previousMessages.pop() ?? null;
-        } else {
-            this.currentMessage = null;
-        }
-    }
+  /**
+   * Stores a new chat request, typically starting a new conversation session.
+   *
+   * @abstract
+   * @param currentMessage - The current message
+   * @param request - The request object
+   * @param response - The response object
+   * @returns Promise resolving to the stored chat message
+   */
+  abstract storeChat(
+    currentMessage: StoredChatMessage | null,
+    request: Body,
+    response: Response
+  ): Promise<StoredChatMessage>;
 
-    /**
-     * Stores a new chat request, typically starting a new conversation session.
-     *
-     * @abstract
-     * @param currentMessage - The current message
-     * @param request - The request object
-     * @param response - The response object
-     * @returns Promise resolving to the stored chat message
-     */
-    abstract storeChat(
-        currentMessage: StoredChatMessage | null,
-        request: Body,
-        response: Response
-    ): Promise<StoredChatMessage>;
-
-    /**
-     * Retrieves a message by its ID.
-     *
-     * @abstract
-     * @param id - The message ID
-     * @returns Promise resolving to the retrieved message
-     */
-    abstract retrieveMessageById(id: number | string): Promise<StoredChatMessage>;
+  /**
+   * Retrieves a message by its ID.
+   *
+   * @abstract
+   * @param id - The message ID
+   * @returns Promise resolving to the retrieved message
+   */
+  abstract retrieveMessageById(id: number | string): Promise<StoredChatMessage>;
 }

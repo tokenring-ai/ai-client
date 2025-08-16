@@ -1,5 +1,5 @@
-import {ChatInputMessage} from "../client/AIChatClient.js";
 import {Registry} from "@token-ring/registry";
+import {ChatInputMessage} from "../client/AIChatClient.js";
 
 /**
  * Adds attention items to the input messages for the chat request.
@@ -7,7 +7,7 @@ import {Registry} from "@token-ring/registry";
  * @param {Object} registry - The registry instance.
  */
 export async function addAttentionItems(messages: ChatInputMessage[], registry: Registry): Promise<void> {
-    for await (const attentionItem of registry.services.getAttentionItems()) {
-        messages.push(attentionItem);
-    }
+  for await (const attentionItem of registry.services.getAttentionItems()) {
+    messages.push(attentionItem);
+  }
 }

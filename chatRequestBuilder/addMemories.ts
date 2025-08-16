@@ -7,15 +7,15 @@ import {ChatInputMessage} from "../client/AIChatClient.js";
  * @param {Object} registry - The registry instance.
  */
 export async function addMemories(messages: ChatInputMessage[], registry: Registry): Promise<void> {
-    /*
-     * Memories are only included in first chat
-     * // TODO: allow new memories to bubble to future chats
-     */
-    for await (const memory of registry.services.getMemories()) {
-        if (memory.role === "system") {
-            messages.splice(1, 0, memory);
-        } else {
-            messages.push(memory);
-        }
+  /*
+   * Memories are only included in first chat
+   * // TODO: allow new memories to bubble to future chats
+   */
+  for await (const memory of registry.services.getMemories()) {
+    if (memory.role === "system") {
+      messages.splice(1, 0, memory);
+    } else {
+      messages.push(memory);
     }
+  }
 }
