@@ -30,7 +30,7 @@ export type ChatModelSpec = {
   contextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens: number;
-  impl: LanguageModel;
+  impl: LanguageModel | LanguageModelV2;
   isAvailable: () => Promise<boolean>;
   isHot?: () => Promise<boolean>;
   mangleRequest?: (req: ChatRequest) => void;
