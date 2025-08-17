@@ -1,5 +1,5 @@
 import {createOpenAI} from "@ai-sdk/openai";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 /**
  * @param {import('../ModelRegistry.ts').default} modelRegistry
@@ -22,7 +22,7 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
   }
   baseURL ??= "https://api.openai.com/v1";
 
-  const openai = createOpenAI({apiKey, baseURL, compatibility: "strict"});
+  const openai = createOpenAI({apiKey, baseURL});
 
   const getModels = cachedDataRetriever(`${baseURL}/models`, {
     headers: {
@@ -163,8 +163,8 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     if (model.webSearch) {
       const newModel = {
         ...model,
-        mangleRequest(req: any) {
-          req.tools.web_search_preview = openai.tools.webSearchPreview();
+        mangleRequest(req: ChatRequest) {
+          (req.tools ??= {}).web_search_preview = openai.tools.webSearchPreview({});
           return undefined;
         },
         costPerMillionInputTokens: model.costPerMillionInputTokens + 0.001, // Adjust the cost slightly so that these models are only used for search

@@ -1,5 +1,6 @@
 import {Body, Response} from "@token-ring/chat/ChatService";
 import {Service} from "@token-ring/registry";
+import {ChatRequest} from "./client/AIChatClient.js";
 
 export interface StoredChatSession {
   id: string;
@@ -16,7 +17,7 @@ export interface StoredChatMessage {
   /** The ID of the session */
   sessionId: string;
   /** The AI request */
-  request: Body;
+  request: ChatRequest;
   /** The response from AI */
   response?: Response;
   /** The creation time in milliseconds since the epoch format */
@@ -91,7 +92,7 @@ export default abstract class ChatMessageStorage extends Service {
    */
   abstract storeChat(
     currentMessage: StoredChatMessage | null,
-    request: Body,
+    request: ChatRequest,
     response: Response
   ): Promise<StoredChatMessage>;
 

@@ -1,17 +1,16 @@
+import {LanguageModelV2} from "@openrouter/ai-sdk-provider";
 import ChatService from "@token-ring/chat/ChatService";
 import {Registry} from "@token-ring/registry";
 
 import {
-  type CoreMessage,
+  AssistantModelMessage,
   generateObject,
   generateText,
-  type LanguageModel,
-  type Message,
-  streamText,
-  type Tool
+  streamText, SystemModelMessage, UserModelMessage,
+  type Tool, ToolModelMessage
 } from "ai";
 
-export type ChatInputMessage = Omit<Message, 'id'>;
+export type ChatInputMessage = SystemModelMessage | UserModelMessage | AssistantModelMessage | ToolModelMessage;
 
 export type ChatRequest = {
   tools?: Record<string, Tool>;
@@ -30,7 +29,7 @@ export type ChatModelSpec = {
   contextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens: number;
-  impl: LanguageModel | LanguageModelV2;
+  impl: LanguageModelV2;
   isAvailable: () => Promise<boolean>;
   isHot?: () => Promise<boolean>;
   mangleRequest?: (req: ChatRequest) => void;
@@ -46,7 +45,7 @@ export type ChatModelSpec = {
 export type AIResponse = {
   timestamp: number;
   model: string;
-  messages: Array<CoreMessage>;
+  messages: ChatInputMessage[];
   text?: string;
   object?: any;
   usage?: {
@@ -160,15 +159,15 @@ export default class AIChatClient {
             mode = "text";
           }
 
-          chatService.out(part.textDelta);
+          chatService.out(part.text);
           break;
         }
-        case "reasoning": {
+        case "reasoning-delta": {
           if (mode !== "reasoning") {
             chatService.emit("outputType", "reasoning");
             mode = "reasoning";
           }
-          chatService.out(part.textDelta);
+          chatService.out(part.text);
           break;
         }
         case "finish": {

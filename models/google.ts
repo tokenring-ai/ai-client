@@ -1,5 +1,5 @@
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 /**
  * @param {import('../ModelRegistry.ts').default} modelRegistry
  * @param {import("../ModelRegistry.ts").ModelConfig} config
@@ -36,6 +36,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
   const googleProvider = createGoogleGenerativeAI({
     apiKey: config.apiKey,
     baseURL: config.baseURL,
+
   });
 
   /**
@@ -113,7 +114,10 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     const model = chatModels[modelName];
     const newModel = {
       ...model,
-      impl: googleProvider(model.impl.modelId, {useSearchGrounding: true}),
+      mangleRequest(req: ChatRequest) {
+        (req.tools ??= {}).google_search = googleProvider.tools.googleSearch({})
+        return undefined;
+      },
       costPerMillionInputTokens: model.costPerMillionInputTokens + 0.001, // Adjust the cost slightly so that these models are only used for search
       costPerMillionOutputTokens: model.costPerMillionOutputTokens + 0.001,
     };

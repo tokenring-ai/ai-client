@@ -5,7 +5,8 @@ import * as runChat from "../runChat.js";
 
 export const description = "/chat [message] - Send a message to the chat service";
 
-export async function execute(remainder: any, registry: Registry): Promise<void> {
+// Updated remainder type from any to string for better type safety
+export async function execute(remainder: string, registry: Registry): Promise<void> {
   const chatService = registry.requireFirstServiceByType(ChatService);
 
   if (!remainder?.trim()) {

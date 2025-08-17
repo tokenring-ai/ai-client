@@ -101,10 +101,11 @@ export async function execute(
 
     const finalOutput: string = output ?? "";
     return [finalOutput, response]; // Return the full response object
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
     if (request) {
       abandon(chatMessageStorage.storeChat(currentMessage, request, {
-        error: err.message,
+        error: errorMessage,
       }));
     }
     chatMessageStorage.setCurrentMessage(currentMessage);

@@ -100,7 +100,7 @@ export default class AIImageGenerationClient {
         abortSignal: signal,
       });
 
-      return [result.image as ImageResponse, result];
+      return [result.image as unknown as ImageResponse, result];
     } catch (error) {
       chatService.errorLine("Error generating image: ", error);
       throw error;

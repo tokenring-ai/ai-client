@@ -1,6 +1,7 @@
 import type {Body, Response} from "@token-ring/chat/ChatService";
 import {v4 as uuid} from "uuid";
 import ChatMessageStorage, {StoredChatMessage} from "./ChatMessageStorage.js";
+import {ChatRequest} from "./client/AIChatClient.js";
 
 /**
  * Session object representing a chat session
@@ -36,7 +37,7 @@ export default class EphemeralChatMessageStorage extends ChatMessageStorage {
    */
   async storeChat(
     currentMessage: StoredChatMessage | null,
-    request: Body,
+    request: ChatRequest,
     response: Response
   ): Promise<StoredChatMessage> {
     let sessionId = currentMessage?.sessionId;

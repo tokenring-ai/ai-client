@@ -1,11 +1,12 @@
-import {embed, type EmbeddingModel, type EmbedResult} from "ai";
+import {EmbeddingModelV2} from "@ai-sdk/provider";
+import {embed, type EmbedResult} from "ai";
 
 export type ModelSpec = {
   provider: string;
   contextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens?: number;
-  impl: EmbeddingModel<string>;
+  impl: EmbeddingModelV2<string>;
   isAvailable: () => Promise<boolean>;
   isHot?: () => Promise<boolean>;
 };

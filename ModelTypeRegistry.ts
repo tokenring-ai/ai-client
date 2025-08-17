@@ -1,10 +1,12 @@
 import {ChatModelRequirements} from "./ModelRegistry.js";
 
 interface ModelSpec {
+  name: string,
+  provider: string,
   isAvailable: () => Promise<boolean>;
   isHot: () => Promise<boolean>;
 
-  [x: string]: any;
+  //[x: string]: unknown;
 }
 
 /**
