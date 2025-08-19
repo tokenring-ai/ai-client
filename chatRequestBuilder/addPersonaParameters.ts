@@ -2,15 +2,11 @@ import {ChatService} from "@token-ring/chat";
 import {Registry} from "@token-ring/registry";
 import type {ChatRequest} from "../client/AIChatClient.js";
 
-type Request = ChatRequest & { [key: string]: unknown };
-
 
 /**
- * Adds temperature and top_p parameters from the current persona to the request object
- * @param request - The request object to modify
- * @param registry - The TokenRing registry
+ * Adds temperature and topP parameters from the current persona to the request object
  */
-export function addPersonaParameters(request: Request, registry: Registry): void {
+export function addPersonaParameters(request: ChatRequest, registry: Registry): void {
   const chatService = registry.requireFirstServiceByType(ChatService);
 
   const persona = chatService.getPersona();
@@ -26,8 +22,8 @@ export function addPersonaParameters(request: Request, registry: Registry): void
     request.temperature = personaConfig.temperature;
   }
 
-  // Add top_p if available
-  if (personaConfig.top_p !== undefined) {
-    request.top_p = personaConfig.top_p;
+  // Add topP if available
+  if (personaConfig.topP !== undefined) {
+    request.topP = personaConfig.topP;
   }
 }

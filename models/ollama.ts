@@ -5,8 +5,54 @@ import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 const providerName = "Ollama";
 
+export type OllamaModelConfigFunction = (modelInfo: OllamaModelTagItem) => ModelConfigResults;
+
+export type OllamaModelConfig = ModelConfig & {
+  generateModelSpec: OllamaModelConfigFunction;
+}
+type ModelConfigResults = {
+  type: string;
+  capabilities?: any;
+}
+
+type OllamaModelTagItem = {
+  "name": string,
+  "model": string,
+  "modified_at": string;
+  "size": number,
+  "digest": string;
+  "details": Record<string, ModelDetails>,
+}
+
+type ModelTagResponse = {
+  "models": OllamaModelTagItem[],
+}
+
+type ModelDetails = {
+  "parent_model": string,
+  "format": string,
+  "family": string,
+  "families": string[],
+  "parameter_size": string,
+  "quantization_level": string,
+};
+
+type ModelPsItem = {
+  "name": string,
+  "model": string,
+  "size": number,
+  "digest": string,
+  "details": Record<string, ModelDetails>,
+  "expires_at": string,
+  "size_vram": number,
+}
+
+type ModelPsResponse = {
+  "models": ModelPsItem[],
+}
+
 export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
-  const {baseURL, generateModelSpec} = config;
+  const {baseURL, generateModelSpec} = config as OllamaModelConfig;
   if (!baseURL) {
     throw new Error("No config.baseURL provided for Ollama provider.");
   }
@@ -24,15 +70,16 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     headers: {},
     cacheTime: 60000,
     timeout: 1000,
-  });
+  }) as () => Promise<ModelTagResponse>;
   const getRunningModels = cachedDataRetriever(`${baseURL}/ps`, {
     headers: {},
     cacheTime: 60000,
     timeout: 1000,
-  });
+  }) as () => Promise<ModelPsResponse>;
+
   abandon(getRunningModels()); // In background, fetch the list of running models.
 
-  const modelList = await getModelList();
+  const modelList = await getModelList() as ModelTagResponse;
   if (!modelList?.models) return;
 
   for (const modelInfo of modelList.models) {
@@ -46,8 +93,8 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () =>
           capabilities.alwaysHot ||
-          getRunningModels().then((result: any) =>
-            result?.models?.find?.((row: any) => modelInfo.model === row.model),
+          getRunningModels().then(result =>
+            result?.models?.find?.(row => modelInfo.model === row.model),
           ),
         ...capabilities,
       };
@@ -59,8 +106,8 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () =>
           capabilities.alwaysHot ||
-          getRunningModels().then((result: any) =>
-            result?.models?.find?.((row: any) => modelInfo.model === row.model),
+          getRunningModels().then(result =>
+            result?.models?.find?.(row => modelInfo.model === row.model),
           ),
       };
     }

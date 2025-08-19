@@ -3,8 +3,6 @@ import {ChatInputMessage} from "../client/AIChatClient.js";
 
 /**
  * Adds memories to the input messages for the initial chat request.
- * @param {Array} messages - The input messages array to modify.
- * @param {Object} registry - The registry instance.
  */
 export async function addMemories(messages: ChatInputMessage[], registry: Registry): Promise<void> {
   /*

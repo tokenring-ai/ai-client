@@ -4,11 +4,12 @@ import AIEmbeddingClient from "./client/AIEmbeddingClient.js";
 import AIImageGenerationClient from "./client/AIImageGenerationClient.js";
 import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
 
-export type ModelConfig = {
+export interface ModelConfig {
   /**
-   * The name of the model provider
+   * The display name of the model provider
    */
-  provider: string;
+  displayName?: string;
+
   /**
    * The API Key for the model provider
    */
@@ -17,9 +18,11 @@ export type ModelConfig = {
    * The Base URL for the model provider
    */
   baseURL?: string;
-
-  [key: string]: any;
-};
+  /**
+   * The model provider
+   */
+  provider: string;
+}
 
 export type ModelProvider = {
   init: (registry: ModelRegistry, config: ModelConfig) => Promise<void>;
@@ -56,7 +59,7 @@ export type ChatModelRequirements = {
   /**
    * Reasoning capability score (0-infinity)
    */
-  reasoning?: number;
+  reasoningText?: number;
   /**
    * Intelligence capability score (0-infinity)
    */
@@ -89,40 +92,28 @@ export default class ModelRegistry extends Service {
 
   /**
    * Registers a key: value object of model specs
-   * @param providers - Object mapping provider codes to provider implementations
-   * @param config - Configuration for each provider
    */
   async initializeModels(
     providers: Record<string, ModelProvider>,
-    config: Record<string, ModelConfig>
+    config: Record<string, ModelConfig | ModelConfig[]>
   ): Promise<void> {
-    for (const providerName in config) {
-      const providerConfig = config[providerName];
+    for (const providerCode in config) {
+      const providerConfig = config[providerCode];
       if (typeof providerConfig !== "object") {
         throw new Error(
-          `Invalid model provider configuration for '${providerName}': config must be an object`
+          `Invalid model provider configuration for '${providerCode}': config must be an object`
         );
       }
-      const providerCode = providerConfig.provider;
-      if (!providerCode) {
+
+      const providerImpl = providers[providerCode];
+      if (!providerImpl) {
         throw new Error(
-          `Invalid model provider configuration for '${providerName}': missing provider`
+          `Invalid model provider configuration for '${providerCode}': unknown provider '${providerCode}'`
         );
       }
-      const provider = providers[providerCode];
-      if (!provider) {
-        throw new Error(
-          `Invalid model provider configuration for '${providerName}': unknown provider '${providerCode}'`
-        );
-      }
-      try {
-        await provider.init(this, providerConfig);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(
-          `Error initializing model provider '${providerCode}', skipping provider:`,
-          msg
-        );
+
+      for (const item of Array.isArray(providerConfig) ? providerConfig : [providerConfig]) {
+        await providerImpl.init(this, item);
       }
     }
   }
@@ -130,8 +121,6 @@ export default class ModelRegistry extends Service {
 
 /**
  * Filters model specifications by name requirements
- * @param requirements - The name requirements to filter by
- * @returns The matching model specifications (empty if none)
  */
 function nameRequirementsFilter(
   this: ModelTypeRegistry<any, any>,
@@ -146,8 +135,6 @@ function nameRequirementsFilter(
 
 /**
  * Finds the chatModels that match the requirements and sorts them by the expected price of the query
- * @param requirements - The filter criteria for model selection
- * @returns The selected models sorted by estimated price
  */
 function chatRequirementsFilter(
   this: ModelTypeRegistry<any, any>,

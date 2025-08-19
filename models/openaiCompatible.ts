@@ -4,11 +4,31 @@ import type {ModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddingClient.
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
+export type OAICompatibleModelConfigFunction = (modelInfo: ModelListData) => ModelConfigResults;
+
+export type OAICompatibleModelConfig = ModelConfig & {
+  generateModelSpec: OAICompatibleModelConfigFunction
+}
+type ModelConfigResults = {
+  type: string;
+  capabilities?: any;
+}
+type ModelListData = {
+  id: string,
+  object: "model",
+  owned_by: "organization" | "openai",
+  created: number,
+}
+
+type ModelListResponse = {
+  object: "list",
+  data: ModelListData[],
+}
 
 const providerName = "Generic";
 
 export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
-  const {baseURL, apiKey, generateModelSpec} = config;
+  const {baseURL, apiKey, generateModelSpec} = config as OAICompatibleModelConfig;
   if (!baseURL) {
     throw new Error("No config.baseURL provided for VLLM provider.");
   }
@@ -32,7 +52,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     },
     cacheTime: 60000,
     timeout: 5000,
-  });
+  }) as () => Promise<ModelListResponse>;
   //const getRunningModels = cachedDataRetriever(baseURL + '/ps', { cacheTime: 60000, timeout: 1000 });
   //getRunningModels(); // In background, fetch the list of running models.
 
@@ -52,11 +72,11 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
         ...capabilities,
       };
     } else if (type === "embedding") {
-      embeddingModelSpecs[modelInfo.model] = {
+      embeddingModelSpecs[modelInfo.id] = {
         provider: providerName,
         contextLength: capabilities.contextLength || 8192,
         costPerMillionInputTokens: capabilities.costPerMillionInputTokens || 0,
-        impl: openai.textEmbeddingModel(modelInfo.model),
+        impl: openai.textEmbeddingModel(modelInfo.id),
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () => Promise.resolve(true),
       };

@@ -1,17 +1,22 @@
 import {groq} from "@ai-sdk/groq";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-/**
- * @param {import('../ModelRegistry.ts').default} modelRegistry
- * @param {import("../ModelRegistry.ts").ModelConfig} config
- * @returns {Promise<void>}
- *
- */
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
+interface Model {
+  id: string;
+  object: "model";
+  created: number;
+  owned_by: string;
+}
+
+interface ModelList {
+  object: "list";
+  data: Model[];
+}
+
 /**
  * The name of the AI provider.
- * @type {string}
  */
 const providerName = "Groq";
 
@@ -27,153 +32,152 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
         Authorization: `Bearer ${config.apiKey}`,
       },
     },
-  );
-
-  const isAvailable = () => getModels().then((data) => !!data);
+  ) as () => Promise<ModelList | null>;
 
   const provider = config.provider || providerName;
+
+  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+    return {
+      [modelId]: {
+        provider,
+        impl: groq(modelId),
+        async isAvailable() {
+          const modelList = await getModels();
+          return !!modelList?.data.some((model) => model.id === modelId);
+        },
+        ...modelSpec,
+      },
+    }
+  }
 
   /**
    * A collection of Groq chat model specifications.
    * Each key is a model ID, and the value is a `ChatModelSpec` object.
    * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   * @type {Object<string, import("../client/AIChatClient.ts").ChatModelSpec>}
    */
   const chatModels: Record<string, ChatModelSpec> = {
-    // Production Models from Groq Docs, with pricing from user feedback
-    "gemma2-9b-it": {
-      provider,
-      impl: groq("gemma2-9b-it"),
-      isAvailable,
-      contextLength: 8192,
-      maxCompletionTokens: 8192,
-      costPerMillionInputTokens: 0.2,
-      costPerMillionOutputTokens: 0.2,
-      reasoning: 3,
-      intelligence: 3,
-      speed: 5, // Groq is fast
-      tools: 2,
-    },
-    "llama-3.1-8b-instant": {
-      provider,
-      impl: groq("llama-3.1-8b-instant"),
-      isAvailable,
+    ...generateModelSpec("llama-3.1-8b-instant", {
       contextLength: 131072,
       maxCompletionTokens: 131072,
       costPerMillionInputTokens: 0.05,
       costPerMillionOutputTokens: 0.08,
-      reasoning: 3,
+      reasoningText: 3,
       intelligence: 3,
-      speed: 6, // Extra fast for "instant"
+      speed: 6,
       tools: 2,
-    },
-    "llama-3.3-70b-versatile": {
-      provider,
-      impl: groq("llama-3.3-70b-versatile"),
-      isAvailable,
+    }),
+    ...generateModelSpec("llama-3.3-70b-versatile", {
       contextLength: 131072,
       maxCompletionTokens: 32768,
       costPerMillionInputTokens: 0.59,
       costPerMillionOutputTokens: 0.79,
-      reasoning: 4,
+      reasoningText: 4,
       intelligence: 4,
       speed: 5,
       tools: 3,
-    },
-    // Preview Models (use with caution, map prices if available)
-    "deepseek-r1-distill-llama-70b": {
-      provider,
-      impl: groq("deepseek-r1-distill-llama-70b"),
-      isAvailable,
+    }),
+    // New and Updated Models
+    ...generateModelSpec("deepseek-r1-distill-llama-70b", {
       contextLength: 131072,
       maxCompletionTokens: 131072,
       costPerMillionInputTokens: 0.75,
       costPerMillionOutputTokens: 0.99,
-      reasoning: 4,
-      intelligence: 4,
+      reasoningText: 5,
+      intelligence: 5,
       speed: 4,
-      tools: 3,
-    },
-    "meta-llama/llama-4-maverick-17b-128e-instruct": {
-      provider,
-      impl: groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
-      isAvailable,
+      tools: 4,
+    }),
+    ...generateModelSpec("meta-llama/llama-4-maverick-17b-128e-instruct", {
       contextLength: 131072,
       maxCompletionTokens: 8192,
       costPerMillionInputTokens: 0.2,
       costPerMillionOutputTokens: 0.6,
-      reasoning: 4,
+      reasoningText: 4,
       intelligence: 4,
       speed: 4,
       tools: 3,
-    },
-    "meta-llama/llama-4-scout-17b-16e-instruct": {
-      provider,
-      impl: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
-      isAvailable,
+    }),
+    ...generateModelSpec("meta-llama/llama-4-scout-17b-16e-instruct", {
       contextLength: 131072,
       maxCompletionTokens: 8192,
       costPerMillionInputTokens: 0.11,
       costPerMillionOutputTokens: 0.34,
-      reasoning: 3,
-      intelligence: 3,
-      speed: 4,
-      tools: 3,
-    },
-    "mistral-saba-24b": {
-      provider,
-      impl: groq("mistral-saba-24b"),
-      isAvailable,
-      contextLength: 32768,
-      maxCompletionTokens: 32768,
-      costPerMillionInputTokens: 0.79,
-      costPerMillionOutputTokens: 0.79,
-      reasoning: 3,
+      reasoningText: 4,
       intelligence: 4,
       speed: 4,
       tools: 3,
-    },
-    "qwen/qwen3-32b": {
-      provider,
-      impl: groq("qwen/qwen3-32b"),
-      isAvailable,
+    }),
+    ...generateModelSpec("openai/gpt-oss-120b", {
+      contextLength: 131072,
+      maxCompletionTokens: 65536,
+      costPerMillionInputTokens: 0.15,
+      costPerMillionOutputTokens: 0.75,
+      reasoningText: 5,
+      intelligence: 5,
+      speed: 3,
+      tools: 5,
+    }),
+    ...generateModelSpec("openai/gpt-oss-20b", {
+      contextLength: 131072,
+      maxCompletionTokens: 65536,
+      costPerMillionInputTokens: 0.10,
+      costPerMillionOutputTokens: 0.50,
+      reasoningText: 4,
+      intelligence: 4,
+      speed: 4,
+      tools: 4,
+    }),
+    ...generateModelSpec("qwen/qwen3-32b", {
       contextLength: 131072,
       maxCompletionTokens: 40960,
       costPerMillionInputTokens: 0.29,
       costPerMillionOutputTokens: 0.59,
-      reasoning: 4,
+      reasoningText: 4,
       intelligence: 4,
       speed: 4,
       tools: 3,
-    },
-    "qwen-qwq-32b": {
-      // Official ID for "Qwen QwQ 32B (Preview) 128k"
-      provider,
-      impl: groq("qwen-qwq-32b"),
-      isAvailable,
-      contextLength: 131072,
-      maxCompletionTokens: 131072,
-      costPerMillionInputTokens: 0.29,
-      costPerMillionOutputTokens: 0.39,
-      reasoning: 4,
-      intelligence: 4,
-      speed: 4,
-      tools: 3,
-    },
-    "kimi-k2-instruct": {
-      provider,
-      impl: groq("moonshotai/kimi-k2-instruct"),
-      isAvailable,
+    }),
+    ...generateModelSpec("moonshotai/kimi-k2-instruct", {
       contextLength: 131072,
       maxCompletionTokens: 16384,
       costPerMillionInputTokens: 1,
       costPerMillionOutputTokens: 3,
-      reasoning: 4,
+      reasoningText: 4,
       intelligence: 4,
       speed: 5,
       tools: 5,
-    },
+    }),
+    ...generateModelSpec("meta-llama/llama-guard-4-12b", {
+      contextLength: 131072,
+      maxCompletionTokens: 1024,
+      costPerMillionInputTokens: 0.20,
+      costPerMillionOutputTokens: 0.20,
+      reasoningText: 2,
+      intelligence: 2,
+      speed: 5,
+      tools: 1,
+    }),
+    ...generateModelSpec("meta-llama/llama-prompt-guard-2-22m", {
+      contextLength: 512,
+      maxCompletionTokens: 512,
+      costPerMillionInputTokens: 0.03,
+      costPerMillionOutputTokens: 0.03,
+      reasoningText: 1,
+      intelligence: 1,
+      speed: 6,
+      tools: 1,
+    }),
+    ...generateModelSpec("meta-llama/llama-prompt-guard-2-86m", {
+      contextLength: 512,
+      maxCompletionTokens: 512,
+      costPerMillionInputTokens: 0.04,
+      costPerMillionOutputTokens: 0.04,
+      reasoningText: 1,
+      intelligence: 1,
+      speed: 6,
+      tools: 1,
+    }),
   };
 
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
+  modelRegistry.chat.registerAllModelSpecs(chatModels);
 }

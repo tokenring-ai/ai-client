@@ -1,4 +1,5 @@
 import {Registry} from "@token-ring/registry";
+import {stepCountIs} from "ai";
 import ChatMessageStorage from "../ChatMessageStorage.js";
 import {ChatInputMessage, ChatRequest} from "../client/AIChatClient.js";
 import {addAttentionItems} from "./addAttentionItems.js";
@@ -9,14 +10,6 @@ import {addTools} from "./addTools.js";
 
 /**
  * Creates a chat request object.
- * @param {Object} params
- * @param {string|ChatInputMessage|ChatInputMessage[]} params.input - The input messages array.
- * @param {string|ChatInputMessage} [params.systemPrompt] - The system prompt
- * @param {boolean} [params.includePriorMessages] - Whether to include prior messages
- * @param {boolean} [params.includeTools] - Whether to include tools
- * @param {boolean} [params.includeMemories] - Whether to include memories
- * @param {Registry} registry - The registry instance.
- * @returns {Promise<ChatRequest>} The chat request object.
  */
 export async function createChatRequest(
   {
@@ -25,12 +18,26 @@ export async function createChatRequest(
     includeMemories = true,
     includeTools = true,
     includePriorMessages = true,
+    maxSteps = 15,
+    temperature,
+    topP,
+    topK,
+    stopSequences,
+    presencePenalty,
+    frequencyPenalty,
   }: {
     input: string | ChatInputMessage | ChatInputMessage[];
     systemPrompt?: string | ChatInputMessage;
     includeMemories?: boolean;
     includeTools?: boolean;
     includePriorMessages?: boolean;
+    maxSteps?: number;
+    temperature?: number;
+    topP?: number;
+    topK?: number;
+    stopSequences?: string[];
+    presencePenalty?: number;
+    frequencyPenalty?: number;
   },
   registry: Registry
 ): Promise<ChatRequest> {
@@ -77,12 +84,12 @@ export async function createChatRequest(
   }
 
   if (includePriorMessages && previousMessage) {
-    let previousRequestMessages = (previousMessage?.request?.messages as ChatInputMessage[] | undefined) ?? [];
+    let previousRequestMessages = previousMessage?.request?.messages ?? [];
     if (previousRequestMessages?.[0]?.role === "system") {
       previousRequestMessages = previousRequestMessages.slice(1);
     }
 
-    const previousResponseMessages = (previousMessage?.response?.messages as ChatInputMessage[] | undefined) ?? [];
+    const previousResponseMessages = previousMessage?.response?.messages ?? [];
 
     messages.push(...previousRequestMessages, ...previousResponseMessages);
   } else {
@@ -104,9 +111,15 @@ export async function createChatRequest(
   //messages = compactMessageContext(messages);
 
   const request: ChatRequest = {
-    maxSteps: 15,
     messages,
     tools: {},
+    stopWhen: stepCountIs(maxSteps),
+    temperature,
+    topP,
+    topK,
+    stopSequences,
+    presencePenalty,
+    frequencyPenalty,
   };
 
   addPersonaParameters(request, registry);

@@ -1,4 +1,4 @@
-import {LanguageModelV2} from "@openrouter/ai-sdk-provider";
+import {LanguageModelV2CallWarning, LanguageModelV2Source, LanguageModelV2Usage} from "@ai-sdk/provider";
 import ChatService from "@token-ring/chat/ChatService";
 import {Registry} from "@token-ring/registry";
 
@@ -6,18 +6,31 @@ import {
   AssistantModelMessage,
   generateObject,
   generateText,
-  streamText, SystemModelMessage, UserModelMessage,
-  type Tool, ToolModelMessage
+  GenerateTextResult,
+  LanguageModel,
+  StopCondition,
+  streamText,
+  StreamTextResult,
+  SystemModelMessage,
+  type Tool,
+  ToolModelMessage,
+  UserModelMessage
 } from "ai";
 
 export type ChatInputMessage = SystemModelMessage | UserModelMessage | AssistantModelMessage | ToolModelMessage;
 
 export type ChatRequest = {
-  tools?: Record<string, Tool>;
-  maxSteps?: number;
+  tools: Record<string, Tool>;
+  stopWhen?: StopCondition<any> | undefined;
   messages: ChatInputMessage[];
   temperature?: number;
   topP?: number;
+  topK?: number;
+  stopSequences?: string[];
+  presencePenalty?: number;
+  frequencyPenalty?: number;
+  parallelTools?: boolean;
+  _toolQueue?: any;
 };
 
 export type GenerateRequest = {
@@ -29,12 +42,14 @@ export type ChatModelSpec = {
   contextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens: number;
-  impl: LanguageModelV2;
+  costPerMillionCachedInputTokens?: number;
+  costPerMillionReasoningTokens?: number;
+  impl: Exclude<LanguageModel, string>;
   isAvailable: () => Promise<boolean>;
   isHot?: () => Promise<boolean>;
   mangleRequest?: (req: ChatRequest) => void;
   research?: number;
-  reasoning?: number;
+  reasoningText?: number;
   tools?: number;
   intelligence?: number;
   speed?: number;
@@ -43,32 +58,33 @@ export type ChatModelSpec = {
 };
 
 export type AIResponse = {
+  providerMetadata: any;
+  finishReason: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other" | "unknown";
   timestamp: number;
-  model: string;
-  messages: ChatInputMessage[];
+  modelId: string;
+  messages?: ChatInputMessage[];
   text?: string;
-  object?: any;
-  usage?: {
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-    cost?: number;
-  };
-  [key: string]: any;
+  usage: LanguageModelV2Usage;
+  cost: AIResponseCost;
+  timing: AIResponseTiming;
+  sources?: LanguageModelV2Source[];
+  warnings?: LanguageModelV2CallWarning[];
+  //[key: string]: any;
 };
 
-const storedResultKeys = [
-  "finishReason",
-  "usage",
-  "toolCalls",
-  "toolResults",
-  "files",
-  "sources",
-  "text",
-  "warnings",
-  "object",
-  "providerMetadata",
-];
+export type AIResponseCost = {
+  input?: number;
+  cachedInput?: number;
+  output?: number;
+  reasoning?: number;
+  total?: number;
+};
+
+export type AIResponseTiming = {
+  elapsedMs: number;
+  tokensPerSec?: number;
+  totalTokens?: number;
+};
 
 /**
  * Chat client that relies on the Vercel AI SDK instead of the OpenAI SDK.
@@ -94,30 +110,41 @@ export default class AIChatClient {
    * using the pricing info from modelSpec (prefers .pricing, falls back to legacy fields).
    * Returns a number (cost in USD or provider's currency).
    */
-  calculateCost({promptTokens, completionTokens}: { promptTokens: number; completionTokens: number }) {
-    if (
-      !this.modelSpec ||
-      promptTokens === undefined ||
-      completionTokens === undefined
-    ) {
-      return undefined;
-    }
-    const promptRate = this.modelSpec.costPerMillionInputTokens / 1000000;
-    const completionRate = this.modelSpec.costPerMillionOutputTokens / 1000000;
+  calculateCost({inputTokens, outputTokens, cachedInputTokens, reasoningTokens}: LanguageModelV2Usage): AIResponseCost {
+    const inputRate = this.modelSpec.costPerMillionInputTokens / 1000000;
+    const cachedInputRate = (this.modelSpec.costPerMillionCachedInputTokens ?? this.modelSpec.costPerMillionInputTokens) / 1000000;
+    const outputRate = this.modelSpec.costPerMillionOutputTokens / 1000000;
+    const reasoningRate = (this.modelSpec.costPerMillionReasoningTokens ?? this.modelSpec.costPerMillionOutputTokens) / 1000000;
 
-    const inputCost = promptTokens * promptRate;
-    const outputCost = completionTokens * completionRate;
-    return inputCost + outputCost;
+    const input = inputTokens ? inputTokens * inputRate : undefined;
+    const cachedInput = cachedInputTokens ? cachedInputTokens * cachedInputRate : undefined;
+    const output = outputTokens ? outputTokens * outputRate : undefined;
+    const reasoning = reasoningTokens ? reasoningTokens * reasoningRate : undefined;
+
+    return {
+      input,
+      cachedInput,
+      output,
+      reasoning,
+      total:
+        (input ?? 0) +
+        (cachedInput ?? 0) +
+        (output ?? 0) +
+        (reasoning ?? 0),
+    };
   }
 
-  /**
-   * Get the token cost as a formatted string.
-   */
-  getTokenCost({promptTokens, completionTokens}: { promptTokens: number; completionTokens: number }) {
-    const totalCost = this.calculateCost({promptTokens, completionTokens});
-    if (totalCost === undefined) return "Unknown";
-    return `$${totalCost.toFixed(4)}`;
+  calculateTiming(elapsedMs: number, usage: LanguageModelV2Usage): AIResponseTiming {
+    const totalTokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0) +
+      (usage.cachedInputTokens ?? 0) + (usage.reasoningTokens ?? 0);
+
+    return {
+      elapsedMs,
+      tokensPerSec: totalTokens > 0 ? (totalTokens / (elapsedMs / 1000)) : undefined,
+      totalTokens: totalTokens > 0 ? totalTokens : undefined
+    };
   }
+
 
   /**
    * Streams a chat completion via `streamText`, relaying every delta
@@ -140,6 +167,8 @@ export default class AIChatClient {
       );
     }
 
+
+    const start = Date.now();
     const result = streamText({
       ...request,
       maxRetries: 15,
@@ -152,7 +181,7 @@ export default class AIChatClient {
     const stream = result.fullStream;
     for await (const part of stream) {
       switch (part.type) {
-        case "text-delta": {
+        case 'text-delta': {
           if (mode !== "text") {
             chatService.out("\n");
             chatService.emit("outputType", "chat");
@@ -182,7 +211,9 @@ export default class AIChatClient {
       }
     }
 
-    const response = await this.generateResponseObject(result);
+    const elapsedMs = Date.now() - start;
+
+    const response = await this.generateResponseObject(result, elapsedMs);
 
     return [response.text, response];
   }
@@ -199,13 +230,15 @@ export default class AIChatClient {
     const chatService = registry.requireFirstServiceByType(ChatService);
     const signal = chatService.getAbortSignal();
 
+    const start = Date.now();
     const result = await generateText({
       ...request,
       model: this.modelSpec.impl,
       abortSignal: signal,
     });
+    const elapsedMs = Date.now() - start;
 
-    const response = await this.generateResponseObject(result);
+    const response = await this.generateResponseObject(result, elapsedMs);
     return [response.text as string, response];
   }
 
@@ -221,50 +254,52 @@ export default class AIChatClient {
     const chatService = registry.requireFirstServiceByType(ChatService);
     const signal = chatService.getAbortSignal();
 
+    const start = Date.now();
     const result = await generateObject({
       model: this.modelSpec.impl,
       abortSignal: signal,
       ...request,
     });
+    const end = Date.now();
 
-    const response = await this.generateResponseObject(result);
+    const {timestamp, modelId} = result.response;
 
-    return [response.object, response];
+    const usage = result.usage;
+
+    return [result.object, {
+      timestamp: timestamp.getTime(),
+      modelId,
+      finishReason: result.finishReason,
+      usage,
+      cost: this.calculateCost(usage),
+      timing: this.calculateTiming(end - start, usage),
+      warnings: result.warnings,
+      providerMetadata: result.providerMetadata,
+    }];
   }
 
   /**
    * Generates a response object from the result.
-   * @param {object} result - The result object.
-   * @returns {Promise<object>} The generated response object.
    */
-  async generateResponseObject(result: any): Promise<AIResponse> {
-    const {timestamp, model, messages} = await result.response;
+  async generateResponseObject(result: StreamTextResult<Record<string, Tool>, never> | GenerateTextResult<Record<string, Tool>, never>, elapsedMs: number): Promise<AIResponse> {
 
-    const response: AIResponse = {
-      timestamp,
-      model,
+    const {timestamp, messages, modelId} = await result.response;
+
+    const usage = await result.usage;
+
+
+    return {
+      timestamp: timestamp.getTime(),
+      modelId,
       messages,
+      finishReason: await result.finishReason,
+      usage,
+      cost: this.calculateCost(usage),
+      timing: this.calculateTiming(elapsedMs, usage),
+      sources: await result.sources,
+      text: await result.text,
+      warnings: await result.warnings,
+      providerMetadata: await result.providerMetadata,
     };
-
-    for (const key of storedResultKeys) {
-      const value = await result[key];
-      if (value) {
-        response[key] = value;
-      }
-    }
-
-    const {usage} = response;
-
-    if (
-      usage &&
-      usage.promptTokens !== undefined &&
-      usage.completionTokens !== undefined
-    ) {
-      usage.cost = this.calculateCost({
-        promptTokens: usage.promptTokens,
-        completionTokens: usage.completionTokens,
-      });
-    }
-    return response;
   }
 }

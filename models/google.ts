@@ -1,17 +1,20 @@
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
-/**
- * @param {import('../ModelRegistry.ts').default} modelRegistry
- * @param {import("../ModelRegistry.ts").ModelConfig} config
- * @returns {Promise<void>}
- *
- */
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
+interface Model {
+  name: string;
+  displayName: string;
+  description: string;
+}
+
+interface ModelList {
+  models: Model[];
+}
+
 /**
  * The name of the AI provider.
- * @type {string}
  */
 const providerName = "Google";
 
@@ -21,93 +24,82 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
   }
 
   const getModels = cachedDataRetriever(
-    "https://generativelanguage.googleapis.com/v1beta/openai/models",
+    "https://generativelanguage.googleapis.com/v1beta/models",
     {
       headers: {
-        Authorization: `Bearer ${config.apiKey}`,
+        "x-goog-api-key": config.apiKey,
       },
     },
-  );
+  ) as () => Promise<ModelList | null>;
 
-  const isAvailable = () => getModels().then((data) => !!data);
-
-  const provider = config.provider || providerName;
 
   const googleProvider = createGoogleGenerativeAI({
     apiKey: config.apiKey,
     baseURL: config.baseURL,
-
   });
 
-  /**
-   * A collection of Google chat model specifications.
-   * Each key is a model ID, and the value is a `ChatModelSpec` object.
-   * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   * @type {Object<string,import("../client/AIChatClient.ts").ChatModelSpec>}
-   */
+  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+    return {
+      [modelId]: {
+        provider: providerName,
+        impl: googleProvider(modelId),
+        async isAvailable() {
+          const modelList = await getModels();
+          return !!modelList?.models.some((model) => model.name.includes(modelId));
+        },
+        ...modelSpec,
+      },
+    }
+  }
+
   const chatModels: Record<string, ChatModelSpec> = {
-    "gemini-1.5-pro": {
-      provider,
-      impl: googleProvider("gemini-1.5-pro"),
-      isAvailable,
+    ...generateModelSpec("gemini-1.5-pro", {
       costPerMillionInputTokens: 7.0,
       costPerMillionOutputTokens: 7.0,
-      reasoning: 3,
+      reasoningText: 3,
       intelligence: 3,
       tools: 3,
       speed: 2,
       contextLength: 2000000,
-    },
-    "gemini-1.5-flash": {
-      provider,
-      impl: googleProvider("gemini-1.5-flash"),
-      isAvailable,
+    }),
+    ...generateModelSpec("gemini-1.5-flash", {
       costPerMillionInputTokens: 0.075,
       costPerMillionOutputTokens: 0.3,
-      reasoning: 1,
+      reasoningText: 1,
       intelligence: 3,
       tools: 3,
       speed: 5,
       contextLength: 128000,
-    },
-    "gemini-2.5-pro": {
-      provider,
-      impl: googleProvider("gemini-2.5-pro"),
-      isAvailable,
+    }),
+    ...generateModelSpec("gemini-2.5-pro", {
       costPerMillionInputTokens: 4.0,
       costPerMillionOutputTokens: 20.0,
-      reasoning: 6,
+      reasoningText: 6,
       intelligence: 6,
       tools: 6,
       speed: 2,
       webSearch: 1,
       contextLength: 1000000,
-    },
-    "gemini-2.5-flash": {
-      provider,
-      impl: googleProvider("gemini-2.5-flash"),
-      isAvailable,
+    }),
+    ...generateModelSpec("gemini-2.5-flash", {
       costPerMillionInputTokens: 0.3,
       costPerMillionOutputTokens: 2.5,
-      reasoning: 5,
+      reasoningText: 5,
       intelligence: 4,
       tools: 4,
       speed: 4,
       webSearch: 1,
       contextLength: 1000000,
-    },
-    "gemini-2.5-flash-lite": {
-      provider,
-      impl: googleProvider("gemini-2.5-flash-lite"),
-      isAvailable,
+    }),
+    ...generateModelSpec("gemini-2.5-flash-lite", {
       costPerMillionInputTokens: 0.1,
       costPerMillionOutputTokens: 0.4,
-      reasoning: 2,
+      reasoningText: 2,
       intelligence: 3,
       tools: 3,
       speed: 5,
       contextLength: 1000000,
-    },
+    }),
   };
 
   for (const modelName of Object.keys(chatModels)) {

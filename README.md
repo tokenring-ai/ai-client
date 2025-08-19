@@ -1,10 +1,13 @@
 # @token-ring/ai-client
 
-The `@token-ring/ai-client` module provides essential services for managing AI model interactions, storing chat messages, constructing chat requests, and offering command-line utilities for chat operations within the Token Ring ecosystem.
+The `@token-ring/ai-client` module provides essential services for managing AI model interactions, storing chat
+messages, constructing chat requests, and offering command-line utilities for chat operations within the Token Ring
+ecosystem.
 
 ## Installation
 
-As part of the Token Ring monorepo, this package is typically used as a local dependency. If it were published independently:
+As part of the Token Ring monorepo, this package is typically used as a local dependency. If it were published
+independently:
 
 ```bash
 npm install @token-ring/ai-client
@@ -27,14 +30,18 @@ The primary components exported by this module are:
 
 ### 1. ModelRegistry
 
-The `ModelRegistry` service is responsible for managing and providing access to various AI models. It categorizes models into types (e.g., `chat`, `embedding`, `imageGeneration`) and uses `ModelTypeRegistry` instances internally to handle the specifics of each type, including model registration, feature-based filtering, and client instantiation.
+The `ModelRegistry` service is responsible for managing and providing access to various AI models. It categorizes models
+into types (e.g., `chat`, `embedding`, `imageGeneration`) and uses `ModelTypeRegistry` instances internally to handle
+the specifics of each type, including model registration, feature-based filtering, and client instantiation.
 
 **Supported Model Types:**
+
 - `chat`: Text generation models (via `AIChatClient`)
 - `embedding`: Text embedding models (via `AIEmbeddingClient`)
 - `imageGeneration`: Image generation models (via `AIImageGenerationClient`)
 
 **Supported Providers:**
+
 - OpenAI (GPT-4.1, o3, o4-mini, etc.)
 - Anthropic (Claude 4, Claude 3.7, etc.)
 - Google (Gemini 1.5, 2.5 Pro, etc.)
@@ -52,21 +59,21 @@ The `ModelRegistry` service is responsible for managing and providing access to 
 **Initialization:**
 
 ```javascript
-import { ModelRegistry } from '@token-ring/ai-client';
+import {ModelRegistry} from '@token-ring/ai-client';
 import * as providers from '@token-ring/ai-client/models';
 
 const modelRegistry = new ModelRegistry();
 
 const config = {
-  openai: {
-    provider: 'openai',
-    apiKey: process.env.OPENAI_API_KEY,
-  },
-  anthropic: {
-    provider: 'anthropic',
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  },
-  // Add more providers as needed
+ openai: {
+  provider: 'openai',
+  apiKey: process.env.OPENAI_API_KEY,
+ },
+ anthropic: {
+  provider: 'anthropic',
+  apiKey: process.env.ANTHROPIC_API_KEY,
+ },
+ // Add more providers as needed
 };
 
 await modelRegistry.initializeModels(providers, config);
@@ -80,9 +87,9 @@ const client = await modelRegistry.chat.getFirstOnlineClient('gpt-4.1');
 
 // Get a model by capabilities
 const advancedClient = await modelRegistry.chat.getFirstOnlineClient({
-  reasoning: '>5',
-  contextLength: '>64000',
-  speed: '>3'
+ reasoning: '>5',
+ contextLength: '>64000',
+ speed: '>3'
 });
 
 // Get embedding client
@@ -96,9 +103,11 @@ const imageClient = await modelRegistry.imageGeneration.getFirstOnlineClient('gp
 
 ### 2. ChatMessageStorage
 
-`ChatMessageStorage` is an abstract base class designed for services that store and retrieve chat messages. It defines a standard interface for message persistence and basic session context management.
+`ChatMessageStorage` is an abstract base class designed for services that store and retrieve chat messages. It defines a
+standard interface for message persistence and basic session context management.
 
 **Key Features:**
+
 - Message storage and retrieval
 - Conversation chain management
 - Session context tracking
@@ -108,21 +117,30 @@ const imageClient = await modelRegistry.imageGeneration.getFirstOnlineClient('gp
 
 ```javascript
 {
-  id: string,                    // Unique message identifier
-  sessionId: string,            // Conversation session ID
-  request: {                     // User's request
-    messages: Array<{role, content}>,
-    model?: string,
-    tools?: object
-  },
-  response?: {                   // AI's response
-    messages: Array<{role, content}>,
-    usage?: {promptTokens, completionTokens, cost},
-    timing?: {elapsedMs, tokensPerSec}
-  },
-  cumulativeInputLength: number, // Total input context length
-  updatedAt: number,             // Timestamp
-  previousMessageId?: string    // Link to previous message
+ id: string,                    // Unique message identifier
+  sessionId
+:
+ string,            // Conversation session ID
+  request
+:
+ {                     // User's request
+  messages: Array < {role, content} >,
+   model ? : string,
+   tools ? : object
+ }
+,
+ response ? : {                   // AI's response
+  messages: Array < {role, content} >,
+  usage? : {promptTokens, completionTokens, cost},
+  timing? : {elapsedMs, tokensPerSec}
+ },
+  cumulativeInputLength
+:
+ number, // Total input context length
+  updatedAt
+:
+ number,             // Timestamp
+  previousMessageId ? : string    // Link to previous message
 }
 ```
 
@@ -130,20 +148,21 @@ const imageClient = await modelRegistry.imageGeneration.getFirstOnlineClient('gp
 
 ### 3. EphemeralChatMessageStorage
 
-`EphemeralChatMessageStorage` is a concrete implementation that stores messages in memory. All data is lost when the process terminates.
+`EphemeralChatMessageStorage` is a concrete implementation that stores messages in memory. All data is lost when the
+process terminates.
 
 **Usage:**
 
 ```javascript
-import { EphemeralChatMessageStorage } from '@token-ring/ai-client';
+import {EphemeralChatMessageStorage} from '@token-ring/ai-client';
 
 const storage = new EphemeralChatMessageStorage();
 
 // Store a message
 const message = await storage.storeChat(
-  currentMessage, 
-  { messages: [{role: 'user', content: 'Hello'}] },
-  { messages: [{role: 'assistant', content: 'Hi there!'}] }
+ currentMessage,
+ {messages: [{role: 'user', content: 'Hello'}]},
+ {messages: [{role: 'assistant', content: 'Hi there!'}]}
 );
 
 // Retrieve by ID
@@ -157,9 +176,11 @@ const current = storage.getCurrentMessage();
 
 ### 4. createChatRequest
 
-`createChatRequest` is an async utility that constructs well-formed requests for AI chat models, incorporating conversation history, system prompts, memories, tools, and persona parameters.
+`createChatRequest` is an async utility that constructs well-formed requests for AI chat models, incorporating
+conversation history, system prompts, memories, tools, and persona parameters.
 
 **Features:**
+
 - Automatic conversation history inclusion
 - System prompt integration
 - Memory and attention item management
@@ -170,17 +191,17 @@ const current = storage.getCurrentMessage();
 **Usage:**
 
 ```javascript
-import { createChatRequest, EphemeralChatMessageStorage } from '@token-ring/ai-client';
+import {createChatRequest, EphemeralChatMessageStorage} from '@token-ring/ai-client';
 
 const registry = new TokenRingRegistry();
 registry.register(EphemeralChatMessageStorage);
 
 const request = await createChatRequest({
-  input: "What's the weather like?",
-  systemPrompt: "You are a helpful weather assistant.",
-  includePriorMessages: true,
-  includeTools: true,
-  includeMemories: true
+ input: "What's the weather like?",
+ systemPrompt: "You are a helpful weather assistant.",
+ includePriorMessages: true,
+ includeTools: true,
+ includeMemories: true
 }, registry);
 ```
 
@@ -188,17 +209,18 @@ const request = await createChatRequest({
 
 ### 5. runChat
 
-`runChat` is a high-level utility that combines model selection, request building, streaming, and response storage into a single operation.
+`runChat` is a high-level utility that combines model selection, request building, streaming, and response storage into
+a single operation.
 
 **Usage:**
 
 ```javascript
-import { runChat } from '@token-ring/ai-client';
+import {runChat} from '@token-ring/ai-client';
 
 const [responseText, response] = await runChat({
-  input: "Explain quantum computing",
-  systemPrompt: "Be concise and use analogies.",
-  model: "gpt-4.1"
+ input: "Explain quantum computing",
+ systemPrompt: "Be concise and use analogies.",
+ model: "gpt-4.1"
 }, registry);
 
 console.log(responseText);
@@ -215,18 +237,20 @@ Command-line utilities for interactive chat operations. These are designed for C
 **Available Commands:**
 
 #### `/model [model_name]`
+
 - Set or show the current AI model
 - Interactive tree selection when no model provided
 - Shows online/offline status for all models
 
 #### `/chat [message]`
+
 - Send a message to the current AI model
 - Displays token usage and timing information
 
 **Usage Example:**
 
 ```javascript
-import { chatCommands } from '@token-ring/ai-client';
+import {chatCommands} from '@token-ring/ai-client';
 
 // In a CLI context
 await chatCommands.model.execute('', registry); // Show model selection
@@ -263,16 +287,16 @@ DEEPSEEK_API_KEY=sk-...
 
 ```javascript
 const config = {
-  openai: {
-    provider: 'openai',
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: 'https://api.openai.com/v1' // Optional
-  },
-  ollama: {
-    provider: 'ollama',
-    baseURL: 'http://localhost:11434',
-    generateModelSpec: (modelInfo) => ({ /* custom spec */ })
-  }
+ openai: {
+  provider: 'openai',
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: 'https://api.openai.com/v1' // Optional
+ },
+ ollama: {
+  provider: 'ollama',
+  baseURL: 'http://localhost:11434',
+  generateModelSpec: (modelInfo) => ({ /* custom spec */})
+ }
 };
 ```
 
@@ -287,8 +311,8 @@ All clients include built-in cost calculation:
 ```javascript
 const client = await modelRegistry.chat.getFirstOnlineClient('gpt-4.1');
 const cost = client.calculateCost({
-  promptTokens: 1000,
-  completionTokens: 500
+ promptTokens: 1000,
+ completionTokens: 500
 });
 console.log(`Cost: $${cost.toFixed(4)}`);
 ```
@@ -299,11 +323,11 @@ Sophisticated filtering for model selection:
 
 ```javascript
 const client = await modelRegistry.chat.getFirstOnlineClient({
-  provider: 'openai',
-  reasoning: '>5',
-  contextLength: '>100000',
-  costPerMillionInputTokens: '<5',
-  webSearch: 1
+ provider: 'openai',
+ reasoning: '>5',
+ contextLength: '>100000',
+ costPerMillionInputTokens: '<5',
+ webSearch: 1
 });
 ```
 
@@ -314,8 +338,8 @@ Extensible tool system with lifecycle hooks:
 ```javascript
 // Tools are automatically integrated via the registry
 const request = await createChatRequest({
-  input: "What's the weather in Tokyo?",
-  includeTools: true
+ input: "What's the weather in Tokyo?",
+ includeTools: true
 }, registry);
 ```
 
@@ -346,19 +370,19 @@ Example provider structure:
 
 ```javascript
 export async function init(modelRegistry, config) {
-  if (!config.apiKey) throw new Error('API key required');
-  
-  const chatModels = {
-    'my-model': {
-      provider: 'my-provider',
-      impl: myProvider('model-name'),
-      isAvailable: async () => true,
-      costPerMillionInputTokens: 1.0,
-      costPerMillionOutputTokens: 2.0,
-      contextLength: 128000
-    }
-  };
-  
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
+ if (!config.apiKey) throw new Error('API key required');
+
+ const chatModels = {
+  'my-model': {
+   provider: 'my-provider',
+   impl: myProvider('model-name'),
+   isAvailable: async () => true,
+   costPerMillionInputTokens: 1.0,
+   costPerMillionOutputTokens: 2.0,
+   contextLength: 128000
+  }
+ };
+
+ await modelRegistry.chat.registerAllModelSpecs(chatModels);
 }
 ```

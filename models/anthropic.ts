@@ -1,17 +1,25 @@
 import {createAnthropic} from "@ai-sdk/anthropic";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-/**
- * @param {import('../ModelRegistry.ts').default} modelRegistry
- * @param {import("../ModelRegistry.ts").ModelConfig} config
- * @returns {Promise<void>}
- *
- */
+
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
+interface Model {
+  created_at: string;
+  display_name: string;
+  id: string;
+  type: "model";
+}
+
+interface ModelsResponse {
+  data: Model[];
+  first_id: string;
+  has_more: boolean;
+  last_id: string;
+}
+
 /**
  * The name of the AI provider.
- * @type {string}
  */
 const providerName = "Anthropic";
 
@@ -25,85 +33,115 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
       "x-api-key": config.apiKey,
       "anthropic-version": "2023-06-01",
     },
-  });
-
-  const isAvailable = () => getModels().then((data) => !!data);
-
-  const provider = config.provider || providerName;
+  }) as () => Promise<ModelsResponse | null>;
 
   const anthropicProvider = createAnthropic({
     apiKey: config.apiKey,
     baseURL: config.baseURL,
   });
 
-  /**
+  function generateModelSpec(modelId: string, anthropicModelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+    return {
+      [modelId]: {
+        provider: providerName,
+        impl: anthropicProvider(anthropicModelId),
+        async isAvailable() {
+          const modelList = await getModels();
+          return !!modelList?.data.some((model) => model.id === anthropicModelId);
+        },
+        ...modelSpec,
+      },
+    }
+  }
+
+  /*/**
    * A collection of Anthropic chat model specifications.
    * Each key is a model ID, and the value is a `ChatModelSpec` object.
    * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   * @type {Object<string,ChatModelSpec>}
    */
   const chatModels: Record<string, ChatModelSpec> = {
-    "claude-4-opus": {
-      provider,
-      impl: anthropicProvider("claude-opus-4-20250514"),
-      isAvailable,
-      costPerMillionInputTokens: 15.0, // $15 / MTok
-      costPerMillionOutputTokens: 75.0, // $75 / MTok
-      reasoning: 6,
+    ...generateModelSpec("claude-4.1-opus", "claude-opus-4-1-20250805", {
+      costPerMillionInputTokens: 15, // Unknown cost
+      costPerMillionOutputTokens: 75, // Unknown cost
+      reasoningText: 6,
       intelligence: 6,
       tools: 6,
       speed: 2,
       contextLength: 200000,
-    },
-    "claude-4-sonnet": {
-      provider,
-      impl: anthropicProvider("claude-sonnet-4-20250514"),
-      isAvailable,
+    }),
+    ...generateModelSpec("claude-4-opus", "claude-opus-4-20250514", {
+      costPerMillionInputTokens: 15.0, // $15 / MTok
+      costPerMillionOutputTokens: 75.0, // $75 / MTok
+      reasoningText: 6,
+      intelligence: 6,
+      tools: 6,
+      speed: 2,
+      contextLength: 200000,
+    }),
+    ...generateModelSpec("claude-4-sonnet", "claude-sonnet-4-20250514", {
       costPerMillionInputTokens: 3.0, // $3 / MTok
       costPerMillionOutputTokens: 15.0, // $15 / MTok
-      reasoning: 5,
+      reasoningText: 5,
       intelligence: 5,
       tools: 5,
       speed: 3,
       contextLength: 200000,
-    },
-    "claude-3.7-sonnet": {
-      provider,
-      impl: anthropicProvider("claude-3-7-sonnet-20250219"),
-      isAvailable,
+    }),
+    ...generateModelSpec("claude-3.7-sonnet", "claude-3-7-sonnet-20250219", {
       costPerMillionInputTokens: 3.0, // $3 / MTok
       costPerMillionOutputTokens: 15.0, // $15 / MTok
-      reasoning: 4,
+      reasoningText: 4,
       intelligence: 4,
       tools: 4,
       speed: 3,
       contextLength: 200000,
-    },
-    "claude-3.5-sonnet": {
-      provider,
-      impl: anthropicProvider("claude-3-5-sonnet-20240620"),
-      isAvailable,
+    }),
+    ...generateModelSpec("claude-3.5-sonnet-new", "claude-3-5-sonnet-20241022", {
       costPerMillionInputTokens: 3.0, // $3 / MTok
       costPerMillionOutputTokens: 15.0, // $15 / MTok
-      reasoning: 3,
-      intelligence: 3,
-      tools: 3,
+      reasoningText: 4,
+      intelligence: 4,
+      tools: 4,
       speed: 3,
       contextLength: 200000,
-    },
-    "claude-3.5-haiku": {
-      provider,
-      impl: anthropicProvider("claude-3-5-haiku-20241022"),
-      isAvailable,
+    }),
+    ...generateModelSpec("claude-3.5-haiku", "claude-3-5-haiku-20241022", {
       costPerMillionInputTokens: 0.8, // $0.80 / MTok
       costPerMillionOutputTokens: 4.0, // $4 / MTok
-      reasoning: 2,
+      reasoningText: 2,
       intelligence: 3,
       tools: 3,
       speed: 4,
       contextLength: 200000,
-    },
+    }),
+    ...generateModelSpec("claude-3.5-sonnet", "claude-3-5-sonnet-20240620", {
+      costPerMillionInputTokens: 3.0, // $3 / MTok
+      costPerMillionOutputTokens: 15.0, // $15 / MTok
+      reasoningText: 3,
+      intelligence: 3,
+      tools: 3,
+      speed: 3,
+      contextLength: 200000,
+    }),
+    ...generateModelSpec("claude-3-haiku", "claude-3-haiku-20240307", {
+      costPerMillionInputTokens: 0.25, // $0.25 / MTok
+      costPerMillionOutputTokens: 1.25, // $1.25 / MTok
+      reasoningText: 2,
+      intelligence: 2,
+      tools: 2,
+      speed: 5,
+      contextLength: 200000,
+    }),
+    ...generateModelSpec("claude-3-opus", "claude-3-opus-20240229", {
+      costPerMillionInputTokens: 15.0, // $15 / MTok
+      costPerMillionOutputTokens: 75.0, // $75 / MTok
+      reasoningText: 5,
+      intelligence: 5,
+      tools: 5,
+      speed: 2,
+      contextLength: 200000,
+    }),
   };
 
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
+  modelRegistry.chat.registerAllModelSpecs(chatModels);
 }

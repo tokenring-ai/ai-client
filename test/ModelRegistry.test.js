@@ -94,13 +94,13 @@ describe("ModelRegistry Integration Tests", () => {
 		it("should filter models by capabilities", () => {
 			const specs = modelRegistry.chat.filterModelSpecs({
 				contextLength: ">100000",
-				reasoning: ">2",
+				reasoningText: ">2",
 			});
 
 			expect(specs.length).toBeGreaterThan(0);
 			specs.forEach((spec) => {
 				expect(spec.contextLength).toBeGreaterThan(100000);
-				expect(spec.reasoning).toBeGreaterThan(2);
+				expect(spec.reasoningText).toBeGreaterThan(2);
 			});
 		});
 

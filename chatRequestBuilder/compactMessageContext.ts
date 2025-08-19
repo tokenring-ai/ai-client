@@ -3,8 +3,6 @@ import {ChatInputMessage} from "../client/AIChatClient.js";
 
 /**
  * Compacts message context to stay within maximum allowed message count
- * @param messages Array of chat messages to compact
- * @returns Compacted array of messages
  */
 function compactMessageContext(messages: ChatInputMessage[]): ChatInputMessage[] {
   // Context Compaction Logic

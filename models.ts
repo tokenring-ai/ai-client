@@ -8,6 +8,7 @@ export * as ollama from "./models/ollama.ts";
 export * as openai from "./models/openai.ts";
 export * as openrouter from "./models/openrouter.ts";
 export * as perplexity from "./models/perplexity.ts";
-export * as qwen from "./models/qwen.ts";
+export * as azure from "./models/azure.ts";
+//export * as qwen from "./models/qwen.ts"; // Currently not supported by AI SDK V5
 export * as openaiCompatible from "./models/openaiCompatible.ts";
 export * as xai from "./models/xai.ts";

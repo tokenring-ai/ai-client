@@ -2,117 +2,91 @@ import {perplexity} from "@ai-sdk/perplexity";
 import type {ChatInputMessage, ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
-import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 const providerName = "Perplexity";
 
 /**
  * Initializes the Perplexity AI provider and registers its chat models with the model registry.
  *
- * @param {import('../ModelRegistry.ts').default} modelRegistry - The model registry to register chat models with
- * @param {Object} config - Configuration object for the Perplexity provider
- * @param {string} config.apiKey - The API key for accessing Perplexity services
- * @param {string} [config.provider] - Optional provider name override (defaults to "Perplexity")
- * @throws {Error} If no API key is provided in the config
- * @returns {Promise<void>} A promise that resolves when initialization is complete
  */
 export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Perplexity provider.");
   }
 
-  const getModels = cachedDataRetriever(
-    "https://api.perplexity.ai/async/chat/completions",
-    {
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-      },
-    },
-  );
-
-  const isAvailable = () => getModels().then((data) => !!data);
-
   const provider = config.provider || providerName;
+
+  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">, "mangleRequest">): Record<string, ChatModelSpec> {
+    return {
+      [modelId]: {
+        provider,
+        impl: perplexity(modelId),
+        mangleRequest,
+        async isAvailable() {
+          return true;
+        },
+        ...modelSpec,
+      },
+    }
+  }
 
   /**
    * A collection of Perplexity chat model specifications.
    * Each key is a model ID, and the value is a `ChatModelSpec` object.
    * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   * @type {Object<string,import("../client/AIChatClient.ts").ChatModelSpec>}
    */
   const chatModels: Record<string, ChatModelSpec> = {
-    sonar: {
-      provider,
-      impl: perplexity("sonar"),
-      mangleRequest,
-      isAvailable,
+    ...generateModelSpec("sonar", {
       costPerMillionInputTokens: 1,
       costPerMillionOutputTokens: 1,
-      reasoning: 2,
+      reasoningText: 2,
       intelligence: 3,
       tools: 3,
       speed: 2,
       webSearch: 1,
       contextLength: 128000,
-    },
-    "sonar-pro": {
-      provider,
-      impl: perplexity("sonar-pro"),
-      mangleRequest,
-      isAvailable,
+    }),
+    ...generateModelSpec("sonar-pro", {
       costPerMillionInputTokens: 3,
       costPerMillionOutputTokens: 15,
-      reasoning: 2,
+      reasoningText: 2,
       intelligence: 3,
       tools: 3,
       speed: 3,
       webSearch: 1,
       contextLength: 200000,
-    },
-
-    "sonar-reasoning": {
-      provider,
-      impl: perplexity("sonar-reasoning"),
-      mangleRequest,
-      isAvailable,
+    }),
+    ...generateModelSpec("sonar-reasoning", {
       costPerMillionInputTokens: 1,
       costPerMillionOutputTokens: 5,
-      reasoning: 3,
+      reasoningText: 3,
       intelligence: 3,
       tools: 3,
       speed: 2,
       webSearch: 1,
       contextLength: 128000,
-    },
-    "sonar-reasoning-pro": {
-      provider,
-      impl: perplexity("sonar-reasoning-pro"),
-      mangleRequest,
-      isAvailable,
+    }),
+    ...generateModelSpec("sonar-reasoning-pro", {
       costPerMillionInputTokens: 2,
       costPerMillionOutputTokens: 8,
-      reasoning: 4,
+      reasoningText: 4,
       intelligence: 4,
       tools: 4,
       speed: 2,
       webSearch: 1,
       contextLength: 128000,
-    },
-    "sonar-deep-research": {
-      provider,
-      impl: perplexity("sonar-deep-research"),
-      mangleRequest,
-      isAvailable,
+    }),
+    ...generateModelSpec("sonar-deep-research", {
       costPerMillionInputTokens: 2,
       costPerMillionOutputTokens: 8,
       research: 3,
-      reasoning: 5,
+      reasoningText: 5,
       intelligence: 5,
       tools: 5,
       speed: 1,
       webSearch: 1,
       contextLength: 128000,
-    },
+    }),
   };
 
   await modelRegistry.chat.registerAllModelSpecs(chatModels);

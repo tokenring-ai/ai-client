@@ -3,10 +3,49 @@ import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-/**
- * The name of the AI provider.
- * @type {string}
- */
+interface ModelData {
+  id: string;
+  canonical_slug: string;
+  hugging_face_id: string;
+  name: string;
+  created: number;
+  description: string;
+  context_length: number;
+  architecture: {
+    modality: string;
+    input_modalities: string[];
+    output_modalities: string[];
+    tokenizer: string;
+    instruct_type: string | null;
+  };
+  pricing: {
+    prompt: string;
+    completion: string;
+    request: string;
+    image: string;
+    audio: string;
+    web_search: string;
+    internal_reasoning: string;
+  };
+  topProvider: {
+    context_length: number;
+    max_completion_tokens: number | null;
+    is_moderated: boolean;
+  };
+  per_request_limits: any | null; // You may want to define a more specific type based on your use case
+  supported_parameters: string[];
+}
+
+interface ApiResponse {
+  data: ModelData[];
+}
+
+type OpenRouterModelConfig = ModelConfig & {
+  modelFilter?: ModelFilter
+}
+
+type ModelFilter = (model: ModelData) => boolean;
+
 const providerName = "OpenRouter";
 
 // Function to safely convert pricing string to number (cost per million tokens)
@@ -22,14 +61,12 @@ function parsePricing(priceString: string | null | undefined): number {
   return Number.isNaN(price) ? 0 : price * 1000000;
 }
 
-async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, config: ModelConfig & {
-  modelFilter?: (model: any) => boolean
-}) {
+async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, config: OpenRouterModelConfig) {
   const getModels = cachedDataRetriever("https://openrouter.ai/api/v1/models", {
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
     },
-  });
+  }) as () => Promise<ApiResponse | null>;
 
   const modelsData = await getModels();
   if (modelsData == null) return;
@@ -59,8 +96,8 @@ async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, co
         impl: openrouter(model.id),
         isAvailable,
         contextLength:
-          model.context_length || model.top_provider?.context_length || 4096,
-        maxCompletionTokens: model.top_provider?.max_completion_tokens,
+          model.context_length || model.topProvider?.context_length || 4096,
+        maxCompletionTokens: model.topProvider?.max_completion_tokens ?? undefined,
         costPerMillionInputTokens: parsePricing(
           model.pricing?.prompt,
         ),
@@ -79,15 +116,7 @@ async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, co
   }
 }
 
-/**
- * @param {import('../ModelRegistry.ts').default} modelRegistry
- * @param {import("../ModelRegistry.ts").ModelConfig} config
- * @returns {Promise<void>}
- *
- */
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig & {
-  modelFilter?: (model: any) => boolean
-}) {
+export async function init(modelRegistry: ModelRegistry, config: OpenRouterModelConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for OpenRouter provider.");
   }

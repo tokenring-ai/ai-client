@@ -5,7 +5,6 @@ import * as runChat from "../runChat.js";
 
 export const description = "/chat [message] - Send a message to the chat service";
 
-// Updated remainder type from any to string for better type safety
 export async function execute(remainder: string, registry: Registry): Promise<void> {
   const chatService = registry.requireFirstServiceByType(ChatService);
 
@@ -24,24 +23,39 @@ export async function execute(remainder: string, registry: Registry): Promise<vo
     registry,
   );
 
-  if (response.usage) {
-    const {promptTokens, completionTokens, totalTokens, cost} = response.usage;
-    chatService.systemLine(
-      `[Chat Complete] Token usage - promptTokens: ${promptTokens}, completionTokens: ${completionTokens}, totalTokens: ${totalTokens}, cost: ${cost}`,
-    );
-    if (response.timing) {
-      const {elapsedMs, tokensPerSec} = response.timing;
-      const seconds = (elapsedMs / 1000).toFixed(2);
-      const tps = tokensPerSec !== undefined ? tokensPerSec.toFixed(2) : "N/A";
-      chatService.systemLine(
-        `[Chat Complete] Time: ${seconds}s, Throughput: ${tps} tokens/sec`,
-      );
-    }
-  } else {
-    chatService.systemLine("[Chat Complete] Unknown token usage");
+  const {inputTokens, cachedInputTokens, outputTokens, reasoningTokens, totalTokens} = response.usage;
+
+  const usage = [
+    `Input Tokens: ${inputTokens}${cachedInputTokens ? ` (+${cachedInputTokens} cached)` : ""}`,
+    `Output: ${outputTokens}${reasoningTokens ? ` (+${reasoningTokens} reasoning)` : ""}`,
+    `Total: ${totalTokens}`
+  ];
+
+  chatService.systemLine(`[Chat Complete] ${usage.join(', ')}`)
+
+  const {input, cachedInput, output, reasoning, total} = response.cost;
+  if (total) {
+    const cost = [
+      `Input Cost: \$${input ? input.toFixed(4) : 'unknown'}${cachedInput ? ` (+\$${cachedInput.toFixed(4)} cached)` : ""}`,
+      `Output: \$${output ? output.toFixed(4) : 'unknown'}${reasoning ? ` (+\$${reasoning.toFixed(4)} reasoning)` : ""}`,
+      `Total: \$${total.toFixed(4)}`
+    ];
+
+
+    chatService.systemLine(`[Chat Complete] ${cost.join(', ')}`)
   }
+
+  const {elapsedMs, tokensPerSec} = response.timing;
+
+  const seconds = (elapsedMs / 1000).toFixed(2);
+  const tps = tokensPerSec ? tokensPerSec.toFixed(2) : "N/A";
+
+  chatService.systemLine(
+    `[Chat Complete] Time: ${seconds}s, Throughput: ${tps} tokens/sec`,
+  );
 }
 
+// noinspection JSUnusedGlobalSymbols
 export function help(): string[] {
   return [
     "/chat [message]",

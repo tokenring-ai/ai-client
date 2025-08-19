@@ -21,8 +21,8 @@ class MockAIChatClient {
 		const mockResponse = {
 			messages: [{ role: "assistant", content: "Mock response" }],
 			usage: {
-				promptTokens: 10,
-				completionTokens: 5,
+				inputTokens: 10,
+				outputTokens: 5,
 				totalTokens: 15,
 				cost: 0.001,
 			},
@@ -39,7 +39,7 @@ class MockAIChatClient {
 		return 0.001;
 	}
 
-	getTokenCost({ promptTokens, completionTokens }) {
+	getTokenCost({ inputTokens, outputTokens }) {
 		return "$0.0010";
 	}
 
@@ -47,8 +47,8 @@ class MockAIChatClient {
 		const mockResponse = {
 			messages: [{ role: "assistant", content: "Mock response" }],
 			usage: {
-				promptTokens: 10,
-				completionTokens: 5,
+				inputTokens: 10,
+				outputTokens: 5,
 				totalTokens: 15,
 				cost: 0.001,
 			},
@@ -90,13 +90,17 @@ class MockChatService extends ChatService {
 	getModel() {
 		return this.model;
 	}
+
 	getInstructions() {
 		return this.instructions;
 	}
+
 	emit() {
 		return true;
 	}
+
 	systemLine() {}
+
 	warningLine() {}
 }
 
@@ -158,7 +162,7 @@ describe("runChat Integration Tests", () => {
 			);
 
 			expect(responseText).toBe("Mock response");
-			expect(response.usage.promptTokens).toBe(10);
+			expect(response.usage.inputTokens).toBe(10);
 		});
 
 		it("should use default model when not specified", async () => {
@@ -372,8 +376,8 @@ describe("runChat Integration Tests", () => {
 			);
 
 			expect(response.usage).toBeDefined();
-			expect(response.usage.promptTokens).toBe(10);
-			expect(response.usage.completionTokens).toBe(5);
+			expect(response.usage.inputTokens).toBe(10);
+			expect(response.usage.outputTokens).toBe(5);
 			expect(response.usage.totalTokens).toBe(15);
 			expect(response.usage.cost).toBe(0.001);
 		});

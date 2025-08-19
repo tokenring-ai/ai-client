@@ -1,7 +1,6 @@
-import type {Body, Response} from "@token-ring/chat/ChatService";
 import {v4 as uuid} from "uuid";
 import ChatMessageStorage, {StoredChatMessage} from "./ChatMessageStorage.js";
-import {ChatRequest} from "./client/AIChatClient.js";
+import {AIResponse, ChatRequest} from "./client/AIChatClient.js";
 
 /**
  * Session object representing a chat session
@@ -30,15 +29,11 @@ export default class EphemeralChatMessageStorage extends ChatMessageStorage {
   /**
    * Stores a chat message in memory.
    *
-   * @param currentMessage - The current chat message.
-   * @param request - The request object to store.
-   * @param response - The response object to store.
-   * @returns The stored message.
    */
   async storeChat(
     currentMessage: StoredChatMessage | null,
     request: ChatRequest,
-    response: Response
+    response: AIResponse
   ): Promise<StoredChatMessage> {
     let sessionId = currentMessage?.sessionId;
 
@@ -74,9 +69,6 @@ export default class EphemeralChatMessageStorage extends ChatMessageStorage {
   /**
    * Retrieves a message by its ID from memory.
    *
-   * @param id - The message ID.
-   * @returns The retrieved message.
-   * @throws Error When message is not found.
    */
   async retrieveMessageById(
     id: string
@@ -90,7 +82,6 @@ export default class EphemeralChatMessageStorage extends ChatMessageStorage {
 
   /**
    * Creates a new chat session with a unique identifier.
-   * @private
    */
   private createSession(): void {
     this.session = {

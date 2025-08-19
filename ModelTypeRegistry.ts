@@ -5,26 +5,20 @@ interface ModelSpec {
   provider: string,
   isAvailable: () => Promise<boolean>;
   isHot: () => Promise<boolean>;
-
-  //[x: string]: unknown;
 }
 
 /**
  * Registry for AI model specifications that uses a templated type for ModelSpec
- * @template {new (modelSpec: T) => any} C - The AIClient class type
- * @template T - The ModelSpec type used by the AIClient
  *   with optional fields used by the registry helper methods
  *   (e.g., isAvailable, isHot, provider)
  */
 export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends ModelSpec> {
   AIClient: C;
   filterModelSpecs: (arg0: any) => Array<T>;
-  /** @type {Object<string, Array<T>>} */
   modelSpecs: { [x: string]: T[] } = {};
 
   /**
-   * @param {C} AIClient - The AIClient class constructor
-   * @param {function(any): Array<T>} filterModelSpecs - Function to filter model specs
+   * Creates a new ModelTypeRegistry instance
    */
   constructor(AIClient: C, filterModelSpecs: (arg0: any) => Array<T>) {
     this.AIClient = AIClient;
@@ -34,8 +28,6 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
 
   /**
    * Registers a model with its metadata
-   * @param {string} modelName - The model identifier
-   * @param {T} metadata - Metadata about the model
    */
   registerModelSpec(modelName: string, metadata: T): void {
     (this.modelSpecs[modelName] ??= []).push(metadata);
@@ -43,7 +35,6 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
 
   /**
    * Registers a key: value object of model specs
-   * @param {Object<string, T>} modelSpecs - The model specs to register
    */
   registerAllModelSpecs(modelSpecs: { [x: string]: T }): void {
     for (const modelName in modelSpecs) {
@@ -77,7 +68,6 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
 
   /**
    * Gets all registered chatModels, with their online status
-   * @returns {Promise<Array<{status: string, name: string, modelSpecs: Array<{available: boolean, hot: boolean, modelSpec: T}>}>>} Array of model specs with online status
    */
   async getAllModelsWithOnlineStatus(): Promise<Array<{
     status: string;
@@ -114,7 +104,6 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
 
   /**
    * Gets all registered models grouped by provider, with their online status
-   * @returns {Promise<Object.<string, Array<{status: string, name: string, modelSpecs: Array<{available: boolean, hot: boolean, modelSpec: T}>}>>>} Models grouped by provider
    */
   async getModelsByProvider(): Promise<{
     [x: string]: Array<{
@@ -160,8 +149,6 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
 
   /**
    * Gets metadata for a specific model
-   * @param {string} modelName - The model identifier
-   * @returns {Array<T>|undefined} The model metadata or undefined if not found
    */
   getModelSpecs(modelName: string): Array<T> | undefined {
     return this.modelSpecs[modelName];
@@ -169,9 +156,6 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
 
   /**
    * Gets the first chat client that matches the requirements and is online
-   * @param {any} requirements - The filter criteria for model selection
-   * @returns {Promise<InstanceType<C>>} A client instance that uses the selected model
-   * @throws {Error} If no available model is found for the intent
    */
   async getFirstOnlineClient(requirements: ChatModelRequirements | string): Promise<InstanceType<C>> {
     const modelSpecs = this.filterModelSpecs(requirements);

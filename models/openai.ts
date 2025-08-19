@@ -2,17 +2,25 @@ import {createOpenAI} from "@ai-sdk/openai";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 /**
- * @param {import('../ModelRegistry.ts').default} modelRegistry
- * @param {import("../ModelRegistry.ts").ModelConfig} config
- * @returns {Promise<void>}
  *
  */
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
+type ModelListData = {
+  id: string,
+  object: "model",
+  owned_by: "organization" | "openai",
+  created: number,
+}
+
+type ModelList = {
+  object: "list",
+  data: ModelListData[],
+}
+
 /**
  * The name of the AI provider.
- * @type {string}
  */
 const providerName = "OpenAI";
 
@@ -28,134 +36,117 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     headers: {
       Authorization: `Bearer ${apiKey}`,
     },
-  });
-
-  const isAvailable = () => getModels().then((data) => !!data);
+  }) as () => Promise<ModelList | null>;
 
   provider ??= providerName;
+
+  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+    return {
+      [modelId]: {
+        provider,
+        impl: openai(modelId),
+        async isAvailable() {
+          const modelList = await getModels();
+          return !!modelList?.data.some((model) => model.id === modelId);
+        },
+        ...modelSpec,
+      },
+    }
+  }
 
   /**
    * A collection of OpenAI chat model specifications.
    * Each key is a model ID, and the value is a `ChatModelSpec` object.
    * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   * @type {Object<string,import("../client/AIChatClient.ts").ChatModelSpec>}
    */
   const chatModels: Record<string, ChatModelSpec> = {
-    "gpt-4.1": {
-      provider,
-      impl: openai("gpt-4.1"),
-      isAvailable,
+    ...generateModelSpec("gpt-4.1", {
       costPerMillionInputTokens: 2.0,
       costPerMillionOutputTokens: 8.0,
-      reasoning: 3,
+      reasoningText: 3,
       intelligence: 5,
       tools: 5,
       speed: 3,
       contextLength: 1000000,
-    },
-    "gpt-4.1-mini": {
-      provider,
-      impl: openai("gpt-4.1-mini"),
-      isAvailable,
+    }),
+    ...generateModelSpec("gpt-4.1-mini", {
       costPerMillionInputTokens: 0.4,
       costPerMillionOutputTokens: 1.6,
-      reasoning: 2,
+      reasoningText: 2,
       intelligence: 4,
       tools: 4,
       speed: 4,
       contextLength: 1000000,
-    },
-    "gpt-4.1-nano": {
-      provider,
-      impl: openai("gpt-4.1-nano"),
-      isAvailable,
+    }),
+    ...generateModelSpec("gpt-4.1-nano", {
       costPerMillionInputTokens: 0.1,
       costPerMillionOutputTokens: 0.4,
-      reasoning: 1,
+      reasoningText: 1,
       intelligence: 2,
       tools: 2,
       speed: 5,
       contextLength: 1000000,
-    },
-    "gpt-5": {
-      provider,
-      impl: openai("gpt-5"),
-      isAvailable,
+    }),
+    ...generateModelSpec("gpt-5", {
       costPerMillionInputTokens: 1.25,
       costPerMillionOutputTokens: 10,
-      reasoning: 4,
+      reasoningText: 4,
       intelligence: 6,
       tools: 6,
       speed: 3,
       webSearch: 1,
       contextLength: 400000,
-    },
-    "gpt-5-mini": {
-      provider,
-      impl: openai("gpt-5-mini"),
-      isAvailable,
+    }),
+    ...generateModelSpec("gpt-5-mini", {
       costPerMillionInputTokens: 0.25,
       costPerMillionOutputTokens: 2,
-      reasoning: 3,
+      reasoningText: 3,
       intelligence: 5,
       tools: 5,
       speed: 4,
       webSearch: 1,
       contextLength: 400000,
-    },
-    "gpt-5-nano": {
-      provider,
-      impl: openai("gpt-5-nano"),
-      isAvailable,
+    }),
+    ...generateModelSpec("gpt-5-nano", {
       costPerMillionInputTokens: 0.05,
       costPerMillionOutputTokens: 0.4,
-      reasoning: 2,
+      reasoningText: 2,
       intelligence: 3,
       tools: 3,
       speed: 5,
       webSearch: 1,
       contextLength: 400000,
-    },
-    o3: {
-      provider,
-      impl: openai("o3"),
-      isAvailable,
+    }),
+    ...generateModelSpec("o3", {
       costPerMillionInputTokens: 10.0,
       costPerMillionOutputTokens: 40.0,
-      reasoning: 6,
+      reasoningText: 6,
       intelligence: 6,
       tools: 6,
       speed: 2,
       webSearch: 1,
       contextLength: 200000,
-    },
-    "o4-mini": {
-      provider,
-      impl: openai("o4-mini"),
-      isAvailable,
+    }),
+    ...generateModelSpec("o4-mini", {
       costPerMillionInputTokens: 1.1,
       costPerMillionOutputTokens: 4.4,
-      reasoning: 5,
+      reasoningText: 5,
       intelligence: 5,
       tools: 5,
       speed: 3,
       webSearch: 1,
       contextLength: 200000,
-    },
-    "o1-pro": {
-      provider,
-      impl: openai("o1-pro"),
-      isAvailable,
-
+    }),
+    ...generateModelSpec("o1-pro", {
       costPerMillionInputTokens: 150.0,
       costPerMillionOutputTokens: 600.0,
-      reasoning: 7,
+      reasoningText: 7,
       intelligence: 7,
       speed: 1,
       tools: 5,
       webSearch: 1,
       contextLength: 200000,
-    },
+    }),
   };
 
   for (const modelName in chatModels) {
@@ -180,14 +171,16 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
   /**
    * A collection of OpenAI image generation model specifications.
    * Each key is a model ID, and the value is an `ImageModelSpec` object.
-   * @type {Object<string,import("../client/AIImageGenerationClient.ts").ImageModelSpec>}
    */
   const imageGenerationModels: Record<string, ImageModelSpec> = {
     "gpt-image-1": {
       provider,
       impl: openai.imageModel("gpt-image-1"),
-      isAvailable,
-      calculateImageCost(usage) {
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some((model) => model.id === "gpt-image-1");
+      },
+      calculateImageCost(_usage) {
         return 0.25; //TODO - this is a placeholder cost, need to figure out how to get the actual cost from the API
       },
       costPerMillionInputTokens: 5.0,
@@ -195,8 +188,8 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     },
   };
 
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
-  await modelRegistry.imageGeneration.registerAllModelSpecs(
+  modelRegistry.chat.registerAllModelSpecs(chatModels);
+  modelRegistry.imageGeneration.registerAllModelSpecs(
     imageGenerationModels,
   );
 }

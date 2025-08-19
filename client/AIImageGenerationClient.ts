@@ -61,7 +61,6 @@ export default class AIImageGenerationClient {
 
   /**
    * Creates an instance of AIImageGenerationClient.
-   * @param {ImageModelSpec} modelSpec  – The image generation model specification to use.
    */
   constructor(modelSpec: ImageModelSpec) {
     this.modelSpec = modelSpec;
@@ -69,7 +68,6 @@ export default class AIImageGenerationClient {
 
   /**
    * Get the model ID.
-   * @returns {string} The model ID.
    */
   getModelId(): string {
     return this.modelSpec.impl.modelId;
@@ -78,8 +76,6 @@ export default class AIImageGenerationClient {
   /**
    * Calculates the token cost. For image models, this might be an approximation
    * or based on prompt tokens if applicable. Because there is no standard, we always defer to the model to calculate it
-   * @param {object} usage - The usage object from the response
-   * @returns {number|undefined} The calculated cost.
    */
   getTokenCost(usage: object): number | undefined {
     return this.modelSpec?.calculateImageCost?.(usage);

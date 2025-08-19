@@ -16,7 +16,7 @@ describe("EphemeralChatMessageStorage Integration Tests", () => {
 			};
 			const response = {
 				messages: [{ role: "assistant", content: "Hi there!" }],
-				usage: { promptTokens: 10, completionTokens: 5 },
+				usage: { inputTokens: 10, outputTokens: 5 },
 			};
 
 			const message = await storage.storeChat(null, request, response);

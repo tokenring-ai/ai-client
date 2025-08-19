@@ -1,17 +1,22 @@
-import {createDeepSeek, deepseek} from "@ai-sdk/deepseek";
+import {createDeepSeek} from "@ai-sdk/deepseek";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-/**
- * @param {import('../ModelRegistry.ts').default} modelRegistry
- * @param {import("../ModelRegistry.ts").ModelConfig} config
- * @returns {Promise<void>}
- *
- */
+
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
+interface Model {
+  id: string;
+  object: "model";
+  owned_by: string;
+}
+
+interface ModelsListResponse {
+  object: "list";
+  data: Model[];
+}
+
 /**
  * The name of the AI provider.
- * @type {string}
  */
 const providerName = "DeepSeek";
 
@@ -37,9 +42,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
     },
-  });
-
-  const isAvailable = () => getModels().then((data) => !!data);
+  }) as () => Promise<ModelsListResponse | null>;
 
   const provider = config.provider || providerName;
 
@@ -48,66 +51,68 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     baseURL: config.baseURL,
   });
 
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable">, offPeakAdjustment: {
+    costPerMillionInputTokens: number
+    costPerMillionOutputTokens: number,
+  }): Record<string, ChatModelSpec> {
+    return {
+      [`${modelId}-peak`]: {
+        async isAvailable() {
+          if (isOffPeak) return false;
+          const modelList = await getModels();
+          return !!modelList?.data.some((model) => model.id === modelId);
+
+        },
+        ...modelSpec,
+      },
+      [`${modelId}-offpeak`]: {
+        async isAvailable() {
+          if (!isOffPeak) return false;
+          const modelList = await getModels();
+          return !!modelList?.data.some((model) => model.id === modelId);
+        },
+        ...modelSpec,
+        ...offPeakAdjustment,
+      }
+    }
+  }
+
   /**
-   * A collection of DeepSeek chat model specifications.
+   * A collection of DeepSeek chat model specifications.]
    * Each key is a model ID, and the value is a `ChatModelSpec` object.
    * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   * @type {Object<string,import("../client/AIChatClient.ts").ChatModelSpec>}
    */
   const chatModels: Record<string, ChatModelSpec> = {
-    "deepseek-chat": {
-      provider,
-      impl: deepseekProvider("deepseek-chat"),
-      isAvailable: isOffPeak ? falsePromise : isAvailable,
-      costPerMillionInputTokens: 0.27,
-      costPerMillionOutputTokens: 1.1,
-      reasoning: 1,
-      intelligence: 3,
-      tools: 3,
-      speed: 2,
-      contextLength: 64000,
-    },
-    "deepseek-reasoner": {
+    ...generateModelSpec("deepseek-chat", {
+        provider,
+        impl: deepseekProvider("deepseek-chat"),
+        costPerMillionInputTokens: 0.27,
+        costPerMillionOutputTokens: 1.1,
+        reasoningText: 1,
+        intelligence: 3,
+        tools: 3,
+        speed: 2,
+        contextLength: 64000,
+      },
+      {
+        costPerMillionInputTokens: 0.135,
+        costPerMillionOutputTokens: 0.55
+      }),
+    ...generateModelSpec("deepseek-reasoner", {
       provider,
       impl: deepseekProvider("deepseek-reasoner"),
-      isAvailable: isOffPeak ? falsePromise : isAvailable,
       costPerMillionInputTokens: 0.55,
       costPerMillionOutputTokens: 2.19,
-      reasoning: 5,
+      reasoningText: 5,
       intelligence: 5,
       tools: 5,
       speed: 2,
       contextLength: 64000,
-    },
-    "deepseek-chat-offpeak": {
-      provider,
-      impl: deepseekProvider("deepseek-chat"),
-      isAvailable: isOffPeak ? isAvailable : falsePromise,
+    }, {
       costPerMillionInputTokens: 0.135,
       costPerMillionOutputTokens: 0.55,
-      reasoning: 1,
-      intelligence: 3,
-      tools: 3,
-      speed: 2,
-      contextLength: 64000,
-    },
-    "deepseek-reasoner-offpeak": {
-      provider,
-      impl: deepseekProvider("deepseek-reasoner"),
-      isAvailable: isOffPeak ? isAvailable : falsePromise,
-      costPerMillionInputTokens: 0.135,
-      costPerMillionOutputTokens: 0.55,
-      reasoning: 5,
-      intelligence: 5,
-      tools: 5,
-      speed: 2,
-      contextLength: 64000,
-    },
+    })
   };
 
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
-}
-
-async function falsePromise() {
-  return false;
+  modelRegistry.chat.registerAllModelSpecs(chatModels);
 }

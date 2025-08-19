@@ -1,11 +1,20 @@
-import { createAzure } from "@ai-sdk/azure";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
-import ModelRegistry, { ModelConfig } from "../ModelRegistry.ts";
+import {createAzure} from "@ai-sdk/azure";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+
+interface Deployment {
+  id: string;
+  model: string;
+  status: string;
+}
+
+interface DeploymentList {
+  data: Deployment[];
+}
 
 /**
  * The name of the AI provider.
- * @type {string}
  */
 const providerName = "Azure";
 
@@ -14,20 +23,15 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     throw new Error("No config.apiKey provided for Azure provider.");
   }
 
-  if (!!config.baseURL) {
-    throw new Error("Either config.resourceName or config.baseURL must be provided for Azure provider.");
+  if (!config.baseURL) {
+    throw new Error("config.baseURL must be provided for Azure provider.");
   }
 
-  // For Azure, we'll need to construct the models endpoint URL
-  const baseURL = config.baseURL;
-
-  const getModels = cachedDataRetriever(`${baseURL}/openai/deployments?api-version=preview`, {
+  const getModels = cachedDataRetriever(`${config.baseURL}/openai/deployments?api-version=2023-05-15`, {
     headers: {
       "api-key": config.apiKey,
     },
-  });
-
-  const isAvailable = () => getModels().then((data) => !!data);
+  }) as () => Promise<DeploymentList | null>;
 
   const provider = config.provider || providerName;
 
@@ -36,25 +40,34 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     baseURL: config.baseURL,
   });
 
+  function generateModelSpec(deploymentName: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+    return {
+      [deploymentName]: {
+        provider: providerName,
+        impl: azureProvider(deploymentName),
+        async isAvailable() {
+          const deploymentList = await getModels();
+          return !!deploymentList?.data.some((deployment) => deployment.id === deploymentName && deployment.status === "succeeded");
+        },
+        ...modelSpec,
+      },
+    }
+  }
+
   /**
    * A collection of Azure OpenAI chat model specifications.
-   * Each key is a model ID, and the value is a `ChatModelSpec` object.
-   * Note: Azure uses deployment names, so these should be configured based on your deployments.
-   * @type {Object<string,ChatModelSpec>}
+   * Each key is a deployment name, and the value is a `ChatModelSpec` object.
    */
   const chatModels: Record<string, ChatModelSpec> = {
-    "deepseek-v3-0324": {
-      provider,
-      impl: azureProvider("DeepSeek-V3-0324"), // deployment name
-      isAvailable,
-      costPerMillionInputTokens: 0.0, // $0.14 / MTok
-      costPerMillionOutputTokens: 0.0, // $0.28 / MTok
-      reasoning: 6,
+    ...generateModelSpec("deepseek-v3-0324", {
+      costPerMillionInputTokens: 0.0,
+      costPerMillionOutputTokens: 0.0,
+      reasoningText: 6,
       intelligence: 5,
       tools: 4,
       speed: 3,
       contextLength: 65536,
-    },
+    }),
   };
 
   await modelRegistry.chat.registerAllModelSpecs(chatModels);

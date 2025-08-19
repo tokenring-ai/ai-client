@@ -98,8 +98,7 @@ export async function execute(remainder: string, registry: Registry): Promise<vo
     }
     const selectedModel = await humanInterfaceService.askForSingleTreeSelection({
       message: `Current model: ${chatService.getModel() ?? "auto"}. Choose a new model:`,
-      tree: buildModelTree(),
-      allowCancel: true,
+      tree: buildModelTree()
     });
 
     if (selectedModel) {
@@ -113,6 +112,7 @@ export async function execute(remainder: string, registry: Registry): Promise<vo
   }
 }
 
+// noinspection JSUnusedGlobalSymbols
 export function help(): string[] {
   return [
     "/model [model_name]",

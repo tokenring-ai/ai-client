@@ -1,6 +1,5 @@
-import {Body, Response} from "@token-ring/chat/ChatService";
 import {Service} from "@token-ring/registry";
-import {ChatRequest} from "./client/AIChatClient.js";
+import {AIResponse, ChatRequest} from "./client/AIChatClient.js";
 
 export interface StoredChatSession {
   id: string;
@@ -19,7 +18,7 @@ export interface StoredChatMessage {
   /** The AI request */
   request: ChatRequest;
   /** The response from AI */
-  response?: Response;
+  response?: AIResponse;
   /** The creation time in milliseconds since the epoch format */
   createdAt: number;
   /** The update time in milliseconds since the epoch format */
@@ -32,7 +31,6 @@ export interface StoredChatMessage {
  * Abstract base class for chat message storage implementations.
  * Provides the interface for storing and retrieving chat messages and sessions.
  *
- * @abstract
  */
 export default abstract class ChatMessageStorage extends Service {
   /** The current session data */
@@ -46,7 +44,6 @@ export default abstract class ChatMessageStorage extends Service {
 
   /**
    * Gets the current active message.
-   * @returns The current message or null if no message is active
    */
   getCurrentMessage(): StoredChatMessage | null {
     return this.currentMessage;
@@ -56,8 +53,6 @@ export default abstract class ChatMessageStorage extends Service {
    * Sets the current active message, moving the previous current message to history if it exists.
    * This allows for maintaining a stack of messages for undo/redo operations.
    *
-   * @param message - The message to set as current
-   * @returns void
    */
   setCurrentMessage(message: StoredChatMessage | null): void {
     // Only push to history when replacing an existing message with a new non-null message
@@ -71,7 +66,6 @@ export default abstract class ChatMessageStorage extends Service {
    * Restores the most recent message from history as the current message.
    * This provides undo functionality by popping the last message from the history stack.
    *
-   * @returns void
    */
   popMessage(): void {
     if (this.previousMessages.length > 0) {
@@ -84,16 +78,11 @@ export default abstract class ChatMessageStorage extends Service {
   /**
    * Stores a new chat request, typically starting a new conversation session.
    *
-   * @abstract
-   * @param currentMessage - The current message
-   * @param request - The request object
-   * @param response - The response object
-   * @returns Promise resolving to the stored chat message
    */
   abstract storeChat(
     currentMessage: StoredChatMessage | null,
     request: ChatRequest,
-    response: Response
+    response: AIResponse
   ): Promise<StoredChatMessage>;
 
   /**
