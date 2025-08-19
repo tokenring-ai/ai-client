@@ -1,10 +1,10 @@
+import { setTimeout } from "node:timers/promises";
 import ChatService from "@token-ring/chat/ChatService";
 import { Registry } from "@token-ring/registry";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.ts";
 import ModelRegistry from "../ModelRegistry.ts";
 import { execute as runChat } from "../runChat.ts";
-import { setTimeout } from "timers/promises";
 
 // Mock AI client for testing
 class MockAIChatClient {
@@ -332,7 +332,7 @@ describe("runChat Integration Tests", () => {
 			let err;
 			try {
 				// Should not throw despite tool error
-				const [response] = await runChat(
+				const [_response] = await runChat(
 					{
 						input: "Test",
 						systemPrompt: "System prompt",
