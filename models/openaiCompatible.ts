@@ -25,7 +25,7 @@ type ModelListResponse = {
   data: ModelListData[],
 }
 
-const providerName = "Generic";
+const providerName = "OpenAI Compatible";
 
 export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
   const {baseURL, apiKey, generateModelSpec} = config as OAICompatibleModelConfig;
@@ -73,7 +73,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
       };
     } else if (type === "embedding") {
       embeddingModelSpecs[modelInfo.id] = {
-        provider: providerName,
+        provider: config.provider ?? providerName,
         contextLength: capabilities.contextLength || 8192,
         costPerMillionInputTokens: capabilities.costPerMillionInputTokens || 0,
         impl: openai.textEmbeddingModel(modelInfo.id),

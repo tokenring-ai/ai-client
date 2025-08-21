@@ -70,7 +70,7 @@ export async function execute(
   } catch (err: unknown) {
     chatMessageStorage.setCurrentMessage(currentMessage);
     chatService.warningLine(
-      "OpenAI response cancelled, restoring prior chat state."
+      "AI request cancelled, restoring prior chat state."
     );
     throw err;
   }
