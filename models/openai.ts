@@ -1,9 +1,6 @@
 import {createOpenAI} from "@ai-sdk/openai";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
-import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-/**
- *
- */
+import type {ImageModelSpec, ImageRequest} from "../client/AIImageGenerationClient.ts";
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
@@ -45,6 +42,21 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
       [modelId]: {
         provider,
         impl: openai(modelId),
+        async isAvailable() {
+          const modelList = await getModels();
+          return !!modelList?.data.some((model) => model.id === modelId);
+        },
+        ...modelSpec,
+      },
+    }
+  }
+
+
+  function generateImageModelSpec(modelId: string, variantId: string, modelSpec: Omit<Omit<Omit<ImageModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ImageModelSpec> {
+    return {
+      [variantId]: {
+        provider,
+        impl: openai.imageModel(modelId),
         async isAvailable() {
           const modelList = await getModels();
           return !!modelList?.data.some((model) => model.id === modelId);
@@ -173,19 +185,27 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
    * Each key is a model ID, and the value is an `ImageModelSpec` object.
    */
   const imageGenerationModels: Record<string, ImageModelSpec> = {
-    "gpt-image-1": {
-      provider,
-      impl: openai.imageModel("gpt-image-1"),
-      async isAvailable() {
-        const modelList = await getModels();
-        return !!modelList?.data.some((model) => model.id === "gpt-image-1");
+    ...generateImageModelSpec("gpt-image-1", "gpt-image-1-high", {
+      mangleRequest(req: ImageRequest) {
+        req.quality = 'high';
       },
-      calculateImageCost(_usage) {
-        return 0.25; //TODO - this is a placeholder cost, need to figure out how to get the actual cost from the API
+      costPerMillionInputTokens: 10,
+      costPerMegapixel: 0.067
+    }),
+    ...generateImageModelSpec("gpt-image-1", "gpt-image-1-medium", {
+      mangleRequest(req: ImageRequest) {
+        req.quality = 'medium';
       },
-      costPerMillionInputTokens: 5.0,
-      costPerMillionOutputTokens: 40.0,
-    },
+      costPerMillionInputTokens: 10,
+      costPerMegapixel: 0.042
+    }),
+    ...generateImageModelSpec("gpt-image-1", "gpt-image-1-low", {
+      mangleRequest(req: ImageRequest) {
+        req.quality = 'low';
+      },
+      costPerMillionInputTokens: 10,
+      costPerMegapixel: 0.011
+    })
   };
 
   modelRegistry.chat.registerAllModelSpecs(chatModels);

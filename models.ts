@@ -1,6 +1,7 @@
 export * as anthropic from "./models/anthropic.ts";
 export * as cerebras from "./models/cerebras.ts";
 export * as deepseek from "./models/deepseek.ts";
+export * as fal from "./models/fal.ts";
 export * as google from "./models/google.ts";
 export * as groq from "./models/groq.ts";
 export * as llama from "./models/llama.ts";

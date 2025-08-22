@@ -1,5 +1,6 @@
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
+import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
@@ -32,7 +33,6 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     },
   ) as () => Promise<ModelList | null>;
 
-
   const googleProvider = createGoogleGenerativeAI({
     apiKey: config.apiKey,
     baseURL: config.baseURL,
@@ -50,6 +50,21 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
         ...modelSpec,
       },
     }
+  }
+
+
+  function generateImageModelSpec(modelId: string, costPerImage: number): Record<string, ImageModelSpec> {
+    return {
+      [modelId]: {
+        provider: providerName,
+        impl: googleProvider.image(modelId),
+        async isAvailable() {
+          const modelList = await getModels();
+          return !!modelList?.models.some((model) => model.name.includes(modelId));
+        },
+        costPerImage
+      },
+    };
   }
 
   const chatModels: Record<string, ChatModelSpec> = {
@@ -119,5 +134,16 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     chatModels[`${modelName}-web-search`] = newModel;
   }
 
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
+  modelRegistry.chat.registerAllModelSpecs(chatModels);
+
+  /**
+   * A collection of Google image generation model specifications.
+   * Each key is a model ID, and the value is an `ImageModelSpec` object.
+   */
+  const imageGenerationModels: Record<string, ImageModelSpec> = {
+    ...generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
+    ...generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
+    ...generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
+  };
+  modelRegistry.imageGeneration.registerAllModelSpecs(imageGenerationModels);
 }
