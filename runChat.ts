@@ -50,8 +50,6 @@ export async function execute(
     const [output, response] = await client.streamChat(request, registry);
     chatService.emit("doneWaiting", null);
 
-    chatService.emit("doneWaiting", null);
-
     // Store the response object (now returned by streamChat)
     const chatMessage = await chatMessageStorage.storeChat(
       currentMessage,
@@ -68,7 +66,7 @@ export async function execute(
 
     return [finalOutput, response]; // Return the full response object
   } catch (err: unknown) {
-    chatMessageStorage.setCurrentMessage(currentMessage);
+    chatService.emit("doneWaiting", null);;
     chatService.warningLine(
       "AI request cancelled, restoring prior chat state."
     );
