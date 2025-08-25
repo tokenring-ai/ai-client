@@ -75,6 +75,7 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     ...generateModelSpec("gpt-4.1", {
       costPerMillionInputTokens: 2.0,
       costPerMillionOutputTokens: 8.0,
+      costPerMillionCachedInputTokens: 0.50,
       reasoningText: 3,
       intelligence: 5,
       tools: 5,
@@ -84,6 +85,7 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     ...generateModelSpec("gpt-4.1-mini", {
       costPerMillionInputTokens: 0.4,
       costPerMillionOutputTokens: 1.6,
+      costPerMillionCachedInputTokens: 0.10,
       reasoningText: 2,
       intelligence: 4,
       tools: 4,
@@ -93,6 +95,7 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     ...generateModelSpec("gpt-4.1-nano", {
       costPerMillionInputTokens: 0.1,
       costPerMillionOutputTokens: 0.4,
+      costPerMillionCachedInputTokens: 0.025,
       reasoningText: 1,
       intelligence: 2,
       tools: 2,
@@ -101,6 +104,7 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     }),
     ...generateModelSpec("gpt-5", {
       costPerMillionInputTokens: 1.25,
+      costPerMillionCachedInputTokens: 0.125,
       costPerMillionOutputTokens: 10,
       reasoningText: 4,
       intelligence: 6,
@@ -112,6 +116,7 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     ...generateModelSpec("gpt-5-mini", {
       costPerMillionInputTokens: 0.25,
       costPerMillionOutputTokens: 2,
+      costPerMillionCachedInputTokens: 0.025,
       reasoningText: 3,
       intelligence: 5,
       tools: 5,
@@ -122,6 +127,7 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     ...generateModelSpec("gpt-5-nano", {
       costPerMillionInputTokens: 0.05,
       costPerMillionOutputTokens: 0.4,
+      costPerMillionCachedInputTokens: 0.005,
       reasoningText: 2,
       intelligence: 3,
       tools: 3,
@@ -142,20 +148,11 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
     ...generateModelSpec("o4-mini", {
       costPerMillionInputTokens: 1.1,
       costPerMillionOutputTokens: 4.4,
+      costPerMillionCachedInputTokens: 0.275,
       reasoningText: 5,
       intelligence: 5,
       tools: 5,
       speed: 3,
-      webSearch: 1,
-      contextLength: 200000,
-    }),
-    ...generateModelSpec("o1-pro", {
-      costPerMillionInputTokens: 150.0,
-      costPerMillionOutputTokens: 600.0,
-      reasoningText: 7,
-      intelligence: 7,
-      speed: 1,
-      tools: 5,
       webSearch: 1,
       contextLength: 200000,
     }),

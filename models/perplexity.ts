@@ -79,6 +79,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     ...generateModelSpec("sonar-deep-research", {
       costPerMillionInputTokens: 2,
       costPerMillionOutputTokens: 8,
+      costPerMillionReasoningTokens: 3,
       research: 3,
       reasoningText: 5,
       intelligence: 5,
