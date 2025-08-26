@@ -10,7 +10,7 @@ import {
 
 export type ImageRequest = {
   prompt: string;
-  quality: string;
+  quality?: string;
   size: `${number}x${number}`
   n: number;
 };

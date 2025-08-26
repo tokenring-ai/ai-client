@@ -103,7 +103,6 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
         return 0.07; //TODO - this is a placeholder cost, need to figure out how to get the actual cost from the API
       },
       costPerMillionInputTokens: 0,
-      costPerMillionOutputTokens: 0,
     },
   };
 

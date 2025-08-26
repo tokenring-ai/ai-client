@@ -1,7 +1,6 @@
 import {createFal} from "@ai-sdk/fal";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
-import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 type FalImageModelData = {
   id: string;
@@ -10,9 +9,6 @@ type FalImageModelData = {
   available: boolean;
 }
 
-type FalModelList = {
-  models: FalImageModelData[];
-}
 
 /**
  * The name of the AI provider.
@@ -26,12 +22,6 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
   baseURL ??= "https://fal.run";
 
   const fal = createFal({apiKey, baseURL});
-
-  const getModels = cachedDataRetriever(`${baseURL}/models`, {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-    },
-  }) as () => Promise<FalModelList | null>;
 
   provider ??= providerName;
 

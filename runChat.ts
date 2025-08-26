@@ -66,7 +66,7 @@ export async function execute(
 
     return [finalOutput, response]; // Return the full response object
   } catch (err: unknown) {
-    chatService.emit("doneWaiting", null);;
+    chatService.emit("doneWaiting", null);
     chatService.warningLine(
       "AI request cancelled, restoring prior chat state."
     );
