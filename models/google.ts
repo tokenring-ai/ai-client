@@ -1,7 +1,7 @@
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 interface Model {
@@ -14,12 +14,13 @@ interface ModelList {
   models: Model[];
 }
 
-/**
- * The name of the AI provider.
- */
-const providerName = "Google";
 
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
+
+export interface GoogleModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
+}
+
+export async function init(modelRegistry: ModelRegistry, config: GoogleModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Google provider.");
   }
@@ -34,14 +35,13 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
   ) as () => Promise<ModelList | null>;
 
   const googleProvider = createGoogleGenerativeAI({
-    apiKey: config.apiKey,
-    baseURL: config.baseURL,
+    apiKey: config.apiKey
   });
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {
-        provider: providerName,
+        providerDisplayName: config.providerDisplayName,
         impl: googleProvider(modelId),
         async isAvailable() {
           const modelList = await getModels();
@@ -56,7 +56,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
   function generateImageModelSpec(modelId: string, costPerImage: number): Record<string, ImageModelSpec> {
     return {
       [modelId]: {
-        provider: providerName,
+        providerDisplayName: config.providerDisplayName,
         impl: googleProvider.image(modelId),
         async isAvailable() {
           const modelList = await getModels();

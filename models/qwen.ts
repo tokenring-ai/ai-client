@@ -1,6 +1,6 @@
 import {qwen} from "qwen-ai-provider";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 interface Model {
@@ -15,12 +15,13 @@ interface ModelList {
   data: Model[];
 }
 
-/**
- * The name of the AI provider.
- */
-const providerName = "Qwen";
+export interface QwenModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
+}
 
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
+
+
+export async function init(modelRegistry: ModelRegistry, config: QwenModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Qwen provider.");
   }
@@ -35,12 +36,10 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     },
   ) as () => Promise<ModelList | null>;
 
-  const provider = config.provider || providerName;
-
-  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {
-        provider,
+        providerDisplayName: config.providerDisplayName,
         impl: qwen(modelId),
         async isAvailable() {
           const modelList = await getModels();
@@ -166,5 +165,5 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     }),
   };
 
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
+  modelRegistry.chat.registerAllModelSpecs(chatModels);
 }

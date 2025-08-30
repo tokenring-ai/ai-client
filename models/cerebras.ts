@@ -1,7 +1,10 @@
 import {createCerebras} from "@ai-sdk/cerebras";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+
+export interface CerebrasModelProviderConfig extends ModelProviderInfo {
+}
 
 interface Model {
   id: string;
@@ -15,12 +18,14 @@ interface ModelList {
   data: Model[];
 }
 
-/**
- * The name of the AI provider.
- */
-const providerName = "Cerebras";
 
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
+
+
+export interface CerebrasModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
+}
+
+export async function init(modelRegistry: ModelRegistry, config: CerebrasModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Cerebras provider.");
   }
@@ -33,15 +38,13 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
   }) as () => Promise<ModelList | null>;
 
   const cerebrasProvider = createCerebras({
-    apiKey: config.apiKey,
-    baseURL: config.baseURL,
+    apiKey: config.apiKey
   });
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {
-        provider: providerName,
-
+        providerDisplayName: config.providerDisplayName,
         impl: cerebrasProvider(modelId),
         async isAvailable() {
           const modelList = await getModels();

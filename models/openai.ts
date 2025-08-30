@@ -1,7 +1,7 @@
 import {createOpenAI} from "@ai-sdk/openai";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec, ImageRequest} from "../client/AIImageGenerationClient.ts";
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 type ModelListData = {
@@ -21,26 +21,29 @@ type ModelList = {
  */
 const providerName = "OpenAI";
 
-export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provider}: ModelConfig) {
+export interface OpenAIModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
+}
+
+export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProviderConfig) {
+  let {apiKey} = config;
   if (!apiKey) {
     throw new Error("No config.apiKey provided for OpenAI provider.");
   }
-  baseURL ??= "https://api.openai.com/v1";
 
-  const openai = createOpenAI({apiKey, baseURL});
+  const openai = createOpenAI({apiKey});
 
-  const getModels = cachedDataRetriever(`${baseURL}/models`, {
+  const getModels = cachedDataRetriever(`https://api.openai.com/v1/models`, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
     },
   }) as () => Promise<ModelList | null>;
 
-  provider ??= providerName;
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {
-        provider,
+        providerDisplayName: config.providerDisplayName,
         impl: openai(modelId),
         async isAvailable() {
           const modelList = await getModels();
@@ -52,10 +55,10 @@ export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provi
   }
 
 
-  function generateImageModelSpec(modelId: string, variantId: string, modelSpec: Omit<Omit<Omit<ImageModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ImageModelSpec> {
+  function generateImageModelSpec(modelId: string, variantId: string, modelSpec: Omit<ImageModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ImageModelSpec> {
     return {
       [variantId]: {
-        provider,
+        providerDisplayName: config.providerDisplayName,
         impl: openai.imageModel(modelId),
         async isAvailable() {
           const modelList = await getModels();

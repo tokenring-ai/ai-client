@@ -1,7 +1,7 @@
 import {embed, EmbeddingModel, type EmbedResult} from "ai";
 
-export type ModelSpec = {
-  provider: string;
+export type EmbeddingModelSpec = {
+  providerDisplayName: string;
   contextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens?: number;
@@ -14,12 +14,12 @@ export type ModelSpec = {
  * Client for generating embeddings using the Vercel AI SDK.
  */
 export default class AIEmbeddingClient {
-  public readonly modelSpec: ModelSpec;
+  public readonly modelSpec: EmbeddingModelSpec;
 
   /**
    * Creates an instance of AIEmbeddingClient.
    */
-  constructor({modelSpec}: { modelSpec: ModelSpec }) {
+  constructor({modelSpec}: { modelSpec: EmbeddingModelSpec }) {
     this.modelSpec = modelSpec;
   }
 

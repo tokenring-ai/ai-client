@@ -1,13 +1,16 @@
 import {abandon} from "@token-ring/utility/abandon";
 import {createOllama} from "ollama-ai-provider";
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import {ChatModelSpec} from "../client/AIChatClient.js";
+import {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-const providerName = "Ollama";
+
 
 export type OllamaModelConfigFunction = (modelInfo: OllamaModelTagItem) => ModelConfigResults;
 
-export type OllamaModelConfig = ModelConfig & {
+export interface OllamaModelProviderConfig extends ModelProviderInfo {
+  baseURL: string;
   generateModelSpec: OllamaModelConfigFunction;
 }
 type ModelConfigResults = {
@@ -51,8 +54,8 @@ type ModelPsResponse = {
   "models": ModelPsItem[],
 }
 
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
-  const {baseURL, generateModelSpec} = config as OllamaModelConfig;
+export async function init(modelRegistry: ModelRegistry, config: OllamaModelProviderConfig) {
+  const {baseURL, generateModelSpec} = config;
   if (!baseURL) {
     throw new Error("No config.baseURL provided for Ollama provider.");
   }
@@ -62,8 +65,8 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     );
   }
 
-  const chatModelSpecs: Record<string, any> = {};
-  const embeddingModelSpecs: Record<string, any> = {};
+  const chatModelSpecs: Record<string, ChatModelSpec> = {};
+  const embeddingModelSpecs: Record<string, EmbeddingModelSpec> = {};
 
   const ollama = createOllama({baseURL});
   const getModelList = cachedDataRetriever(`${baseURL}/tags`, {
@@ -79,7 +82,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 
   abandon(getRunningModels()); // In background, fetch the list of running models.
 
-  const modelList = await getModelList() as ModelTagResponse;
+  const modelList = await getModelList();
   if (!modelList?.models) return;
 
   for (const modelInfo of modelList.models) {
@@ -87,7 +90,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 
     if (type === "chat") {
       chatModelSpecs[modelInfo.model] = {
-        provider: config.provider ?? providerName,
+        providerDisplayName: config.providerDisplayName,
         name: modelInfo.model,
         impl: ollama.chat(modelInfo.model),
         isAvailable: () => getModelList().then((data) => !!data),
@@ -100,7 +103,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
       };
     } else if (type === "embedding") {
       embeddingModelSpecs[modelInfo.model] = {
-        provider: providerName,
+        providerDisplayName: config.providerDisplayName,
         name: modelInfo.model,
         impl: ollama.embedding(modelInfo.model),
         isAvailable: () => getModelList().then((data) => !!data),

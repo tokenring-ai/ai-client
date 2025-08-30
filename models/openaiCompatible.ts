@@ -1,12 +1,14 @@
 import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import type {ModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import type {EmbeddingModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export type OAICompatibleModelConfigFunction = (modelInfo: ModelListData) => ModelConfigResults;
 
-export type OAICompatibleModelConfig = ModelConfig & {
+export type OAICompatibleModelConfig = ModelProviderInfo & {
+  apiKey?: string;
+  baseURL: string;
   generateModelSpec: OAICompatibleModelConfigFunction
 }
 type ModelConfigResults = {
@@ -27,8 +29,8 @@ type ModelListResponse = {
 
 const providerName = "OpenAI Compatible";
 
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
-  const {baseURL, apiKey, generateModelSpec} = config as OAICompatibleModelConfig;
+export async function init(modelRegistry: ModelRegistry, config: OAICompatibleModelConfig) {
+  const {baseURL, apiKey, generateModelSpec} = config;
   if (!baseURL) {
     throw new Error("No config.baseURL provided for VLLM provider.");
   }
@@ -64,7 +66,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
 
     if (type === "chat") {
       chatModelSpecs[modelInfo.id] = {
-        provider: config.provider ?? providerName,
+        providerDisplayName: config.providerDisplayName,
         name: modelInfo.id,
         impl: openai.chatModel(modelInfo.id),
         isAvailable: () => getModelList().then((data) => !!data),
@@ -73,7 +75,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
       };
     } else if (type === "embedding") {
       embeddingModelSpecs[modelInfo.id] = {
-        provider: config.provider ?? providerName,
+        providerDisplayName: config.providerDisplayName,
         contextLength: capabilities.contextLength || 8192,
         costPerMillionInputTokens: capabilities.costPerMillionInputTokens || 0,
         impl: openai.textEmbeddingModel(modelInfo.id),

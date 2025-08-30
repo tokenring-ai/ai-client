@@ -23,9 +23,9 @@ export type ImageResponse = {
 
 export type ImageModelSpec = {
   /**
-   * - The model provider code.
+   * - The model provider display name.
    */
-  provider: string;
+  providerDisplayName: string;
   /**
    * - Maximum context length in tokens
    */

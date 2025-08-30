@@ -1,7 +1,7 @@
 import {xai} from "@ai-sdk/xai";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.js";
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 interface Model {
@@ -21,7 +21,11 @@ interface ModelList {
  */
 const providerName = "xAI";
 
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
+export interface XAIModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
+}
+
+export async function init(modelRegistry: ModelRegistry, config: XAIModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for xAI provider.");
   }
@@ -33,12 +37,12 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
   }) as () => Promise<ModelList | null>;
 
 
-  const provider = config.provider || providerName;
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {
-        provider,
+        providerDisplayName: config.providerDisplayName,
         impl: xai(modelId),
         async isAvailable() {
           const modelList = await getModels();
@@ -93,16 +97,13 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
    */
   const imageGenerationModels: Record<string, ImageModelSpec> = {
     "grok-2-image-1212": {
-      provider,
+      providerDisplayName: config.providerDisplayName,
       impl: xai.imageModel("grok-2-image-1212"),
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some((model) => model.id === "grok-2-image-1212");
       },
-      calculateImageCost(usage) {
-        return 0.07; //TODO - this is a placeholder cost, need to figure out how to get the actual cost from the API
-      },
-      costPerMillionInputTokens: 0,
+      costPerImage: 0.07
     },
   };
 

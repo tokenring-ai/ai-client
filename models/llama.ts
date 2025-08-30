@@ -3,8 +3,12 @@ import type {ChatModelSpec} from "../client/AIChatClient.ts";
 /**
  *
  */
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+
+export interface LlamaModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
+}
 
 interface Model {
   id: string;
@@ -23,7 +27,8 @@ interface ModelList {
  */
 const providerName = "Llama";
 
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
+
+export async function init(modelRegistry: ModelRegistry, config: LlamaModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Llama provider.");
   }
@@ -37,17 +42,17 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     },
   ) as () => Promise<ModelList | null>;
 
-  const provider = config.provider || providerName;
+
 
   const openai = createOpenAI({
     apiKey: config.apiKey,
     baseURL: "https://api.llama.com/compat/v1",
   });
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {
-        provider,
+        providerDisplayName: config.providerDisplayName,
         impl: openai(modelId),
         async isAvailable() {
           const modelList = await getModels();

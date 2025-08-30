@@ -1,8 +1,12 @@
 import {createDeepSeek} from "@ai-sdk/deepseek";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+
+export interface DeepSeekModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
+}
 
 interface Model {
   id: string;
@@ -33,7 +37,7 @@ function calculateOffPeak() {
 
 calculateOffPeak();
 
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
+export async function init(modelRegistry: ModelRegistry, config: DeepSeekModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for DeepSeek provider.");
   }
@@ -44,19 +48,19 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
     },
   }) as () => Promise<ModelsListResponse | null>;
 
-  const provider = config.provider || providerName;
+
 
   const deepseekProvider = createDeepSeek({
-    apiKey: config.apiKey,
-    baseURL: config.baseURL,
+    apiKey: config.apiKey
   });
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable">, offPeakAdjustment: {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName">, offPeakAdjustment: {
     costPerMillionInputTokens: number
     costPerMillionOutputTokens: number,
   }): Record<string, ChatModelSpec> {
     return {
       [`${modelId}-peak`]: {
+        providerDisplayName: config.providerDisplayName,
         async isAvailable() {
           if (isOffPeak) return false;
           const modelList = await getModels();
@@ -66,6 +70,7 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
         ...modelSpec,
       },
       [`${modelId}-offpeak`]: {
+        providerDisplayName: config.providerDisplayName,
         async isAvailable() {
           if (!isOffPeak) return false;
           const modelList = await getModels();
@@ -84,7 +89,6 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
    */
   const chatModels: Record<string, ChatModelSpec> = {
     ...generateModelSpec("deepseek-chat", {
-        provider,
         impl: deepseekProvider("deepseek-chat"),
         costPerMillionInputTokens: 0.27,
         costPerMillionOutputTokens: 1.1,
@@ -99,7 +103,6 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
         costPerMillionOutputTokens: 0.55
       }),
     ...generateModelSpec("deepseek-reasoner", {
-      provider,
       impl: deepseekProvider("deepseek-reasoner"),
       costPerMillionInputTokens: 0.55,
       costPerMillionOutputTokens: 2.19,

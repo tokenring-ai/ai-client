@@ -1,6 +1,6 @@
 import {openrouter} from "@openrouter/ai-sdk-provider";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 interface ModelData {
@@ -40,7 +40,8 @@ interface ApiResponse {
   data: ModelData[];
 }
 
-type OpenRouterModelConfig = ModelConfig & {
+export interface OpenRouterModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
   modelFilter?: ModelFilter
 }
 
@@ -61,7 +62,7 @@ function parsePricing(priceString: string | null | undefined): number {
   return Number.isNaN(price) ? 0 : price * 1000000;
 }
 
-async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, config: OpenRouterModelConfig) {
+async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, config: OpenRouterModelProviderConfig) {
   const getModels = cachedDataRetriever("https://openrouter.ai/api/v1/models", {
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
@@ -72,7 +73,7 @@ async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, co
   if (modelsData == null) return;
 
   const isAvailable = async () => true; // Models are available if we got data
-  const provider = config.provider || providerName;
+
   const chatModelsSpec: Record<string, ChatModelSpec> = {};
 
   for (const model of modelsData.data) {
@@ -92,7 +93,7 @@ async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, co
 
     if (isChatModel) {
       chatModelsSpec[model.id] = {
-        provider,
+        providerDisplayName: config.providerDisplayName,
         impl: openrouter(model.id),
         isAvailable,
         contextLength:
@@ -112,11 +113,11 @@ async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, co
   }
 
   if (Object.keys(chatModelsSpec).length > 0) {
-    await modelRegistry.chat.registerAllModelSpecs(chatModelsSpec);
+    modelRegistry.chat.registerAllModelSpecs(chatModelsSpec);
   }
 }
 
-export async function init(modelRegistry: ModelRegistry, config: OpenRouterModelConfig) {
+export async function init(modelRegistry: ModelRegistry, config: OpenRouterModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for OpenRouter provider.");
   }

@@ -1,7 +1,7 @@
 import {createAnthropic} from "@ai-sdk/anthropic";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 interface Model {
@@ -18,12 +18,12 @@ interface ModelsResponse {
   last_id: string;
 }
 
-/**
- * The name of the AI provider.
- */
-const providerName = "Anthropic";
+export interface AnthropicModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
+}
 
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
+
+export async function init(modelRegistry: ModelRegistry, config: AnthropicModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Anthropic provider.");
   }
@@ -36,14 +36,13 @@ export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
   }) as () => Promise<ModelsResponse | null>;
 
   const anthropicProvider = createAnthropic({
-    apiKey: config.apiKey,
-    baseURL: config.baseURL,
+    apiKey: config.apiKey
   });
 
-  function generateModelSpec(modelId: string, anthropicModelId: string, modelSpec: Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, anthropicModelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {
-        provider: providerName,
+        providerDisplayName: config.providerDisplayName,
         impl: anthropicProvider(anthropicModelId),
         async isAvailable() {
           const modelList = await getModels();

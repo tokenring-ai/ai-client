@@ -1,12 +1,9 @@
 import {createFal} from "@ai-sdk/fal";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 
-type FalImageModelData = {
-  id: string;
-  name: string;
-  description?: string;
-  available: boolean;
+export interface FalModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
 }
 
 
@@ -15,20 +12,19 @@ type FalImageModelData = {
  */
 const providerName = "Fal";
 
-export async function init(modelRegistry: ModelRegistry, {apiKey, baseURL, provider}: ModelConfig) {
+export async function init(modelRegistry: ModelRegistry, config: FalModelProviderConfig) {
+  let {apiKey} = config;
   if (!apiKey) {
     throw new Error("No config.apiKey provided for Fal provider.");
   }
-  baseURL ??= "https://fal.run";
 
-  const fal = createFal({apiKey, baseURL});
+  const fal = createFal({apiKey});
 
-  provider ??= providerName;
 
-  function generateImageModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<ImageModelSpec, "isAvailable">, "provider">, "impl">): Record<string, ImageModelSpec> {
+  function generateImageModelSpec(modelId: string, modelSpec: Omit<ImageModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ImageModelSpec> {
     return {
       [modelId]: {
-        provider,
+        providerDisplayName: config.providerDisplayName,
         impl: fal.image(modelId),
         async isAvailable() {
           // For Fal, we'll assume most popular models are available

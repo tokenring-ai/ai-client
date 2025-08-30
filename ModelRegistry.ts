@@ -4,28 +4,16 @@ import AIEmbeddingClient from "./client/AIEmbeddingClient.js";
 import AIImageGenerationClient from "./client/AIImageGenerationClient.js";
 import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
 
-export interface ModelConfig {
+
+export interface ModelProviderInfo {
   /**
    * The display name of the model provider
    */
-  displayName?: string;
-
-  /**
-   * The API Key for the model provider
-   */
-  apiKey?: string;
-  /**
-   * The Base URL for the model provider
-   */
-  baseURL?: string;
-  /**
-   * The model provider
-   */
-  provider: string;
+  providerDisplayName: string;
 }
 
 export type ModelProvider = {
-  init: (registry: ModelRegistry, config: ModelConfig) => Promise<void>;
+  init: (registry: ModelRegistry, config: ModelProviderInfo) => Promise<void>;
 };
 
 export type ModelNameRequirements = {
@@ -44,6 +32,10 @@ export type ChatModelRequirements = {
    * The model provider code, or 'auto' or undefined for any provider
    */
   provider?: string;
+  /**
+   * The model provider code, or 'auto' or undefined for any provider
+   */
+  providerDisplayName?: string;
   /**
    * Maximum context length in tokens the model allows
    */
@@ -95,7 +87,7 @@ export default class ModelRegistry extends Service {
    */
   async initializeModels(
     providers: Record<string, ModelProvider>,
-    config: Record<string, ModelConfig | ModelConfig[]>
+    config: Record<string, ModelProviderInfo | ModelProviderInfo[]>
   ): Promise<void> {
     for (const providerCode in config) {
       const providerConfig = config[providerCode];

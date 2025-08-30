@@ -38,7 +38,7 @@ export type GenerateRequest = {
 } & ChatRequest;
 
 export type ChatModelSpec = {
-  provider: string;
+  providerDisplayName: string;
   contextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens: number;

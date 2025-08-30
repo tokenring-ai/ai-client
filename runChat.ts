@@ -1,6 +1,5 @@
 import ChatService from "@token-ring/chat/ChatService";
 import {Registry} from "@token-ring/registry";
-import {abandon} from "@token-ring/utility/abandon";
 import {z} from "zod";
 import ChatMessageStorage from "./ChatMessageStorage.js";
 import {createChatRequest} from "./chatRequestBuilder/createChatRequest.js";

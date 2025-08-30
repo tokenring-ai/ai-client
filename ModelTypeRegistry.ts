@@ -2,7 +2,7 @@ import {ChatModelRequirements} from "./ModelRegistry.js";
 
 interface ModelSpec {
   name: string,
-  provider: string,
+  providerDisplayName: string,
   isAvailable: () => Promise<boolean>;
   isHot: () => Promise<boolean>;
 }
@@ -130,7 +130,7 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
     for (const model of allModels) {
       // Get provider from the first model spec (they should all have the same provider)
       const provider =
-        (model.modelSpecs[0]?.modelSpec)?.provider ||
+        (model.modelSpecs[0]?.modelSpec)?.providerDisplayName ||
         "unknown";
 
       if (!modelsByProvider[provider]) {

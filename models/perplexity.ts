@@ -1,25 +1,27 @@
 import {perplexity} from "@ai-sdk/perplexity";
 import type {ChatInputMessage, ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 
-import ModelRegistry, {ModelConfig} from "../ModelRegistry.ts";
+import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 
-const providerName = "Perplexity";
+export interface PerplexityModelProviderConfig extends ModelProviderInfo {
+  apiKey: string;
+}
+
+
 
 /**
  * Initializes the Perplexity AI provider and registers its chat models with the model registry.
  *
  */
-export async function init(modelRegistry: ModelRegistry, config: ModelConfig) {
+export async function init(modelRegistry: ModelRegistry, config: PerplexityModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Perplexity provider.");
   }
 
-  const provider = config.provider || providerName;
-
-  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<Omit<Omit<ChatModelSpec, "isAvailable">, "provider">, "impl">, "mangleRequest">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">, "mangleRequest">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {
-        provider,
+        providerDisplayName: config.providerDisplayName,
         impl: perplexity(modelId),
         mangleRequest,
         async isAvailable() {
