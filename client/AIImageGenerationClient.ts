@@ -1,5 +1,4 @@
-import ChatService from "@token-ring/chat/ChatService";
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
 import {
   experimental_generateImage as generateImage,
   type Experimental_GenerateImageResult,
@@ -86,9 +85,8 @@ export default class AIImageGenerationClient {
   /**
    * Generates an image based on a prompt using the specified model.
    */
-  async generateImage(request: ImageRequest, registry: Registry): Promise<[GeneratedFile, Experimental_GenerateImageResult]> {
-    const chatService = registry.requireFirstServiceByType(ChatService);
-    const signal = chatService.getAbortSignal();
+  async generateImage(request: ImageRequest, agent: Agent): Promise<[GeneratedFile, Experimental_GenerateImageResult]> {
+    const signal = agent.getAbortSignal();
 
     try {
       const result = await generateImage({
@@ -100,7 +98,7 @@ export default class AIImageGenerationClient {
 
       return [result.image, result];
     } catch (error) {
-      chatService.errorLine("Error generating image: ", error);
+      agent.errorLine("Error generating image: ", error as Error);
       throw error;
     }
   }

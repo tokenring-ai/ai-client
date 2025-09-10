@@ -1,10 +1,9 @@
-import {abandon} from "@token-ring/utility/abandon";
+import {abandon} from "@tokenring-ai/utility/abandon";
 import {createOllama} from "ollama-ai-provider";
 import {ChatModelSpec} from "../client/AIChatClient.js";
 import {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
 import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
-
 
 
 export type OllamaModelConfigFunction = (modelInfo: OllamaModelTagItem) => ModelConfigResults;
@@ -13,6 +12,7 @@ export interface OllamaModelProviderConfig extends ModelProviderInfo {
   baseURL: string;
   generateModelSpec: OllamaModelConfigFunction;
 }
+
 type ModelConfigResults = {
   type: string;
   capabilities?: any;

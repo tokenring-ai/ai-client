@@ -19,8 +19,6 @@ interface ModelList {
 }
 
 
-
-
 export interface CerebrasModelProviderConfig extends ModelProviderInfo {
   apiKey: string;
 }

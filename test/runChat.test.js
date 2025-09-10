@@ -1,10 +1,10 @@
 import { setTimeout } from "node:timers/promises";
-import ChatService from "@token-ring/chat/ChatService";
-import { Registry } from "@token-ring/registry";
+import Agent from "@tokenring-ai/chat/Agent";
+import { Registry } from "@tokenring-ai/registry";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.ts";
 import ModelRegistry from "../ModelRegistry.ts";
-import { execute as runChat } from "../runChat.ts";
+import { execute as runChat } from "pkg/ai-client/runChat.js";
 
 // Mock AI client for testing
 class MockAIChatClient {
@@ -73,7 +73,7 @@ class MockAIChatClient {
 }
 
 // Mock ChatService that extends real ChatService
-class MockChatService extends ChatService {
+class MockChatService extends Agent {
 	constructor() {
 		super({
 			personas: {

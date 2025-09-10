@@ -27,8 +27,6 @@ type ModelListResponse = {
   data: ModelListData[],
 }
 
-const providerName = "OpenAI Compatible";
-
 export async function init(modelRegistry: ModelRegistry, config: OAICompatibleModelConfig) {
   const {baseURL, apiKey, generateModelSpec} = config;
   if (!baseURL) {
@@ -42,7 +40,7 @@ export async function init(modelRegistry: ModelRegistry, config: OAICompatibleMo
   const embeddingModelSpecs: Record<string, EmbeddingModelSpec> = {};
 
   const openai = createOpenAICompatible({
-    name: providerName,
+    name: config.providerDisplayName,
     baseURL,
     apiKey,
   });
@@ -55,42 +53,44 @@ export async function init(modelRegistry: ModelRegistry, config: OAICompatibleMo
     cacheTime: 60000,
     timeout: 5000,
   }) as () => Promise<ModelListResponse>;
-  //const getRunningModels = cachedDataRetriever(baseURL + '/ps', { cacheTime: 60000, timeout: 1000 });
-  //getRunningModels(); // In background, fetch the list of running models.
 
-  const modelList = await getModelList();
-  if (!modelList?.data) return;
 
-  for (const modelInfo of modelList.data) {
-    const {type, capabilities = {}} = generateModelSpec(modelInfo);
+  getModelList().then(modelList => {
+    if (!modelList?.data) return;
 
-    if (type === "chat") {
-      chatModelSpecs[modelInfo.id] = {
-        providerDisplayName: config.providerDisplayName,
-        name: modelInfo.id,
-        impl: openai.chatModel(modelInfo.id),
-        isAvailable: () => getModelList().then((data) => !!data),
-        isHot: () => Promise.resolve(true),
-        ...capabilities,
-      };
-    } else if (type === "embedding") {
-      embeddingModelSpecs[modelInfo.id] = {
-        providerDisplayName: config.providerDisplayName,
-        contextLength: capabilities.contextLength || 8192,
-        costPerMillionInputTokens: capabilities.costPerMillionInputTokens || 0,
-        impl: openai.textEmbeddingModel(modelInfo.id),
-        isAvailable: () => getModelList().then((data) => !!data),
-        isHot: () => Promise.resolve(true),
-      };
+    for (const modelInfo of modelList.data) {
+      const {type, capabilities = {}} = generateModelSpec(modelInfo);
+
+      if (type === "chat") {
+        chatModelSpecs[modelInfo.id] = {
+          providerDisplayName: config.providerDisplayName,
+          name: modelInfo.id,
+          impl: openai.chatModel(modelInfo.id),
+          isAvailable: () => getModelList().then((data) => !!data),
+          isHot: () => Promise.resolve(true),
+          ...capabilities,
+        };
+      } else if (type === "embedding") {
+        embeddingModelSpecs[modelInfo.id] = {
+          providerDisplayName: config.providerDisplayName,
+          contextLength: capabilities.contextLength || 8192,
+          costPerMillionInputTokens: capabilities.costPerMillionInputTokens || 0,
+          impl: openai.textEmbeddingModel(modelInfo.id),
+          isAvailable: () => getModelList().then((data) => !!data),
+          isHot: () => Promise.resolve(true),
+        };
+      }
     }
-  }
 
-  if (Object.keys(chatModelSpecs).length > 0) {
-    modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
-  }
+    if (Object.keys(chatModelSpecs).length > 0) {
+      modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
+    }
 
-  if (Object.keys(embeddingModelSpecs).length > 0) {
-    modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
-  }
+    if (Object.keys(embeddingModelSpecs).length > 0) {
+      modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
+    }
+  }).catch(e => {
+
+  });
 }
 

@@ -1,5 +1,5 @@
-import ChatService from "@token-ring/chat/ChatService";
-import { Registry } from "@token-ring/registry";
+import Agent from "@tokenring-ai/chat/Agent";
+import { Registry } from "@tokenring-ai/registry";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createChatRequest } from "../chatRequestBuilder/createChatRequest.ts";
 import EphemeralChatMessageStorage from "../EphemeralChatMessageStorage.ts";
@@ -13,7 +13,7 @@ const createMockRegistry = () => {
 	// Add a mock ChatService so persona parameter code does not throw
 	// noinspection JSIgnoredPromiseFromCall
 	registry.services.addServices(
-		new ChatService({
+		new Agent({
 			personas: {
 				writer: {
 					instructions:

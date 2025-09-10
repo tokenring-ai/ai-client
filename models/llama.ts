@@ -43,7 +43,6 @@ export async function init(modelRegistry: ModelRegistry, config: LlamaModelProvi
   ) as () => Promise<ModelList | null>;
 
 
-
   const openai = createOpenAI({
     apiKey: config.apiKey,
     baseURL: "https://api.llama.com/compat/v1",

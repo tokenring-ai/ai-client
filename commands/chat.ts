@@ -1,29 +1,24 @@
-import ChatService from "@token-ring/chat/ChatService";
-import {Registry} from "@token-ring/registry";
-import {ChatInputMessage} from "../client/AIChatClient.js";
-import * as runChat from "../runChat.js";
-import {outputChatAnalytics} from "../util/outputChatAnalytics.js";
+import {Agent} from "@tokenring-ai/agent";
+import {ChatInputMessage} from "../client/AIChatClient.ts";
+import runChat from "../runChat.ts";
+import {outputChatAnalytics} from "../util/outputChatAnalytics.ts";
 
 export const description = "/chat [message] - Send a message to the chat service";
 
-export async function execute(remainder: string, registry: Registry): Promise<void> {
-  const chatService = registry.requireFirstServiceByType(ChatService);
-
+export async function execute(remainder: string, agent: Agent): Promise<void> {
   if (!remainder?.trim()) {
-    chatService.systemLine("Please provide a message to chat with");
+    agent.infoLine("Please provide a message to chat with");
     return;
   }
 
   const currentInput: ChatInputMessage[] = [{role: "user", content: remainder}];
-  const [_output, response] = await runChat.execute(
+  const [_output, response] = await runChat(
     {
       input: currentInput,
-      systemPrompt: chatService.getInstructions(),
-      model: chatService.getModel(),
     },
-    registry,
+    agent
   );
-  outputChatAnalytics(response, chatService);
+  outputChatAnalytics(response, agent);
 }
 
 // noinspection JSUnusedGlobalSymbols

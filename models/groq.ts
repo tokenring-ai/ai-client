@@ -42,7 +42,6 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
   ) as () => Promise<ModelList | null>;
 
 
-
   function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {

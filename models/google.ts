@@ -15,7 +15,6 @@ interface ModelList {
 }
 
 
-
 export interface GoogleModelProviderConfig extends ModelProviderInfo {
   apiKey: string;
 }

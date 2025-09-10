@@ -1,4 +1,4 @@
-import {Service} from "@token-ring/registry";
+import {TokenRingService} from "@tokenring-ai/agent/types";
 import AIChatClient from "./client/AIChatClient.js";
 import AIEmbeddingClient from "./client/AIEmbeddingClient.js";
 import AIImageGenerationClient from "./client/AIImageGenerationClient.js";
@@ -70,7 +70,7 @@ export type ChatModelRequirements = {
  * Class for automatically routing chat requests to the most appropriate model
  * based on specific requirements
  */
-export default class ModelRegistry extends Service {
+export default class ModelRegistry implements TokenRingService {
   name = "ModelRegistry";
   description = "Provides a registry of AI Models";
 

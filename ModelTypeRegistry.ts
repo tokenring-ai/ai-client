@@ -55,7 +55,7 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
       } catch (_error) {
         /* empty */
       }
-    }, 0);
+    }, 0).unref();
   }
 
   /**

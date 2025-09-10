@@ -37,8 +37,6 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
   }) as () => Promise<ModelList | null>;
 
 
-
-
   function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
     return {
       [modelId]: {
@@ -59,10 +57,20 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
    * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
    */
   const chatModels: Record<string, ChatModelSpec> = {
+    ...generateModelSpec("grok-code-fast-1", {
+      costPerMillionInputTokens: 0.2,
+      costPerMillionCachedInputTokens: 0.02,
+      costPerMillionOutputTokens: 1.5,
+      reasoningText: 5,
+      intelligence: 5,
+      tools: 5,
+      speed: 6,
+      contextLength: 256000,
+    }),
     ...generateModelSpec("grok-3", {
       costPerMillionInputTokens: 3,
       costPerMillionOutputTokens: 15.0,
-      reasoningText: 5,
+      reasoningText: 0,
       intelligence: 5,
       tools: 5,
       speed: 2,

@@ -32,7 +32,7 @@ function calculateOffPeak() {
   const minutes = now.getUTCMinutes();
 
   isOffPeak = (hours > 16 && minutes < 30) || (hours === 0 && minutes < 20);
-  setTimeout(calculateOffPeak, 300000);
+  setTimeout(calculateOffPeak, 300000).unref();
 }
 
 calculateOffPeak();
@@ -47,7 +47,6 @@ export async function init(modelRegistry: ModelRegistry, config: DeepSeekModelPr
       Authorization: `Bearer ${config.apiKey}`,
     },
   }) as () => Promise<ModelsListResponse | null>;
-
 
 
   const deepseekProvider = createDeepSeek({

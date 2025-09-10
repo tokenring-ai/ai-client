@@ -1,7 +1,7 @@
-import ChatService from "@token-ring/chat/ChatService";
+import Agent from "@tokenring-ai/agent/Agent";
 import {AIResponse} from "../client/AIChatClient.js";
 
-export function outputChatAnalytics(response: AIResponse, chatService: ChatService, pkgName: string = "Chat Complete") {
+export function outputChatAnalytics(response: AIResponse, agent: Agent, pkgName: string = "Chat Complete") {
   const {inputTokens, cachedInputTokens, outputTokens, reasoningTokens, totalTokens} = response.usage;
 
   const usage = [
@@ -10,7 +10,7 @@ export function outputChatAnalytics(response: AIResponse, chatService: ChatServi
     `Total: ${totalTokens}`
   ];
 
-  chatService.systemLine(`[${pkgName}] ${usage.join(', ')}`)
+  agent.infoLine(`[${pkgName}] ${usage.join(', ')}`)
 
   const {input, cachedInput, output, reasoning, total} = response.cost;
   if (total) {
@@ -21,7 +21,7 @@ export function outputChatAnalytics(response: AIResponse, chatService: ChatServi
     ];
 
 
-    chatService.systemLine(`[${pkgName}] ${cost.join(', ')}`)
+    agent.infoLine(`[${pkgName}] ${cost.join(', ')}`)
   }
 
   const {elapsedMs, tokensPerSec} = response.timing;
@@ -29,7 +29,7 @@ export function outputChatAnalytics(response: AIResponse, chatService: ChatServi
   const seconds = (elapsedMs / 1000).toFixed(2);
   const tps = tokensPerSec ? tokensPerSec.toFixed(2) : "N/A";
 
-  chatService.systemLine(
+  agent.infoLine(
     `[${pkgName}] Time: ${seconds}s, Throughput: ${tps} tokens/sec`,
   );
 }

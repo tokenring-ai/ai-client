@@ -1,6 +1,6 @@
-# @token-ring/ai-client
+# @tokenring-ai/ai-client
 
-The `@token-ring/ai-client` module provides essential services for managing AI model interactions, storing chat
+The `@tokenring-ai/ai-client` module provides essential services for managing AI model interactions, storing chat
 messages, constructing chat requests, and offering command-line utilities for chat operations within the Token Ring
 ecosystem.
 
@@ -10,10 +10,10 @@ As part of the Token Ring monorepo, this package is typically used as a local de
 independently:
 
 ```bash
-npm install @token-ring/ai-client
+npm install @tokenring-ai/ai-client
 ```
 
-Ensure that its peer dependencies (like `@token-ring/registry`, `@token-ring/chat`) are also available in your project.
+Ensure that its peer dependencies (like `@tokenring-ai/registry`, `@tokenring-ai/chat`) are also available in your project.
 
 ## Core Components
 
@@ -59,8 +59,8 @@ the specifics of each type, including model registration, feature-based filterin
 **Initialization:**
 
 ```javascript
-import {ModelRegistry} from '@token-ring/ai-client';
-import * as providers from '@token-ring/ai-client/models';
+import {ModelRegistry} from '@tokenring-ai/ai-client';
+import * as providers from '@tokenring-ai/ai-client/models';
 
 const modelRegistry = new ModelRegistry();
 
@@ -154,7 +154,7 @@ process terminates.
 **Usage:**
 
 ```javascript
-import {EphemeralChatMessageStorage} from '@token-ring/ai-client';
+import {EphemeralChatMessageStorage} from '@tokenring-ai/ai-client';
 
 const storage = new EphemeralChatMessageStorage();
 
@@ -191,7 +191,7 @@ conversation history, system prompts, memories, tools, and persona parameters.
 **Usage:**
 
 ```javascript
-import {createChatRequest, EphemeralChatMessageStorage} from '@token-ring/ai-client';
+import {createChatRequest, EphemeralChatMessageStorage} from '@tokenring-ai/ai-client';
 
 const registry = new TokenRingRegistry();
 registry.register(EphemeralChatMessageStorage);
@@ -215,7 +215,7 @@ a single operation.
 **Usage:**
 
 ```javascript
-import {runChat} from '@token-ring/ai-client';
+import {runChat} from '@tokenring-ai/ai-client';
 
 const [responseText, response] = await runChat({
  input: "Explain quantum computing",
@@ -250,7 +250,7 @@ Command-line utilities for interactive chat operations. These are designed for C
 **Usage Example:**
 
 ```javascript
-import {chatCommands} from '@token-ring/ai-client';
+import {chatCommands} from '@tokenring-ai/ai-client';
 
 // In a CLI context
 await chatCommands.model.execute('', registry); // Show model selection

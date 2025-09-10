@@ -39,7 +39,6 @@ export async function init(modelRegistry: ModelRegistry, config: AzureModelProvi
   }) as () => Promise<DeploymentList | null>;
 
 
-
   const azureProvider = createAzure({
     apiKey: config.apiKey,
     baseURL: config.baseURL,

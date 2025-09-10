@@ -1,6 +1,5 @@
 import {LanguageModelV2CallWarning, LanguageModelV2Source, LanguageModelV2Usage} from "@ai-sdk/provider";
-import ChatService from "@token-ring/chat/ChatService";
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
 
 import {
   AssistantModelMessage,
@@ -150,9 +149,8 @@ export default class AIChatClient {
    * Streams a chat completion via `streamText`, relaying every delta
    * back to the `ChatService`.
    */
-  async streamChat(request: ChatRequest, registry: Registry): Promise<[string | undefined, AIResponse]> {
-    const chatService = registry.requireFirstServiceByType(ChatService);
-    const signal = chatService.getAbortSignal();
+  async streamChat(request: ChatRequest, agent: Agent): Promise<[string | undefined, AIResponse]> {
+    const signal = agent.getAbortSignal();
 
     if (this.modelSpec.mangleRequest) {
       request = {...request};
@@ -162,7 +160,7 @@ export default class AIChatClient {
     const isHot = this.modelSpec.isHot ? await this.modelSpec.isHot() : true;
 
     if (!isHot) {
-      chatService.systemLine(
+      agent.infoLine(
         "Model is not hot and will need to be cold started. Setting retries to 15...",
       );
     }
@@ -182,30 +180,18 @@ export default class AIChatClient {
     for await (const part of stream) {
       switch (part.type) {
         case 'text-delta': {
-          if (mode !== "text") {
-            chatService.out("\n");
-            chatService.emit("outputType", "chat");
-            mode = "text";
-          }
-
-          chatService.out(part.text);
+          agent.chatOutput(part.text);
           break;
         }
         case "reasoning-delta": {
-          if (mode !== "reasoning") {
-            chatService.emit("outputType", "reasoning");
-            mode = "reasoning";
-          }
-          chatService.out(part.text);
+          agent.reasoningOutput(part.text);
           break;
         }
         case "finish": {
-          chatService.out("\n");
-          chatService.emit("outputType", null);
+          agent.chatOutput("\n");
           break;
         }
         case "error": {
-          chatService.emit("outputType", null);
           throw new Error(part.error as any ?? "Unknown error");
         }
       }
@@ -221,14 +207,13 @@ export default class AIChatClient {
   /**
    * Sends a chat completion request and returns the full text response.
    */
-  async textChat(request: ChatRequest, registry: Registry): Promise<[string, AIResponse]> {
+  async textChat(request: ChatRequest, agent: Agent): Promise<[string, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
       request = {...request};
       this.modelSpec.mangleRequest(request);
     }
 
-    const chatService = registry.requireFirstServiceByType(ChatService);
-    const signal = chatService.getAbortSignal();
+    const signal = agent.getAbortSignal();
 
     const start = Date.now();
     const result = await generateText({
@@ -245,14 +230,13 @@ export default class AIChatClient {
   /**
    * Sends a chat completion request and returns the generated object response.
    */
-  async generateObject(request: GenerateRequest, registry: Registry): Promise<[any, AIResponse]> {
+  async generateObject(request: GenerateRequest, agent: Agent): Promise<[any, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
       request = {...request};
       this.modelSpec.mangleRequest(request);
     }
 
-    const chatService = registry.requireFirstServiceByType(ChatService);
-    const signal = chatService.getAbortSignal();
+    const signal = agent.getAbortSignal();
 
     const start = Date.now();
     const result = await generateObject({

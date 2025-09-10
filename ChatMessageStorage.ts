@@ -1,4 +1,4 @@
-import {Service} from "@token-ring/registry";
+import {TokenRingService} from "@tokenring-ai/agent/types";
 import {AIResponse, ChatRequest} from "./client/AIChatClient.js";
 
 export interface StoredChatSession {
@@ -32,7 +32,10 @@ export interface StoredChatMessage {
  * Provides the interface for storing and retrieving chat messages and sessions.
  *
  */
-export default abstract class ChatMessageStorage extends Service {
+export default abstract class ChatMessageStorage implements TokenRingService {
+  name = "ChatMessageStorage";
+  description = "Abstract base class for chat message storage implementations";
+
   /** The current session data */
   session: Record<string, unknown> | null = null;
 

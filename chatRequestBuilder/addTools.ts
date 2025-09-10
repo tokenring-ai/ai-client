@@ -1,39 +1,36 @@
-import {ChatService} from "@token-ring/chat";
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
 import {Tool, tool as aiTool} from "ai";
 import async from "async";
 import {ChatRequest} from "../client/AIChatClient.js";
 
 /**
  * Builds the AI SDK `tools` object by iterating over the active tool
- * tools registered in the current registry.
+ * tools registered in the current agent.
  */
-export async function addTools(request: ChatRequest, registry: Registry): Promise<void> {
+export async function addTools(request: ChatRequest, agent: Agent): Promise<void> {
+  const activeTools = Object.values(agent.tools.getActiveItemEntries());
+
   for (const {
     name,
     description,
     execute,
     inputSchema
-  } of registry.tools.iterateActiveTools()) {
-    if (typeof execute !== "function") {
-      throw new Error(`Tool '${name}' is missing an execute function`);
-    }
+  } of activeTools) {
     const options: Tool = {
       description,
       inputSchema,
       execute: async (args: Record<string, any>, _meta: any) => {
-        const chatService = registry.requireFirstServiceByType(ChatService);
 
         const executeToolFunction = async (): Promise<string> => {
           try {
-            chatService.systemLine(`Calling tool ${name}`);
-            const value = await execute(args, registry);
+            agent.infoLine(`Calling tool ${name}`);
+            const value = await execute(args, agent);
             return typeof value === 'string'
               ? value
               : JSON.stringify(value, null, 1)
               ;
           } catch (err: any) {
-            chatService.errorLine(
+            agent.errorLine(
               `Error calling tool ${name}(${JSON.stringify(args)}): ${err}`,
             );
             return `Error calling tool: ${err.message || err}. Please check your tool call for correctness and retry the function call.`;

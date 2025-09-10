@@ -1,12 +1,25 @@
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
 import {stepCountIs} from "ai";
 import ChatMessageStorage from "../ChatMessageStorage.js";
 import {ChatInputMessage, ChatRequest} from "../client/AIChatClient.js";
 import {addAttentionItems} from "./addAttentionItems.js";
 import {addMemories} from "./addMemories.js";
-import {addPersonaParameters} from "./addPersonaParameters.js";
 import {addTools} from "./addTools.js";
 
+export interface ChatRequestConfig {
+  input: string | ChatInputMessage | ChatInputMessage[];
+  systemPrompt: string | ChatInputMessage;
+  includeMemories?: boolean;
+  includeTools?: boolean;
+  includePriorMessages?: boolean;
+  maxSteps?: number;
+  temperature?: number;
+  topP?: number;
+  topK?: number;
+  stopSequences?: string[];
+  presencePenalty?: number;
+  frequencyPenalty?: number;
+}
 
 /**
  * Creates a chat request object.
@@ -25,21 +38,8 @@ export async function createChatRequest(
     stopSequences,
     presencePenalty,
     frequencyPenalty,
-  }: {
-    input: string | ChatInputMessage | ChatInputMessage[];
-    systemPrompt?: string | ChatInputMessage;
-    includeMemories?: boolean;
-    includeTools?: boolean;
-    includePriorMessages?: boolean;
-    maxSteps?: number;
-    temperature?: number;
-    topP?: number;
-    topK?: number;
-    stopSequences?: string[];
-    presencePenalty?: number;
-    frequencyPenalty?: number;
-  },
-  registry: Registry
+  }: ChatRequestConfig,
+  agent: Agent
 ): Promise<ChatRequest> {
   let processedInput: ChatInputMessage[];
 
@@ -72,7 +72,7 @@ export async function createChatRequest(
     processedSystemPrompt = systemPrompt;
   }
 
-  const chatMessageStorage = registry.requireFirstServiceByType(
+  const chatMessageStorage = agent.requireFirstServiceByType(
     ChatMessageStorage as unknown as new () => ChatMessageStorage
   );
 
@@ -94,7 +94,7 @@ export async function createChatRequest(
     messages.push(...previousRequestMessages, ...previousResponseMessages);
   } else {
     if (includeMemories) {
-      await addMemories(messages, registry);
+      await addMemories(messages, agent);
     }
   }
 
@@ -102,7 +102,7 @@ export async function createChatRequest(
 
   if (includeMemories && !includePriorMessages) {
     const lastMessage = messages.pop();
-    await addAttentionItems(messages, registry);
+    await addAttentionItems(messages, agent);
     if (lastMessage) {
       messages.push(lastMessage);
     }
@@ -122,10 +122,8 @@ export async function createChatRequest(
     frequencyPenalty,
   };
 
-  addPersonaParameters(request, registry);
-
   if (includeTools) {
-    await addTools(request, registry);
+    await addTools(request, agent);
   }
 
   return request;

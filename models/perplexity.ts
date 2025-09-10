@@ -8,9 +8,8 @@ export interface PerplexityModelProviderConfig extends ModelProviderInfo {
 }
 
 
-
 /**
- * Initializes the Perplexity AI provider and registers its chat models with the model registry.
+ * Initializes the Perplexity AI provider and registers its chat models with the model agent.
  *
  */
 export async function init(modelRegistry: ModelRegistry, config: PerplexityModelProviderConfig) {

@@ -1,12 +1,6 @@
-import {HumanInterfaceService} from "@token-ring/chat";
-import ChatService from "@token-ring/chat/ChatService";
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
+import AIService from "../AIService.js";
 import ModelRegistry from "../ModelRegistry.ts";
-
-interface ModelInfo {
-  name: string;
-  status: string;
-}
 
 interface TreeNode {
   name: string;
@@ -18,25 +12,22 @@ interface TreeNode {
 export const description: string =
   "/model [model_name] - Set or show the target model for chat";
 
-export async function execute(remainder: string, registry: Registry): Promise<void> {
-  const chatService = registry.requireFirstServiceByType(ChatService);
-  const humanInterfaceService = registry.getFirstServiceByType(
-    HumanInterfaceService,
-  );
-  const modelRegistry = registry.requireFirstServiceByType(ModelRegistry);
+export async function execute(remainder: string, agent: Agent): Promise<void> {
+  const modelRegistry = agent.requireFirstServiceByType(ModelRegistry);
+  const aiService = agent.requireFirstServiceByType(AIService);
+
+  const aiConfig = aiService.getAIConfig(agent);
 
   // Handle direct model name input, e.g. /model gpt-4
   const directModelName = remainder?.trim();
   if (directModelName) {
-    chatService.setModel(directModelName);
-    chatService.systemLine(`Model set to ${directModelName}`);
+    aiService.setModel(directModelName, agent);
+    agent.infoLine(`Model set to ${directModelName}`);
     return;
   }
 
   // If no remainder provided, show interactive tree selection grouped by provider
-  chatService.emit("waiting", "Checking online status of models...");
-  const modelsByProvider: Record<string, ModelInfo[]> = await modelRegistry.chat.getModelsByProvider();
-  chatService.emit("doneWaiting", null);
+  const modelsByProvider = await agent.busyWhile("Checking online status of models...", modelRegistry.chat.getModelsByProvider());
 
   // Build tree structure for model selection
   const buildModelTree = (): TreeNode => {
@@ -92,23 +83,20 @@ export async function execute(remainder: string, registry: Registry): Promise<vo
 
   // Interactive tree selection if no model name is provided in the command
   try {
-    if (!humanInterfaceService) {
-      chatService.errorLine("No HumanInterfaceService found, cannot select model.");
-      return;
-    }
-    const selectedModel = await humanInterfaceService.askForSingleTreeSelection({
-      message: `Current model: ${chatService.getModel() ?? "auto"}. Choose a new model:`,
+    const selectedModel = await agent.askHuman({
+      type: "askForSingleTreeSelection",
+      message: `Current model: ${aiConfig.model}. Choose a new model:`,
       tree: buildModelTree()
     });
 
     if (selectedModel) {
-      chatService.setModel(selectedModel);
-      chatService.systemLine(`Model set to ${selectedModel}`);
+      aiService.setModel(selectedModel, agent);
+      agent.infoLine(`Model set to ${selectedModel}`);
     } else {
-      chatService.systemLine("Model selection cancelled. No changes made.");
+      agent.infoLine("Model selection cancelled. No changes made.");
     }
   } catch (error) {
-    chatService.errorLine(`Error during model selection:`, error);
+    agent.errorLine(`Error during model selection:`, error as Error);
   }
 }
 

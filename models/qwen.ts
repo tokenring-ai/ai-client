@@ -20,7 +20,6 @@ export interface QwenModelProviderConfig extends ModelProviderInfo {
 }
 
 
-
 export async function init(modelRegistry: ModelRegistry, config: QwenModelProviderConfig) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Qwen provider.");
