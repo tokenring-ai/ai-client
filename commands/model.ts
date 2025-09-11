@@ -16,12 +16,12 @@ export async function execute(remainder: string, agent: Agent): Promise<void> {
   const modelRegistry = agent.requireFirstServiceByType(ModelRegistry);
   const aiService = agent.requireFirstServiceByType(AIService);
 
-  const aiConfig = aiService.getAIConfig(agent);
+  const model = aiService.getModel();
 
   // Handle direct model name input, e.g. /model gpt-4
   const directModelName = remainder?.trim();
   if (directModelName) {
-    aiService.setModel(directModelName, agent);
+    aiService.setModel(directModelName);
     agent.infoLine(`Model set to ${directModelName}`);
     return;
   }
@@ -85,12 +85,12 @@ export async function execute(remainder: string, agent: Agent): Promise<void> {
   try {
     const selectedModel = await agent.askHuman({
       type: "askForSingleTreeSelection",
-      message: `Current model: ${aiConfig.model}. Choose a new model:`,
+      message: `Current model: ${model}. Choose a new model:`,
       tree: buildModelTree()
     });
 
     if (selectedModel) {
-      aiService.setModel(selectedModel, agent);
+      aiService.setModel(selectedModel);
       agent.infoLine(`Model set to ${selectedModel}`);
     } else {
       agent.infoLine("Model selection cancelled. No changes made.");

@@ -20,7 +20,8 @@ export default async function runChat(
 
   const currentMessage = chatMessageStorage.getCurrentMessage();
 
-  const {model, ...defaultRequestOptions} = aiService.getAIConfig(agent);
+  const defaultRequestOptions = aiService.getAIConfig(agent);
+  const model = aiService.getModel();
 
 
   const request = await createChatRequest({...defaultRequestOptions, ...requestOptions}, agent);

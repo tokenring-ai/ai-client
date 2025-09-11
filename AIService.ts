@@ -4,8 +4,8 @@ import {TokenRingService} from "@tokenring-ai/agent/types";
 
 
 export type AIConfig = {
-  model: string;
   systemPrompt: string;
+  forceModel?: string;
   temperature?: number;
   maxTokens?: number;
   topP?: number;
@@ -30,9 +30,18 @@ class AIServiceState implements AgentStateSlice {
   }
 }
 
+export type AIServiceOptions = {
+  model: string;
+}
+
 export default class AIService implements TokenRingService {
   name = "AIService";
   description = "A service for managing AI configuration";
+  model: string;
+
+  constructor(options: AIServiceOptions) {
+    this.model = options.model;
+  }
 
   async attach(agent: Agent): Promise<void> {
     agent.initializeState(AIServiceState, agent.options.ai);
@@ -41,10 +50,11 @@ export default class AIService implements TokenRingService {
   /**
    * Set model for the current persona or global model
    */
-  setModel(model: string, agent: Agent): void {
-    agent.mutateState(AIServiceState, (state) => {
-      state.currentConfig.model = model;
-    })
+  setModel(model: string): void {
+    this.model = model;
+  }
+  getModel(): string {
+    return this.model;
   }
 
   getAIConfig(agent: Agent): AIConfig {
