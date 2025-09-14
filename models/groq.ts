@@ -143,7 +143,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 4,
       tools: 3,
     }),
-    ...generateModelSpec("moonshotai/kimi-k2-instruct", {
+    ...generateModelSpec("moonshotai/kimi-k2-instruct-0905", {
       contextLength: 131072,
       maxCompletionTokens: 16384,
       costPerMillionInputTokens: 1,

@@ -224,7 +224,7 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    return [response.text as string, response];
+    return [response.text ?? "", response];
   }
 
   /**

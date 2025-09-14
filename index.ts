@@ -10,7 +10,5 @@ export const packageInfo: TokenRingPackage = {
   chatCommands: chatCommands,
 };
 
-export {default as ChatMessageStorage} from "./ChatMessageStorage.ts";
 export {createChatRequest} from "./chatRequestBuilder/createChatRequest.ts";
-export {default as EphemeralChatMessageStorage} from "./EphemeralChatMessageStorage.ts";
 export {default as ModelRegistry} from "./ModelRegistry.ts";

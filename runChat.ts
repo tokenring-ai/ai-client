@@ -1,6 +1,5 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import AIService from "./AIService.js";
-import ChatMessageStorage from "./ChatMessageStorage.ts";
 import {ChatRequestConfig, createChatRequest} from "./chatRequestBuilder/createChatRequest.ts";
 import {AIResponse} from "./client/AIChatClient.ts";
 import ModelRegistry from "./ModelRegistry.js";
@@ -13,12 +12,11 @@ export default async function runChat(
   requestOptions: Omit<ChatRequestConfig, "systemPrompt"> & { systemPrompt?: ChatRequestConfig["systemPrompt"] },
   agent: Agent
 ): Promise<[string, AIResponse]> {
-  const chatMessageStorage = agent.requireFirstServiceByType(ChatMessageStorage);
   const modelRegistry = agent.requireFirstServiceByType<ModelRegistry>(ModelRegistry);
   const aiService = agent.requireFirstServiceByType(AIService);
 
 
-  const currentMessage = chatMessageStorage.getCurrentMessage();
+  const currentMessage = aiService.getCurrentMessage(agent);
 
   const defaultRequestOptions = aiService.getAIConfig(agent);
   const model = aiService.getModel();
@@ -41,15 +39,14 @@ export default async function runChat(
       client.streamChat(request, agent)
     );
 
-    // Store the response object (now returned by streamChat)
-    const chatMessage = await chatMessageStorage.storeChat(
-      currentMessage,
-      request,
-      response
-    );
 
     // Update the current message to follow up to the previous
-    chatMessageStorage.setCurrentMessage(chatMessage);
+    aiService.pushChatMessage({
+      request,
+      response,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }, agent);
 
     const finalOutput: string = output ?? "";
 

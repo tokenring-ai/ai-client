@@ -1,6 +1,6 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {stepCountIs} from "ai";
-import ChatMessageStorage from "../ChatMessageStorage.js";
+import AIService from "../AIService.js";
 import {ChatInputMessage, ChatRequest} from "../client/AIChatClient.js";
 import {addAttentionItems} from "./addAttentionItems.js";
 import {addMemories} from "./addMemories.js";
@@ -72,11 +72,9 @@ export async function createChatRequest(
     processedSystemPrompt = systemPrompt;
   }
 
-  const chatMessageStorage = agent.requireFirstServiceByType(
-    ChatMessageStorage as unknown as new () => ChatMessageStorage
-  );
+  const aiService = agent.requireFirstServiceByType(AIService)
 
-  const previousMessage = chatMessageStorage.getCurrentMessage();
+  const previousMessage = aiService.getCurrentMessage(agent);
 
   const messages: ChatInputMessage[] = [];
   if (processedSystemPrompt) {
