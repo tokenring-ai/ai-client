@@ -1,5 +1,5 @@
 import {abandon} from "@tokenring-ai/utility/abandon";
-import {createOllama} from "ollama-ai-provider";
+import {createOllama} from "ollama-ai-provider-v2";
 import {ChatModelSpec} from "../client/AIChatClient.js";
 import {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
 import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
@@ -91,7 +91,6 @@ export async function init(modelRegistry: ModelRegistry, config: OllamaModelProv
     if (type === "chat") {
       chatModelSpecs[modelInfo.model] = {
         providerDisplayName: config.providerDisplayName,
-        name: modelInfo.model,
         impl: ollama.chat(modelInfo.model),
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () =>
@@ -104,8 +103,9 @@ export async function init(modelRegistry: ModelRegistry, config: OllamaModelProv
     } else if (type === "embedding") {
       embeddingModelSpecs[modelInfo.model] = {
         providerDisplayName: config.providerDisplayName,
-        name: modelInfo.model,
         impl: ollama.embedding(modelInfo.model),
+        contextLength: 2048,
+        costPerMillionInputTokens: 0,
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () =>
           capabilities.alwaysHot ||
