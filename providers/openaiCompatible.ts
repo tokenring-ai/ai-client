@@ -28,12 +28,12 @@ type ModelListResponse = {
 }
 
 export async function init(modelRegistry: ModelRegistry, config: OAICompatibleModelConfig) {
-  const {baseURL, apiKey, generateModelSpec} = config;
+  const {baseURL, apiKey, generateModelSpec, providerDisplayName} = config;
   if (!baseURL) {
-    throw new Error("No config.baseURL provided for VLLM provider.");
+    throw new Error(`No config.baseURL provided for ${providerDisplayName} provider.`);
   }
   if (!generateModelSpec) {
-    throw new Error("No config.generateModelSpec provided for VLLM provider.");
+    throw new Error(`No config.generateModelSpec provided for ${providerDisplayName} provider.`);
   }
 
   const chatModelSpecs: Record<string, ChatModelSpec> = {};

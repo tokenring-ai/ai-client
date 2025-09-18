@@ -16,9 +16,6 @@ export default async function runChat(
   const modelRegistry = agent.requireFirstServiceByType<ModelRegistry>(ModelRegistry);
   const aiService = agent.requireFirstServiceByType(AIService);
 
-
-  const currentMessage = aiService.getCurrentMessage(agent);
-
   const defaultRequestOptions = aiService.getAIConfig(agent);
   const model = aiService.getModel();
 

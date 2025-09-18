@@ -1,33 +1,31 @@
 import {ModelRegistry} from "./index.js";
-import {AnthropicModelProviderConfig} from "./models/anthropic.js";
+import {AnthropicModelProviderConfig} from "./providers/anthropic.js";
 
-import * as anthropic from "./models/anthropic.ts";
-import {AzureModelProviderConfig} from "./models/azure.js";
-import * as azure from "./models/azure.ts";
-import {CerebrasModelProviderConfig} from "./models/cerebras.js";
-import * as cerebras from "./models/cerebras.ts";
-import {DeepSeekModelProviderConfig} from "./models/deepseek.js";
-import * as deepseek from "./models/deepseek.ts";
-import {FalModelProviderConfig} from "./models/fal.js";
-import * as fal from "./models/fal.ts";
-import {GoogleModelProviderConfig} from "./models/google.js";
-import * as google from "./models/google.ts";
-import {GroqModelProviderConfig} from "./models/groq.js";
-import * as groq from "./models/groq.ts";
-//import {OllamaModelProviderConfig} from "./models/ollama.js";
-import {OpenAIModelProviderConfig} from "./models/openai.js";
-//import * as ollama from "./models/ollama.ts"; // Currently not supported by AI SDK V5
-import * as openai from "./models/openai.ts";
-import {OAICompatibleModelConfig} from "./models/openaiCompatible.js";
-//import * as qwen from "./models/qwen.ts"; // Currently not supported by AI SDK V5
-import * as openaiCompatible from "./models/openaiCompatible.ts";
-import {OpenRouterModelProviderConfig} from "./models/openrouter.js";
-import * as openrouter from "./models/openrouter.ts";
-import {PerplexityModelProviderConfig} from "./models/perplexity.js";
-import * as perplexity from "./models/perplexity.ts";
-//import {QwenModelProviderConfig} from "./models/qwen.js";
-import {XAIModelProviderConfig} from "./models/xai.js";
-import * as xai from "./models/xai.ts";
+import * as anthropic from "./providers/anthropic.ts";
+import {AzureModelProviderConfig} from "./providers/azure.js";
+import * as azure from "./providers/azure.ts";
+import {CerebrasModelProviderConfig} from "./providers/cerebras.js";
+import * as cerebras from "./providers/cerebras.ts";
+import {DeepSeekModelProviderConfig} from "./providers/deepseek.js";
+import * as deepseek from "./providers/deepseek.ts";
+import {FalModelProviderConfig} from "./providers/fal.js";
+import * as fal from "./providers/fal.ts";
+import {GoogleModelProviderConfig} from "./providers/google.js";
+import * as google from "./providers/google.ts";
+import {GroqModelProviderConfig} from "./providers/groq.js";
+import * as groq from "./providers/groq.ts";
+import {OllamaModelProviderConfig} from "./providers/ollama.js";
+import * as ollama from "./providers/ollama.ts";
+import {OpenAIModelProviderConfig} from "./providers/openai.js";
+import * as openai from "./providers/openai.ts";
+import {OAICompatibleModelConfig} from "./providers/openaiCompatible.js";
+import * as openaiCompatible from "./providers/openaiCompatible.ts";
+import {OpenRouterModelProviderConfig} from "./providers/openrouter.js";
+import * as openrouter from "./providers/openrouter.ts";
+import {PerplexityModelProviderConfig} from "./providers/perplexity.js";
+import * as perplexity from "./providers/perplexity.ts";
+import {XAIModelProviderConfig} from "./providers/xai.js";
+import * as xai from "./providers/xai.ts";
 
 export type ModelProviderConfig =
   | Omit<AnthropicModelProviderConfig, "providerDisplayName"> & { provider: "anthropic" }
@@ -36,13 +34,12 @@ export type ModelProviderConfig =
   | Omit<FalModelProviderConfig, "providerDisplayName"> & { provider: "fal" }
   | Omit<GoogleModelProviderConfig, "providerDisplayName"> & { provider: "google" }
   | Omit<GroqModelProviderConfig, "providerDisplayName"> & { provider: "groq" }
-  //| Omit<OllamaModelProviderConfig, "providerDisplayName"> & { provider: "ollama" }
+  | Omit<OllamaModelProviderConfig, "providerDisplayName"> & { provider: "ollama" }
   | Omit<OpenAIModelProviderConfig, "providerDisplayName"> & { provider: "openai" }
   | Omit<OpenRouterModelProviderConfig, "providerDisplayName"> & { provider: "openrouter" }
   | Omit<PerplexityModelProviderConfig, "providerDisplayName"> & { provider: "perplexity" }
   | Omit<AzureModelProviderConfig, "providerDisplayName"> & { provider: "azure" }
   | Omit<OAICompatibleModelConfig, "providerDisplayName"> & { provider: "openaiCompatible" }
-  //| Omit<QwenModelProviderConfig>, "providerDisplayName"> & { provider: "qwen" }
   | Omit<XAIModelProviderConfig, "providerDisplayName"> & { provider: "xai" };
 
 /**
@@ -71,25 +68,18 @@ export async function registerModels(config: Record<string, ModelProviderConfig>
       case "groq":
         await groq.init(modelRegistry, {providerDisplayName, ...providerConfig});
         break;
-      /*case "ollama":
+      case "ollama":
         await ollama.init(modelRegistry, { providerDisplayName, ...providerConfig});
-        break;*/
+        break;
       case "openai":
         await openai.init(modelRegistry, {providerDisplayName, ...providerConfig});
         break;
       case "openrouter":
         await openrouter.init(modelRegistry, {providerDisplayName, ...providerConfig});
         break;
-      /*case "llama":
-        await llama.init(modelRegistry, { providerDisplayName, ...providerConfig});
-        break;
-       */
       case "perplexity":
         await perplexity.init(modelRegistry, {providerDisplayName, ...providerConfig});
         break;
-      /*case "qwen":
-        await qwen.init(modelRegistry, { providerDisplayName, ...providerConfig});
-        break;*/
       case "azure":
         await azure.init(modelRegistry, {providerDisplayName, ...providerConfig});
         break;
