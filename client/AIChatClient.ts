@@ -286,4 +286,8 @@ export default class AIChatClient {
       providerMetadata: await result.providerMetadata,
     };
   }
+
+  getModelSpec() : ChatModelSpec {
+    return this.modelSpec;
+  }
 }

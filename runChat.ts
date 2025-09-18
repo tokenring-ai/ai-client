@@ -3,6 +3,7 @@ import AIService from "./AIService.js";
 import {ChatRequestConfig, createChatRequest} from "./chatRequestBuilder/createChatRequest.ts";
 import {AIResponse} from "./client/AIChatClient.ts";
 import ModelRegistry from "./ModelRegistry.js";
+import {compactContext} from "./util/compactContext.js";
 
 
 /**
@@ -51,6 +52,24 @@ export default async function runChat(
     const finalOutput: string = output ?? "";
 
     await agent.executeHooks("afterChatCompletion", finalOutput, response);
+
+    // Check if context compacting is needed
+    const messages = aiService.getChatMessages(agent);
+    if (messages.length > 0) {
+      const totalTokens = messages.reduce((sum, msg) => sum + (msg.response.usage.inputTokens || 0), 0);
+      const contextLength = client.getModelSpec().contextLength;
+      
+      if (totalTokens > contextLength * 0.9) {
+        const shouldCompact = await agent.askHuman({
+          type: "askForConfirmation",
+          message: "Context is getting long. Would you like to compact it to save tokens?"
+        });
+        
+        if (shouldCompact) {
+          await compactContext(agent);
+        }
+      }
+    }
 
     return [finalOutput, response]; // Return the full response object
   } catch (err: unknown) {
