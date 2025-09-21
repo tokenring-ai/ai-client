@@ -16,11 +16,6 @@ interface ModelList {
   data: Model[];
 }
 
-/**
- * The name of the AI provider.
- */
-const providerName = "xAI";
-
 export interface XAIModelProviderConfig extends ModelProviderInfo {
   apiKey: string;
 }
@@ -66,6 +61,35 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
       tools: 5,
       speed: 6,
       contextLength: 256000,
+    }),
+    ...generateModelSpec("grok-4-0709", {
+      costPerMillionInputTokens: 3,
+      costPerMillionOutputTokens: 15.0,
+      reasoningText: 6,
+      intelligence: 6,
+      tools: 6,
+      speed: 3,
+      contextLength: 256000,
+    }),
+    ...generateModelSpec("grok-4-fast-reasoning", {
+      costPerMillionInputTokens: 0.20,
+      costPerMillionCachedInputTokens: 0.05,
+      costPerMillionOutputTokens: 0.50,
+      reasoningText: 5,
+      intelligence: 5,
+      tools: 5,
+      speed: 3,
+      contextLength: 2000000,
+    }),
+    ...generateModelSpec("grok-4-fast-non-reasoning", {
+      costPerMillionInputTokens: 0.20,
+      costPerMillionCachedInputTokens: 0.05,
+      costPerMillionOutputTokens: 0.50,
+      reasoningText: 0,
+      intelligence: 5,
+      tools: 5,
+      speed: 6,
+      contextLength: 2000000,
     }),
     ...generateModelSpec("grok-3", {
       costPerMillionInputTokens: 3,
