@@ -6,7 +6,7 @@ export const description: string =
   "/ai settings key=value [key=value...] - Update AI configuration settings | /ai context - Show context items";
 
 export async function execute(remainder: string, agent: Agent): Promise<void> {
-  const aiService = agent.requireFirstServiceByType(AIService);
+  const aiService = agent.requireServiceByType(AIService);
   
   if (!remainder?.trim()) {
     // Show current settings
@@ -70,13 +70,14 @@ export async function execute(remainder: string, agent: Agent): Promise<void> {
 
 async function showContext(agent: Agent): Promise<void> {
   try {
-    const aiService = agent.requireFirstServiceByType(AIService);
+    const aiService = agent.requireServiceByType(AIService);
     const config = aiService.getAIConfig(agent);
-    
+
+    debugger;
     const request = await createChatRequest({
       input: "dummy input",
       systemPrompt: config.systemPrompt,
-      includeMemories: true,
+      includeContextItems: true,
       includeTools: false,
       includePriorMessages: true
     }, agent);

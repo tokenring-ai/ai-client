@@ -1,15 +1,13 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {stepCountIs} from "ai";
+import {stepCountIs, UserModelMessage} from "ai";
 import AIService from "../AIService.js";
 import {ChatInputMessage, ChatRequest} from "../client/AIChatClient.js";
-import {addAttentionItems} from "./addAttentionItems.js";
-import {addMemories} from "./addMemories.js";
 import {addTools} from "./addTools.js";
 
 export interface ChatRequestConfig {
   input: string | ChatInputMessage | ChatInputMessage[];
   systemPrompt: string | ChatInputMessage;
-  includeMemories?: boolean;
+  includeContextItems?: boolean;
   includeTools?: boolean;
   includePriorMessages?: boolean;
   maxSteps?: number;
@@ -28,7 +26,7 @@ export async function createChatRequest(
   {
     input,
     systemPrompt,
-    includeMemories = true,
+    includeContextItems = true,
     includeTools = true,
     includePriorMessages = true,
     maxSteps = 15,
@@ -41,75 +39,76 @@ export async function createChatRequest(
   }: ChatRequestConfig,
   agent: Agent
 ): Promise<ChatRequest> {
-  let processedInput: ChatInputMessage[];
+  const aiService = agent.requireServiceByType(AIService)
+  const lastMessage = aiService.getCurrentMessage(agent);
+
+  let currentMessages: ChatInputMessage[];
 
   if (typeof input === "string") {
-    processedInput = [
+    currentMessages = [
       {
         role: "user",
         content: input,
       },
     ];
   } else if (!Array.isArray(input)) {
-    processedInput = [input];
+    currentMessages = [input];
   } else {
-    processedInput = input;
+    currentMessages = input;
   }
 
-  if (!(processedInput?.length > 0)) {
+  if (!(currentMessages?.length > 0)) {
     throw new Error(
-      "The input: parameter must be an array with a length greater than 0"
+      "The input: parameter must be either a single item or an array with a length greater than 0"
     );
   }
 
-  let processedSystemPrompt: ChatInputMessage | undefined;
-  if (typeof systemPrompt === "string") {
-    processedSystemPrompt = {
-      role: "system",
-      content: systemPrompt,
-    };
-  } else {
-    processedSystemPrompt = systemPrompt;
-  }
+  let systemMessages: ChatInputMessage[] = [];
+  let priorMessages: ChatInputMessage[] = [];
 
-  const aiService = agent.requireFirstServiceByType(AIService)
-
-  const previousMessage = aiService.getCurrentMessage(agent);
-
-  const messages: ChatInputMessage[] = [];
-  if (processedSystemPrompt) {
-    messages.push(processedSystemPrompt);
-  }
-
-  if (includePriorMessages && previousMessage) {
-    let previousRequestMessages = previousMessage?.request?.messages ?? [];
-    if (previousRequestMessages?.[0]?.role === "system") {
-      previousRequestMessages = previousRequestMessages.slice(1);
-    }
-
-    const previousResponseMessages = previousMessage?.response?.messages ?? [];
-
-    messages.push(...previousRequestMessages, ...previousResponseMessages);
-  } else {
-    if (includeMemories) {
-      await addMemories(messages, agent);
+  if (includePriorMessages && lastMessage) {
+    if (lastMessage.request.messages[0]?.role === "system") {
+      systemMessages = [lastMessage.request.messages[0]];
+      priorMessages = lastMessage.request.messages.slice(1);
+    } else {
+      priorMessages = [...lastMessage.request.messages];
     }
   }
 
-  messages.push(...processedInput);
-
-  if (includeMemories && !includePriorMessages) {
-    const lastMessage = messages.pop();
-    await addAttentionItems(messages, agent);
-    if (lastMessage) {
-      messages.push(lastMessage);
+  if (systemMessages.length === 0) {
+    if (typeof systemPrompt === "string") {
+      systemMessages = [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+      ];
+    } else {
+      systemMessages = [systemPrompt];
     }
   }
 
-  //messages = compactMessageContext(messages);
+  if (includeContextItems) {
+    for (const service of agent.team.services.getItems()) {
+      if (!service.getContextItems) continue;
+      for await (const {content, position} of service.getContextItems(agent)) {
+        const message = {role: "user", content} as UserModelMessage;
+
+        if (position === "afterSystemMessage") {
+          if (priorMessages.find(el => el.role === "user" && el.content === content)) continue;
+          systemMessages.push(message);
+        } else if (position === "afterPriorMessages") {
+          if (priorMessages.find(el => el.role === "user" && el.content === content)) continue;
+          priorMessages.push(message);
+        } else if (position === "afterCurrentMessage") {
+          currentMessages.push(message);
+        }
+      }
+    }
+  }
 
   const request: ChatRequest = {
-    messages,
+    messages: [...systemMessages, ...priorMessages, ...currentMessages],
     tools: {},
     stopWhen: stepCountIs(maxSteps),
     temperature,

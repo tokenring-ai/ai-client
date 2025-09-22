@@ -13,8 +13,8 @@ export default async function runChat(
   requestOptions: Omit<ChatRequestConfig, "systemPrompt"> & { systemPrompt?: ChatRequestConfig["systemPrompt"] },
   agent: Agent
 ): Promise<[string, AIResponse]> {
-  const modelRegistry = agent.requireFirstServiceByType<ModelRegistry>(ModelRegistry);
-  const aiService = agent.requireFirstServiceByType(AIService);
+  const modelRegistry = agent.requireServiceByType<ModelRegistry>(ModelRegistry);
+  const aiService = agent.requireServiceByType(AIService);
 
   const defaultRequestOptions = aiService.getAIConfig(agent);
   const model = aiService.getModel();

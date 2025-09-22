@@ -267,7 +267,7 @@ describe("createChatRequest Integration Tests", () => {
 				{
 					input: "Hello",
 					systemPrompt: "System prompt",
-					includeMemories: true,
+					includeContextItems: true,
 					includePriorMessages: false,
 				},
 				registry,
@@ -288,7 +288,7 @@ describe("createChatRequest Integration Tests", () => {
 				{
 					input: "Hello",
 					systemPrompt: "System prompt",
-					includeMemories: false,
+					includeContextItems: false,
 					includePriorMessages: false,
 				},
 				registry,
@@ -304,7 +304,7 @@ describe("createChatRequest Integration Tests", () => {
 				{
 					input: "Hello",
 					systemPrompt: "System prompt",
-					includeMemories: true,
+					includeContextItems: true,
 					includePriorMessages: false,
 				},
 				registry,
@@ -321,7 +321,7 @@ describe("createChatRequest Integration Tests", () => {
 				{
 					input: "Hello",
 					systemPrompt: "System prompt",
-					includeMemories: true,
+					includeContextItems: true,
 					includePriorMessages: false,
 				},
 				registry,

@@ -4,8 +4,8 @@ import {createChatRequest} from "../chatRequestBuilder/createChatRequest.js";
 import ModelRegistry from "../ModelRegistry.js";
 
 export async function compactContext(agent: Agent): Promise<void> {
-  const aiService = agent.requireFirstServiceByType(AIService);
-  const modelRegistry = agent.requireFirstServiceByType(ModelRegistry);
+  const aiService = agent.requireServiceByType(AIService);
+  const modelRegistry = agent.requireServiceByType(ModelRegistry);
   
   const messages = aiService.getChatMessages(agent);
   if (messages.length === 0) return;
@@ -13,7 +13,7 @@ export async function compactContext(agent: Agent): Promise<void> {
   const request = await createChatRequest({
     input: `Please provide a detailed summary of the prior conversation, including all important details, context, and what was being worked on`,
     systemPrompt: "You are a helpful assistant that creates comprehensive summaries of conversations.",
-    includeMemories: true,
+    includeContextItems: true,
     includeTools: false,
     includePriorMessages: true
   }, agent);
