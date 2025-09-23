@@ -73,10 +73,11 @@ async function showContext(agent: Agent): Promise<void> {
     const aiService = agent.requireServiceByType(AIService);
     const config = aiService.getAIConfig(agent);
 
-    debugger;
+    const systemPrompt = typeof config.systemPrompt  === 'function' ? config.systemPrompt(agent) : config.systemPrompt;
+
     const request = await createChatRequest({
       input: "dummy input",
-      systemPrompt: config.systemPrompt,
+      systemPrompt,
       includeContextItems: true,
       includeTools: false,
       includePriorMessages: true

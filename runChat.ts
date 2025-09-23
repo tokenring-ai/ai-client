@@ -19,7 +19,6 @@ export default async function runChat(
   const defaultRequestOptions = aiService.getAIConfig(agent);
   const model = aiService.getModel();
 
-
   const request = await createChatRequest({...defaultRequestOptions, ...requestOptions}, agent);
 
   try {

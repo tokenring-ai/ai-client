@@ -5,7 +5,7 @@ import {AIServiceState} from "./state/aiServiceState.js";
 
 
 export type AIConfig = {
-  systemPrompt: string;
+  systemPrompt: string|((agent: Agent) => string);
   forceModel?: string;
   temperature?: number;
   maxTokens?: number;

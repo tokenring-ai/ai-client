@@ -1,12 +1,12 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {stepCountIs, UserModelMessage} from "ai";
-import AIService from "../AIService.js";
+import AIService, {AIConfig} from "../AIService.js";
 import {ChatInputMessage, ChatRequest} from "../client/AIChatClient.js";
 import {addTools} from "./addTools.js";
 
 export interface ChatRequestConfig {
   input: string | ChatInputMessage | ChatInputMessage[];
-  systemPrompt: string | ChatInputMessage;
+  systemPrompt: AIConfig["systemPrompt"];
   includeContextItems?: boolean;
   includeTools?: boolean;
   includePriorMessages?: boolean;
@@ -63,7 +63,15 @@ export async function createChatRequest(
     );
   }
 
-  let systemMessages: ChatInputMessage[] = [];
+  if (typeof systemPrompt  === 'function') {
+    systemPrompt = systemPrompt(agent);
+  }
+
+  let systemMessages: ChatInputMessage[] = [{
+    role: "system",
+    content: systemPrompt
+  }];
+
   let priorMessages: ChatInputMessage[] = [];
 
   if (includePriorMessages && lastMessage) {
@@ -73,20 +81,13 @@ export async function createChatRequest(
     } else {
       priorMessages = [...lastMessage.request.messages];
     }
-  }
-
-  if (systemMessages.length === 0) {
-    if (typeof systemPrompt === "string") {
-      systemMessages = [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-      ];
-    } else {
-      systemMessages = [systemPrompt];
+    
+    // Add the AI response to maintain conversation context
+    if (lastMessage.response.messages?.length) {
+      priorMessages.push(...lastMessage.response.messages);
     }
   }
+
 
   if (includeContextItems) {
     for (const service of agent.team.services.getItems()) {
