@@ -58,8 +58,11 @@ export async function init(modelRegistry: ModelRegistry, config: GoogleModelProv
         providerDisplayName: config.providerDisplayName,
         impl: googleProvider.image(modelId),
         async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.models.some((model) => model.name.includes(modelId));
+          // TODO: figure out how to get this working
+          return true;
+
+          //const modelList = await getModels();
+          //return !!modelList?.models.some((model) => model.name.includes(modelId));
         },
         costPerImage
       },

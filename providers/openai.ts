@@ -186,22 +186,22 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
    */
   const imageGenerationModels: Record<string, ImageModelSpec> = {
     ...generateImageModelSpec("gpt-image-1", "gpt-image-1-high", {
-      mangleRequest(req: ImageRequest) {
-        req.quality = 'high';
+      providerOptions: {
+        openai: { quality: 'high'}
       },
       costPerMillionInputTokens: 10,
       costPerMegapixel: 0.067
     }),
     ...generateImageModelSpec("gpt-image-1", "gpt-image-1-medium", {
-      mangleRequest(req: ImageRequest) {
-        req.quality = 'medium';
+      providerOptions: {
+        openai: { quality: 'medium'}
       },
       costPerMillionInputTokens: 10,
       costPerMegapixel: 0.042
     }),
     ...generateImageModelSpec("gpt-image-1", "gpt-image-1-low", {
-      mangleRequest(req: ImageRequest) {
-        req.quality = 'low';
+      providerOptions: {
+        openai: { quality: 'low'}
       },
       costPerMillionInputTokens: 10,
       costPerMegapixel: 0.011

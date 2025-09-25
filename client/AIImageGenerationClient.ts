@@ -46,6 +46,11 @@ export type ImageModelSpec = {
    * - The AI SDK image generation model implementation.
    */
   impl: ImageModel;
+
+  /**
+   * - Provider-specific options for the image generation model.
+   */
+  providerOptions?: any;
   /**
    * - A callback that checks whether the model is online and available for use.
    */
@@ -93,6 +98,7 @@ export default class AIImageGenerationClient {
         ...request,
         n: 1,
         model: this.modelSpec.impl,
+        providerOptions: this.modelSpec.providerOptions ?? {},
         abortSignal: signal,
       });
 
