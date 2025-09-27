@@ -172,6 +172,7 @@ export default class AIChatClient {
       maxRetries: 15,
       model: this.modelSpec.impl,
       abortSignal: signal,
+      experimental_context: { agent }
     });
 
     let mode = "text";

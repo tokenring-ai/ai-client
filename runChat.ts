@@ -56,13 +56,18 @@ export default async function runChat(
       const contextLength = client.getModelSpec().contextLength;
       
       if (totalTokens > contextLength * 0.9) {
-        const shouldCompact = await agent.askHuman({
-          type: "askForConfirmation",
-          message: "Context is getting long. Would you like to compact it to save tokens?"
-        });
-        
-        if (shouldCompact) {
+        const config = aiService.getAIConfig(agent);
+        if (config.autoCompact) {
           await compactContext(agent);
+        } else {
+          const shouldCompact = await agent.askHuman({
+            type: "askForConfirmation",
+            message: "Context is getting long. Would you like to compact it to save tokens?"
+          });
+          
+          if (shouldCompact) {
+            await compactContext(agent);
+          }
         }
       }
     }

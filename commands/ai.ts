@@ -57,6 +57,8 @@ export async function execute(remainder: string, agent: Agent): Promise<void> {
       }
     } else if (key === "stopSequences") {
       parsedValue = value.split(",");
+    } else if (key === "autoCompact") {
+      parsedValue = value.toLowerCase() === "true";
     }
 
     updates[key] = parsedValue;
@@ -104,8 +106,8 @@ export function help(): string[] {
   return [
     "/ai settings key=value [key=value...]",
     "  - Update AI configuration settings",
-    "  - Available keys: model, systemPrompt, temperature, maxTokens, topP, frequencyPenalty, presencePenalty, stopSequences",
-    "  - Examples: /ai settings temperature=0.7 topP=0.9",
+    "  - Available keys: model, systemPrompt, temperature, maxTokens, topP, frequencyPenalty, presencePenalty, stopSequences, autoCompact",
+    "  - Examples: /ai settings temperature=0.7 autoCompact=true",
     "  - With no arguments: Shows current settings",
     "/ai context",
     "  - Show all context items that would be added to a chat request",

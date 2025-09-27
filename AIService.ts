@@ -13,6 +13,7 @@ export type AIConfig = {
   frequencyPenalty?: number;
   presencePenalty?: number;
   stopSequences?: string[];
+  autoCompact?: boolean;
 };
 
 
