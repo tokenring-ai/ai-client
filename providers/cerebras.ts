@@ -39,37 +39,21 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
     apiKey: config.apiKey
   });
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId">): ChatModelSpec {
     return {
-      [modelId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: cerebrasProvider(modelId),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some((model) => model.id === modelId);
-
-        },
-        ...modelSpec,
+      modelId,
+      providerDisplayName: config.providerDisplayName,
+      impl: cerebrasProvider(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some((model) => model.id === modelId);
       },
-    }
+      ...modelSpec,
+    } as ChatModelSpec;
   }
 
-  /**
-   * A collection of Cerebras chat model specifications.
-   * Each key is a model ID, and the value is a `ChatModelSpec` object.
-   * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   */
-  const chatModels: Record<string, ChatModelSpec> = {
-    ...generateModelSpec("deepseek-r1-distill-llama-70b", {
-      costPerMillionInputTokens: 0.0,
-      costPerMillionOutputTokens: 0.0,
-      reasoningText: 1,
-      intelligence: 1,
-      tools: 1,
-      speed: 3,
-      contextLength: 100000,
-    }),
-    ...generateModelSpec("llama-4-scout-17b-16e-instruct", {
+  await modelRegistry.chat.registerAllModelSpecs([
+    generateModelSpec("llama-4-scout-17b-16e-instruct", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 2,
@@ -78,7 +62,7 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
       speed: 5,
       contextLength: 100000,
     }),
-    ...generateModelSpec("llama3.1-8b", {
+    generateModelSpec("llama3.1-8b", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 1,
@@ -87,7 +71,7 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
       speed: 5,
       contextLength: 128000,
     }),
-    ...generateModelSpec("llama-3.3-70b", {
+    generateModelSpec("llama-3.3-70b", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 3,
@@ -96,7 +80,7 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
       speed: 4,
       contextLength: 128000,
     }),
-    ...generateModelSpec("llama-4-maverick-17b-128e-instruct", {
+    generateModelSpec("llama-4-maverick-17b-128e-instruct", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 2,
@@ -105,7 +89,7 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
       speed: 5,
       contextLength: 100000,
     }),
-    ...generateModelSpec("qwen-3-32b", {
+    generateModelSpec("qwen-3-32b", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 1,
@@ -114,7 +98,7 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
       speed: 5,
       contextLength: 100000,
     }),
-    ...generateModelSpec("qwen-3-235b-a22b-instruct-2507", {
+    generateModelSpec("qwen-3-235b-a22b-instruct-2507", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 4,
@@ -123,7 +107,7 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
       speed: 2,
       contextLength: 100000,
     }),
-    ...generateModelSpec("qwen-3-235b-a22b-thinking-2507", {
+    generateModelSpec("qwen-3-235b-a22b-thinking-2507", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 5,
@@ -132,7 +116,7 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
       speed: 1,
       contextLength: 100000,
     }),
-    ...generateModelSpec("qwen-3-coder-480b", {
+    generateModelSpec("qwen-3-coder-480b", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 4,
@@ -141,7 +125,7 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
       speed: 1,
       contextLength: 100000,
     }),
-    ...generateModelSpec("gpt-oss-120b", {
+    generateModelSpec("gpt-oss-120b", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 3,
@@ -150,7 +134,5 @@ export async function init(modelRegistry: ModelRegistry, config: CerebrasModelPr
       speed: 3,
       contextLength: 100000,
     }),
-  };
-
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
+  ]);
 }

@@ -65,8 +65,8 @@ export async function init(modelRegistry: ModelRegistry, config: OllamaModelProv
     );
   }
 
-  const chatModelSpecs: Record<string, ChatModelSpec> = {};
-  const embeddingModelSpecs: Record<string, EmbeddingModelSpec> = {};
+  const chatModelSpecs: ChatModelSpec[] = [];
+  const embeddingModelSpecs: EmbeddingModelSpec[] = [];
 
   const ollama = createOllama({baseURL});
   const getModelList = cachedDataRetriever(`${baseURL}/tags`, {
@@ -89,7 +89,8 @@ export async function init(modelRegistry: ModelRegistry, config: OllamaModelProv
     const {type, capabilities = {}} = generateModelSpec(modelInfo);
 
     if (type === "chat") {
-      chatModelSpecs[modelInfo.model] = {
+      chatModelSpecs.push({
+        modelId: modelInfo.model,
         providerDisplayName: config.providerDisplayName,
         impl: ollama.chat(modelInfo.model),
         isAvailable: () => getModelList().then((data) => !!data),
@@ -99,9 +100,10 @@ export async function init(modelRegistry: ModelRegistry, config: OllamaModelProv
             result?.models?.find?.(row => modelInfo.model === row.model),
           ),
         ...capabilities,
-      };
+      });
     } else if (type === "embedding") {
-      embeddingModelSpecs[modelInfo.model] = {
+      embeddingModelSpecs.push({
+        modelId: modelInfo.model,
         providerDisplayName: config.providerDisplayName,
         impl: ollama.embedding(modelInfo.model),
         contextLength: 2048,
@@ -112,15 +114,10 @@ export async function init(modelRegistry: ModelRegistry, config: OllamaModelProv
           getRunningModels().then(result =>
             result?.models?.find?.(row => modelInfo.model === row.model),
           ),
-      };
+      });
     }
   }
 
-  if (Object.keys(chatModelSpecs).length > 0) {
-    modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
-  }
-
-  if (Object.keys(embeddingModelSpecs).length > 0) {
-    modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
-  }
+  modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
+  modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
 }

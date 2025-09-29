@@ -95,7 +95,7 @@ export default class AIService implements TokenRingService {
    */
   pushChatMessage(message: StoredChatMessage, agent: Agent): void {
     agent.mutateState(AIServiceState, (state) => {
-      state.messages.push(message);
+      state.messages = [...state.messages, message]
     });
   }
 
@@ -118,7 +118,9 @@ export default class AIService implements TokenRingService {
    */
   popMessage(agent: Agent): void {
     agent.mutateState(AIServiceState, (state) => {
-      if (state.messages.length > 0) state.messages.pop();
+      if (state.messages.length > 0) {
+        state.messages = state.messages.slice(0, state.messages.length - 1);
+      }
     });
   }
 

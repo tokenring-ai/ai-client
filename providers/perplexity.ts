@@ -17,27 +17,21 @@ export async function init(modelRegistry: ModelRegistry, config: PerplexityModel
     throw new Error("No config.apiKey provided for Perplexity provider.");
   }
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">, "mangleRequest">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "mangleRequest" | "modelId">): ChatModelSpec {
     return {
-      [modelId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: perplexity(modelId),
-        mangleRequest,
-        async isAvailable() {
-          return true;
-        },
-        ...modelSpec,
+      modelId,
+      providerDisplayName: config.providerDisplayName,
+      impl: perplexity(modelId),
+      mangleRequest,
+      async isAvailable() {
+        return true;
       },
-    }
+      ...modelSpec,
+    } as ChatModelSpec;
   }
 
-  /**
-   * A collection of Perplexity chat model specifications.
-   * Each key is a model ID, and the value is a `ChatModelSpec` object.
-   * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   */
-  const chatModels: Record<string, ChatModelSpec> = {
-    ...generateModelSpec("sonar", {
+  await modelRegistry.chat.registerAllModelSpecs([
+    generateModelSpec("sonar", {
       costPerMillionInputTokens: 1,
       costPerMillionOutputTokens: 1,
       reasoningText: 2,
@@ -47,7 +41,7 @@ export async function init(modelRegistry: ModelRegistry, config: PerplexityModel
       webSearch: 1,
       contextLength: 128000,
     }),
-    ...generateModelSpec("sonar-pro", {
+    generateModelSpec("sonar-pro", {
       costPerMillionInputTokens: 3,
       costPerMillionOutputTokens: 15,
       reasoningText: 2,
@@ -57,7 +51,7 @@ export async function init(modelRegistry: ModelRegistry, config: PerplexityModel
       webSearch: 1,
       contextLength: 200000,
     }),
-    ...generateModelSpec("sonar-reasoning", {
+    generateModelSpec("sonar-reasoning", {
       costPerMillionInputTokens: 1,
       costPerMillionOutputTokens: 5,
       reasoningText: 3,
@@ -67,7 +61,7 @@ export async function init(modelRegistry: ModelRegistry, config: PerplexityModel
       webSearch: 1,
       contextLength: 128000,
     }),
-    ...generateModelSpec("sonar-reasoning-pro", {
+    generateModelSpec("sonar-reasoning-pro", {
       costPerMillionInputTokens: 2,
       costPerMillionOutputTokens: 8,
       reasoningText: 4,
@@ -77,7 +71,7 @@ export async function init(modelRegistry: ModelRegistry, config: PerplexityModel
       webSearch: 1,
       contextLength: 128000,
     }),
-    ...generateModelSpec("sonar-deep-research", {
+    generateModelSpec("sonar-deep-research", {
       costPerMillionInputTokens: 2,
       costPerMillionOutputTokens: 8,
       costPerMillionReasoningTokens: 3,
@@ -89,9 +83,7 @@ export async function init(modelRegistry: ModelRegistry, config: PerplexityModel
       webSearch: 1,
       contextLength: 128000,
     }),
-  };
-
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
+  ]);
 }
 
 /**

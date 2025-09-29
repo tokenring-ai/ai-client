@@ -13,13 +13,18 @@ export type OAICompatibleModelConfig = ModelProviderInfo & {
 }
 type ModelConfigResults = {
   type: string;
-  capabilities?: any;
+  capabilities?: Record<string, any>;
 }
 type ModelListData = {
   id: string,
   object: "model",
   owned_by: "organization" | "openai",
   created: number,
+  max_model_len?: number,
+  meta?: {
+    n_ctx_train?: 131072,
+  },
+
 }
 
 type ModelListResponse = {
@@ -36,8 +41,8 @@ export async function init(modelRegistry: ModelRegistry, config: OAICompatibleMo
     throw new Error(`No config.generateModelSpec provided for ${providerDisplayName} provider.`);
   }
 
-  const chatModelSpecs: Record<string, ChatModelSpec> = {};
-  const embeddingModelSpecs: Record<string, EmbeddingModelSpec> = {};
+  const chatModelSpecs: ChatModelSpec[] = []
+  const embeddingModelSpecs: EmbeddingModelSpec[] = [];
 
   const openai = createOpenAICompatible({
     name: config.providerDisplayName,
@@ -62,35 +67,32 @@ export async function init(modelRegistry: ModelRegistry, config: OAICompatibleMo
       const {type, capabilities = {}} = generateModelSpec(modelInfo);
 
       if (type === "chat") {
-        chatModelSpecs[modelInfo.id] = {
+        chatModelSpecs.push({
+          modelId: modelInfo.id,
           providerDisplayName: config.providerDisplayName,
-          name: modelInfo.id,
           impl: openai.chatModel(modelInfo.id),
           isAvailable: () => getModelList().then((data) => !!data),
           isHot: () => Promise.resolve(true),
+          costPerMillionInputTokens: 0,
+          costPerMillionOutputTokens: 0,
+          contextLength: modelInfo.max_model_len ?? modelInfo?.meta?.n_ctx_train ?? 4000,
           ...capabilities,
-        };
+        });
       } else if (type === "embedding") {
-        embeddingModelSpecs[modelInfo.id] = {
+        embeddingModelSpecs.push({
+          modelId: modelInfo.id,
           providerDisplayName: config.providerDisplayName,
           contextLength: capabilities.contextLength || 8192,
           costPerMillionInputTokens: capabilities.costPerMillionInputTokens || 0,
           impl: openai.textEmbeddingModel(modelInfo.id),
           isAvailable: () => getModelList().then((data) => !!data),
           isHot: () => Promise.resolve(true),
-        };
+        });
       }
     }
 
-    if (Object.keys(chatModelSpecs).length > 0) {
-      modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
-    }
-
-    if (Object.keys(embeddingModelSpecs).length > 0) {
-      modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
-    }
-  }).catch(e => {
-
-  });
+    modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
+    modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
+  }).catch(e => {});
 }
 

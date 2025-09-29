@@ -48,27 +48,21 @@ export async function init(modelRegistry: ModelRegistry, config: LlamaModelProvi
     baseURL: "https://api.llama.com/compat/v1",
   });
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): ChatModelSpec {
     return {
-      [modelId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: openai(modelId),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some((model) => model.id === modelId);
-        },
-        ...modelSpec,
+      modelId,
+      providerDisplayName: config.providerDisplayName,
+      impl: openai(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some((model) => model.id === modelId);
       },
-    }
+      ...modelSpec,
+    };
   }
 
-  /**
-   * A collection of Llama chat model specifications.
-   * Each key is a model ID, and the value is a `ChatModelSpec` object.
-   * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   */
-  const chatModels: Record<string, ChatModelSpec> = {
-    ...generateModelSpec("Llama-3.3-70B-Instruct", {
+  modelRegistry.chat.registerAllModelSpecs([
+    generateModelSpec("Llama-3.3-70B-Instruct", {
       contextLength: 131072,
       maxCompletionTokens: 32768,
       costPerMillionInputTokens: 0,
@@ -78,7 +72,7 @@ export async function init(modelRegistry: ModelRegistry, config: LlamaModelProvi
       speed: 4, // Larger model, moderate speed
       tools: 4, // Good tool use capabilities
     }),
-    ...generateModelSpec("Llama-3.3-8B-Instruct", {
+    generateModelSpec("Llama-3.3-8B-Instruct", {
       contextLength: 131072,
       maxCompletionTokens: 131072,
       costPerMillionInputTokens: 0,
@@ -88,7 +82,7 @@ export async function init(modelRegistry: ModelRegistry, config: LlamaModelProvi
       speed: 6, // Smaller model - faster inference
       tools: 3, // Moderate tool use capabilities
     }),
-    ...generateModelSpec("Llama-4-Maverick-17B-128E-Instruct-FP8", {
+    generateModelSpec("Llama-4-Maverick-17B-128E-Instruct-FP8", {
       contextLength: 131072,
       maxCompletionTokens: 32768,
       costPerMillionInputTokens: 0,
@@ -98,7 +92,7 @@ export async function init(modelRegistry: ModelRegistry, config: LlamaModelProvi
       speed: 4, // FP8 quantization may help with speed, but 17B size is moderate
       tools: 4, // Advanced model likely good with tools
     }),
-    ...generateModelSpec("Llama-4-Scout-17B-16E-Instruct-FP8", {
+    generateModelSpec("Llama-4-Scout-17B-16E-Instruct-FP8", {
       contextLength: 131072,
       maxCompletionTokens: 32768,
       costPerMillionInputTokens: 0,
@@ -108,7 +102,5 @@ export async function init(modelRegistry: ModelRegistry, config: LlamaModelProvi
       speed: 5, // Fewer experts and FP8 quantization should make it faster
       tools: 4, // Good tool capabilities expected from Llama 4
     }),
-  };
-
-  modelRegistry.chat.registerAllModelSpecs(chatModels);
+  ]);
 }

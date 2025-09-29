@@ -1,10 +1,18 @@
+import KeyedRegistry from "@tokenring-ai/utility/KeyedRegistry";
 import {ChatModelRequirements} from "./ModelRegistry.js";
 
-interface ModelSpec {
-  name: string,
+export type ModelSpec = {
+  modelId: string,
   providerDisplayName: string,
-  isAvailable: () => Promise<boolean>;
-  isHot: () => Promise<boolean>;
+  isAvailable?: () => Promise<boolean>;
+  isHot?: () => Promise<boolean>;
+} & Record<string, any>;
+
+export interface ModelStatus<T> {
+  status: string;
+  available: boolean;
+  hot: boolean;
+  modelSpec: T;
 }
 
 /**
@@ -12,34 +20,30 @@ interface ModelSpec {
  *   with optional fields used by the registry helper methods
  *   (e.g., isAvailable, isHot, provider)
  */
-export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends ModelSpec> {
+export class ModelTypeRegistry<C extends new (modelSpec: any) => any, T extends ModelSpec> {
   AIClient: C;
-  filterModelSpecs: (arg0: any) => Array<T>;
-  modelSpecs: { [x: string]: T[] } = {};
+  modelSpecs = new KeyedRegistry<T>();
 
   /**
    * Creates a new ModelTypeRegistry instance
    */
-  constructor(AIClient: C, filterModelSpecs: (arg0: any) => Array<T>) {
+  constructor(AIClient: C) {
     this.AIClient = AIClient;
-    // bind filter to this registry so helper filters can use `this`
-    this.filterModelSpecs = filterModelSpecs.bind(this);
   }
 
   /**
    * Registers a model with its metadata
    */
-  registerModelSpec(modelName: string, metadata: T): void {
-    (this.modelSpecs[modelName] ??= []).push(metadata);
-  }
+  registerModelSpec = this.modelSpecs.register;
 
   /**
    * Registers a key: value object of model specs
    */
-  registerAllModelSpecs(modelSpecs: { [x: string]: T }): void {
-    for (const modelName in modelSpecs) {
-      this.registerModelSpec(modelName, modelSpecs[modelName]);
+  registerAllModelSpecs(modelSpecs: T[]): void {
+    for (const modelSpec of modelSpecs) {
+      this.modelSpecs.register(`${modelSpec.providerDisplayName}:${modelSpec.modelId}`, modelSpec);
     }
+
     // Check model availability in the background
     this.checkModelsAvailabilityInBackground();
   }
@@ -69,35 +73,23 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
   /**
    * Gets all registered chatModels, with their online status
    */
-  async getAllModelsWithOnlineStatus(): Promise<Array<{
-    status: string;
-    name: string;
-    modelSpecs: Array<{
-      available: boolean;
-      hot: boolean;
-      modelSpec: T;
-    }>;
-  }>> {
-    const ret = [];
-    for (const name in this.modelSpecs) {
-      const specs = this.modelSpecs[name];
-
-      const specRows = [];
+  async getAllModelsWithOnlineStatus(): Promise<Record<string, ModelStatus<T>>> {
+    const ret: Record<string, ModelStatus<T>> = {};
+    for (const [name, modelSpec] of Object.entries(this.modelSpecs.getAllItems())) {
       let status = "offline";
-      for (const spec of specs) {
-        const available =
-          spec.isAvailable ? await spec.isAvailable() : false;
-        const hot = spec.isHot ? await spec.isHot() : true;
-        specRows.push({available, hot, modelSpec: spec});
-        if (available) {
-          if (hot) {
-            status = "online";
-          } else if (status === "offline") {
-            status = "cold";
-          }
+      const available =
+        modelSpec.isAvailable ? await modelSpec.isAvailable() : false;
+      const hot = modelSpec.isHot ? await modelSpec.isHot() : true;
+      if (available) {
+        if (hot) {
+          status = "online";
+        } else if (status === "offline") {
+          status = "cold";
         }
       }
-      ret.push({status, name, modelSpecs: specRows});
+
+      ret[name] = {status, available, hot, modelSpec: modelSpec};
+
     }
     return ret;
   }
@@ -105,60 +97,35 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
   /**
    * Gets all registered models grouped by provider, with their online status
    */
-  async getModelsByProvider(): Promise<{
-    [x: string]: Array<{
-      status: string;
-      name: string;
-      modelSpecs: Array<{
-        available: boolean;
-        hot: boolean;
-        modelSpec: T;
-      }>;
-    }>;
-  }> {
+  async getModelsByProvider(): Promise<Record<string, Record<string, ModelStatus<T>>>> {
     const allModels = await this.getAllModelsWithOnlineStatus();
-    const modelsByProvider: Record<string, Array<{
-      status: string;
-      name: string;
-      modelSpecs: Array<{
-        available: boolean;
-        hot: boolean;
-        modelSpec: T;
-      }>;
-    }>> = {};
+    const modelsByProvider: Record<string, Record<string, ModelStatus<T>>> = {};
 
-    for (const model of allModels) {
-      // Get provider from the first model spec (they should all have the same provider)
-      const provider =
-        (model.modelSpecs[0]?.modelSpec)?.providerDisplayName ||
-        "unknown";
-
-      if (!modelsByProvider[provider]) {
-        modelsByProvider[provider] = [];
-      }
-      modelsByProvider[provider].push(model);
-    }
-
-    // Sort models within each provider by name
-    for (const provider in modelsByProvider) {
-      modelsByProvider[provider].sort((a, b) => a.name.localeCompare(b.name));
+    for (const modelName in allModels) {
+      const model = allModels[modelName];
+      const leaf = modelsByProvider[model.modelSpec.providerDisplayName] ??= {};
+      leaf[modelName] = model;
     }
 
     return modelsByProvider;
   }
 
   /**
-   * Gets metadata for a specific model
+   * Gets the first chat client that matches the name and is online
    */
-  getModelSpecs(modelName: string): Array<T> | undefined {
-    return this.modelSpecs[modelName];
+  async getFirstOnlineClient(name: string): Promise<InstanceType<C>> {
+    const modelSpec = this.modelSpecs.getItemByName(name);
+    if (!modelSpec) {
+      throw new Error(`Model ${name} not found`);
+    }
+    return new this.AIClient(modelSpec);
   }
-
+  
   /**
    * Gets the first chat client that matches the requirements and is online
    */
-  async getFirstOnlineClient(requirements: ChatModelRequirements | string): Promise<InstanceType<C>> {
-    const modelSpecs = this.filterModelSpecs(requirements);
+  async getFirstOnlineClientByRequirements(requirements: ChatModelRequirements): Promise<InstanceType<C>> {
+    const modelSpecs = this.getModelSpecsByRequirements(requirements);
 
     // Find first hot model
     for (const modelSpec of modelSpecs) {
@@ -186,5 +153,83 @@ export class ModelTypeRegistry<C extends new (modelSpec: T) => any, T extends Mo
     }
 
     throw new Error(`No online model found`);
+  }
+
+
+  /**
+   * Finds the chatModels that match the requirements and sorts them by the expected price of the query
+   */
+  getModelSpecsByRequirements(requirements: ChatModelRequirements): T[] {
+    requirements = {...requirements};
+    if (requirements.provider === "auto") delete requirements.provider;
+
+    let estimatedContextLength = 10000;
+    if (requirements.contextLength) {
+      const [, value] = String(requirements.contextLength).match(/^[<>]?[=<>]?([^=<>].*)$/) ?? [];
+
+      estimatedContextLength = Math.max(
+        estimatedContextLength,
+        Number.parseInt(value)
+      );
+    }
+
+    const eligibleModels = Object.entries(this.modelSpecs.getAllItems()).filter(
+      ([modelName, metadata]): boolean => {
+        for (const [key, condition] of Object.entries(requirements)) {
+          const [, operator, value] = String(condition).match(/^([<>]?[=<>]?)([^=<>].*)$/) ?? [];
+          switch (operator) {
+            case ">":
+              if (!(metadata[key] > value)) {
+                return false;
+              }
+              break;
+            case "<":
+              if (!(metadata[key] < value)) {
+                return false;
+              }
+              break;
+            case ">=":
+              if (!(metadata[key] >= value)) {
+                return false;
+              }
+              break;
+            case "<=":
+              if (!(metadata[key] <= value)) {
+                return false;
+              }
+              break;
+            case "":
+            case "=":
+              if (key === "name") {
+                if (modelName !== value) {
+                  return false;
+                }
+              } else {
+                // Type coercion is ok for this check, because we allow strings and numbers to coexist
+                // eslint-disable-next-line eqeqeq
+                if (metadata[key] != value) {
+                  return false;
+                }
+              }
+              break;
+            default:
+              throw new Error(`Unknown operator '${operator}'`);
+          }
+        }
+        return true;
+      }
+    );
+
+    // Sort the matched chatModels by price, using the current context length + 1000 tokens to calculate the price
+    return eligibleModels.map(el => el[1]).sort((a, b) => {
+      const aPrice =
+        estimatedContextLength * (a.costPerMillionInputTokens ?? 600) +
+        1000 * (a.costPerMillionOutputTokens ?? 600);
+      const bPrice =
+        estimatedContextLength * (b.costPerMillionInputTokens ?? 600) +
+        1000 * (b.costPerMillionOutputTokens ?? 600);
+
+      return aPrice - bPrice;
+    });
   }
 }

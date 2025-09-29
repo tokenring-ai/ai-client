@@ -5,6 +5,7 @@ import {
   GeneratedFile,
   type ImageModel
 } from "ai";
+import {ModelSpec} from "../ModelTypeRegistry.js";
 
 
 export type ImageRequest = {
@@ -20,11 +21,7 @@ export type ImageResponse = {
   uint8Array: Uint8Array
 }
 
-export type ImageModelSpec = {
-  /**
-   * - The model provider display name.
-   */
-  providerDisplayName: string;
+export type ImageModelSpec = ModelSpec & {
   /**
    * - Maximum context length in tokens
    */
@@ -52,17 +49,9 @@ export type ImageModelSpec = {
    */
   providerOptions?: any;
   /**
-   * - A callback that checks whether the model is online and available for use.
-   */
-  isAvailable: () => Promise<boolean>;
-  /**
    * - A callback to calculate the image cost
    */
   calculateImageCost?: (req: ImageRequest, res: ImageResponse) => number;
-  /**
-   * - A callback that checks whether the model is hot, or will need to be loaded.
-   */
-  isHot?: () => Promise<boolean>;
 
   mangleRequest?: (req: ImageRequest) => void;
 };

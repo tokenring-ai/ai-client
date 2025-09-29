@@ -56,6 +56,7 @@ export default async function runChat(
       const contextLength = client.getModelSpec().contextLength;
       
       if (totalTokens > contextLength * 0.9) {
+        console.log("compact!");
         const config = aiService.getAIConfig(agent);
         if (config.autoCompact) {
           await compactContext(agent);

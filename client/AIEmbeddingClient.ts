@@ -1,13 +1,11 @@
 import {embed, EmbeddingModel, type EmbedResult} from "ai";
+import {ModelSpec} from "../ModelTypeRegistry.js";
 
-export type EmbeddingModelSpec = {
-  providerDisplayName: string;
+export type EmbeddingModelSpec = ModelSpec & {
   contextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens?: number;
   impl: Exclude<EmbeddingModel, string>;
-  isAvailable: () => Promise<boolean>;
-  isHot?: () => Promise<boolean>;
 };
 
 /**

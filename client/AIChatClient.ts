@@ -15,6 +15,7 @@ import {
   ToolModelMessage,
   UserModelMessage
 } from "ai";
+import {ModelSpec} from "../ModelTypeRegistry.js";
 
 export type ChatInputMessage = SystemModelMessage | UserModelMessage | AssistantModelMessage | ToolModelMessage;
 
@@ -36,16 +37,13 @@ export type GenerateRequest = {
   schema: import('zod').ZodTypeAny;
 } & ChatRequest;
 
-export type ChatModelSpec = {
-  providerDisplayName: string;
+export type ChatModelSpec = ModelSpec & {
   contextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens: number;
   costPerMillionCachedInputTokens?: number;
   costPerMillionReasoningTokens?: number;
   impl: Exclude<LanguageModel, string>;
-  isAvailable: () => Promise<boolean>;
-  isHot?: () => Promise<boolean>;
   mangleRequest?: (req: ChatRequest) => void;
   research?: number;
   reasoningText?: number;

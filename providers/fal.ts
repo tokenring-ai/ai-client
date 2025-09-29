@@ -21,39 +21,29 @@ export async function init(modelRegistry: ModelRegistry, config: FalModelProvide
   const fal = createFal({apiKey});
 
 
-  function generateImageModelSpec(modelId: string, modelSpec: Omit<ImageModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ImageModelSpec> {
+  function generateImageModelSpec(modelId: string, modelSpec: Omit<ImageModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): ImageModelSpec {
     return {
-      [modelId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: fal.image(modelId),
-        async isAvailable() {
-          // For Fal, we'll assume most popular models are available
-          // In a real implementation, you might want to check the API
-          return true;
-        },
-        ...modelSpec,
+      modelId,
+      providerDisplayName: config.providerDisplayName,
+      impl: fal.image(modelId),
+      async isAvailable() {
+        // For Fal, we'll assume most popular models are available
+        // In a real implementation, you might want to check the API
+        return true;
       },
-    }
+      ...modelSpec,
+    };
   }
 
-  /**
-   * A collection of Fal image generation model specifications.
-   * Each key is a model ID, and the value is an `ImageModelSpec` object.
-   * Pricing is generally $0.04 per image based on Fal documentation.
-   */
-  const imageGenerationModels: Record<string, ImageModelSpec> = {
-    ...generateImageModelSpec("fal-ai/qwen-image", {
+  modelRegistry.imageGeneration.registerAllModelSpecs([
+    generateImageModelSpec("fal-ai/qwen-image", {
       costPerMegapixel: 0.02,
     }),
-    ...generateImageModelSpec("fal-ai/flux-pro/v1.1-ultra", {
+    generateImageModelSpec("fal-ai/flux-pro/v1.1-ultra", {
       costPerMegapixel: 0.06,
     }),
-    ...generateImageModelSpec("fal-ai/flux-pro/v1.1", {
+    generateImageModelSpec("fal-ai/flux-pro/v1.1", {
       costPerMegapixel: 0.04,
     }),
-  };
-
-  modelRegistry.imageGeneration.registerAllModelSpecs(
-    imageGenerationModels,
-  );
+  ]);
 }

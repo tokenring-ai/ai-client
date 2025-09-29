@@ -1,6 +1,6 @@
 import {createOpenAI} from "@ai-sdk/openai";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
-import type {ImageModelSpec, ImageRequest} from "../client/AIImageGenerationClient.ts";
+import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
@@ -40,42 +40,35 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
   }) as () => Promise<ModelList | null>;
 
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId">): ChatModelSpec {
     return {
-      [modelId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: openai(modelId),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some((model) => model.id === modelId);
-        },
-        ...modelSpec,
+      modelId,
+      providerDisplayName: config.providerDisplayName,
+      impl: openai(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some((model) => model.id === modelId);
       },
-    }
+      ...modelSpec,
+    } as ChatModelSpec;
   }
 
 
-  function generateImageModelSpec(modelId: string, variantId: string, modelSpec: Omit<ImageModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ImageModelSpec> {
+  function generateImageModelSpec(modelId: string, variantId: string, modelSpec: Omit<ImageModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): ImageModelSpec {
     return {
-      [variantId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: openai.imageModel(modelId),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some((model) => model.id === modelId);
-        },
-        ...modelSpec,
+      modelId: variantId,
+      providerDisplayName: config.providerDisplayName,
+      impl: openai.imageModel(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some((model) => model.id === modelId);
       },
-    }
+      ...modelSpec,
+    };
   }
 
-  /**
-   * A collection of OpenAI chat model specifications.
-   * Each key is a model ID, and the value is a `ChatModelSpec` object.
-   * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   */
-  const chatModels: Record<string, ChatModelSpec> = {
-    ...generateModelSpec("gpt-4.1", {
+  const chatModels: ChatModelSpec[] = [
+    generateModelSpec("gpt-4.1", {
       costPerMillionInputTokens: 2.0,
       costPerMillionOutputTokens: 8.0,
       costPerMillionCachedInputTokens: 0.50,
@@ -85,7 +78,7 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
       speed: 3,
       contextLength: 1000000,
     }),
-    ...generateModelSpec("gpt-4.1-mini", {
+    generateModelSpec("gpt-4.1-mini", {
       costPerMillionInputTokens: 0.4,
       costPerMillionOutputTokens: 1.6,
       costPerMillionCachedInputTokens: 0.10,
@@ -95,7 +88,7 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
       speed: 4,
       contextLength: 1000000,
     }),
-    ...generateModelSpec("gpt-4.1-nano", {
+    generateModelSpec("gpt-4.1-nano", {
       costPerMillionInputTokens: 0.1,
       costPerMillionOutputTokens: 0.4,
       costPerMillionCachedInputTokens: 0.025,
@@ -105,7 +98,7 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
       speed: 5,
       contextLength: 1000000,
     }),
-    ...generateModelSpec("gpt-5", {
+    generateModelSpec("gpt-5", {
       costPerMillionInputTokens: 1.25,
       costPerMillionCachedInputTokens: 0.125,
       costPerMillionOutputTokens: 10,
@@ -116,7 +109,7 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
       webSearch: 1,
       contextLength: 400000,
     }),
-    ...generateModelSpec("gpt-5-mini", {
+    generateModelSpec("gpt-5-mini", {
       costPerMillionInputTokens: 0.25,
       costPerMillionOutputTokens: 2,
       costPerMillionCachedInputTokens: 0.025,
@@ -127,7 +120,7 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
       webSearch: 1,
       contextLength: 400000,
     }),
-    ...generateModelSpec("gpt-5-nano", {
+    generateModelSpec("gpt-5-nano", {
       costPerMillionInputTokens: 0.05,
       costPerMillionOutputTokens: 0.4,
       costPerMillionCachedInputTokens: 0.005,
@@ -138,7 +131,7 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
       webSearch: 1,
       contextLength: 400000,
     }),
-    ...generateModelSpec("o3", {
+    generateModelSpec("o3", {
       costPerMillionInputTokens: 10.0,
       costPerMillionOutputTokens: 40.0,
       reasoningText: 6,
@@ -148,7 +141,7 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
       webSearch: 1,
       contextLength: 200000,
     }),
-    ...generateModelSpec("o4-mini", {
+    generateModelSpec("o4-mini", {
       costPerMillionInputTokens: 1.1,
       costPerMillionOutputTokens: 4.4,
       costPerMillionCachedInputTokens: 0.275,
@@ -159,13 +152,15 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
       webSearch: 1,
       contextLength: 200000,
     }),
-  };
+  ];
 
-  for (const modelName in chatModels) {
-    const model = chatModels[modelName];
+  const webSearchModels: ChatModelSpec[] = [];
+  
+  for (const model of chatModels) {
     if (model.webSearch) {
       const newModel = {
         ...model,
+        modelId: `${model.modelId}-web-search`,
         mangleRequest(req: ChatRequest) {
           (req.tools ??= {}).web_search_preview = openai.tools.webSearchPreview({});
           return undefined;
@@ -175,41 +170,32 @@ export async function init(modelRegistry: ModelRegistry, config: OpenAIModelProv
       };
 
       delete model.webSearch;
-
-      chatModels[`${modelName}-web-search`] = newModel;
+      webSearchModels.push(newModel);
     }
   }
 
-  /**
-   * A collection of OpenAI image generation model specifications.
-   * Each key is a model ID, and the value is an `ImageModelSpec` object.
-   */
-  const imageGenerationModels: Record<string, ImageModelSpec> = {
-    ...generateImageModelSpec("gpt-image-1", "gpt-image-1-high", {
+  modelRegistry.chat.registerAllModelSpecs([...chatModels, ...webSearchModels]);
+  modelRegistry.imageGeneration.registerAllModelSpecs([
+    generateImageModelSpec("gpt-image-1", "gpt-image-1-high", {
       providerOptions: {
         openai: { quality: 'high'}
       },
       costPerMillionInputTokens: 10,
       costPerMegapixel: 0.067
     }),
-    ...generateImageModelSpec("gpt-image-1", "gpt-image-1-medium", {
+    generateImageModelSpec("gpt-image-1", "gpt-image-1-medium", {
       providerOptions: {
         openai: { quality: 'medium'}
       },
       costPerMillionInputTokens: 10,
       costPerMegapixel: 0.042
     }),
-    ...generateImageModelSpec("gpt-image-1", "gpt-image-1-low", {
+    generateImageModelSpec("gpt-image-1", "gpt-image-1-low", {
       providerOptions: {
         openai: { quality: 'low'}
       },
       costPerMillionInputTokens: 10,
       costPerMegapixel: 0.011
     })
-  };
-
-  modelRegistry.chat.registerAllModelSpecs(chatModels);
-  modelRegistry.imageGeneration.registerAllModelSpecs(
-    imageGenerationModels,
-  );
+  ]);
 }

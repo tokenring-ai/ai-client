@@ -32,18 +32,17 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
   }) as () => Promise<ModelList | null>;
 
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId">): ChatModelSpec {
     return {
-      [modelId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: xai(modelId),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some((model) => model.id === modelId);
-        },
-        ...modelSpec,
+      modelId,
+      providerDisplayName: config.providerDisplayName,
+      impl: xai(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some((model) => model.id === modelId);
       },
-    }
+      ...modelSpec,
+    } as ChatModelSpec;
   }
 
   /**
@@ -51,8 +50,8 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
    * Each key is a model ID, and the value is a `ChatModelSpec` object.
    * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
    */
-  const chatModels: Record<string, ChatModelSpec> = {
-    ...generateModelSpec("grok-code-fast-1", {
+  modelRegistry.chat.registerAllModelSpecs([
+    generateModelSpec("grok-code-fast-1", {
       costPerMillionInputTokens: 0.2,
       costPerMillionCachedInputTokens: 0.02,
       costPerMillionOutputTokens: 1.5,
@@ -62,7 +61,7 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
       speed: 6,
       contextLength: 256000,
     }),
-    ...generateModelSpec("grok-4-0709", {
+    generateModelSpec("grok-4-0709", {
       costPerMillionInputTokens: 3,
       costPerMillionOutputTokens: 15.0,
       reasoningText: 6,
@@ -71,7 +70,7 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
       speed: 3,
       contextLength: 256000,
     }),
-    ...generateModelSpec("grok-4-fast-reasoning", {
+    generateModelSpec("grok-4-fast-reasoning", {
       costPerMillionInputTokens: 0.20,
       costPerMillionCachedInputTokens: 0.05,
       costPerMillionOutputTokens: 0.50,
@@ -81,7 +80,7 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
       speed: 3,
       contextLength: 2000000,
     }),
-    ...generateModelSpec("grok-4-fast-non-reasoning", {
+    generateModelSpec("grok-4-fast-non-reasoning", {
       costPerMillionInputTokens: 0.20,
       costPerMillionCachedInputTokens: 0.05,
       costPerMillionOutputTokens: 0.50,
@@ -91,7 +90,7 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
       speed: 6,
       contextLength: 2000000,
     }),
-    ...generateModelSpec("grok-3", {
+    generateModelSpec("grok-3", {
       costPerMillionInputTokens: 3,
       costPerMillionOutputTokens: 15.0,
       reasoningText: 0,
@@ -100,7 +99,7 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
       speed: 2,
       contextLength: 131072,
     }),
-    ...generateModelSpec("grok-3-mini", {
+    generateModelSpec("grok-3-mini", {
       costPerMillionInputTokens: 0.3,
       costPerMillionOutputTokens: 0.5,
       reasoningText: 4,
@@ -109,7 +108,7 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
       speed: 3,
       contextLength: 131072,
     }),
-    ...generateModelSpec("grok-4-0709", {
+    generateModelSpec("grok-4-0709", {
       costPerMillionInputTokens: 3,
       costPerMillionOutputTokens: 15.0,
       reasoningText: 6,
@@ -118,17 +117,16 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
       speed: 3,
       contextLength: 256000,
     }),
-  };
-
-  modelRegistry.chat.registerAllModelSpecs(chatModels);
+  ]);
 
 
   /**
-   * A collection of xAI image generation model specifications.
+   * A collection of xAI imageneration model specifications.
    * Each key is a model ID, and the value is an `ImageModelSpec` object.
    */
-  const imageGenerationModels: Record<string, ImageModelSpec> = {
-    "grok-2-image-1212": {
+  modelRegistry.imageGeneration.registerAllModelSpecs([
+    {
+      modelId: "grok-2-image-1212",
       providerDisplayName: config.providerDisplayName,
       impl: xai.imageModel("grok-2-image-1212"),
       async isAvailable() {
@@ -136,8 +134,6 @@ export async function init(modelRegistry: ModelRegistry, config: XAIModelProvide
         return !!modelList?.data.some((model) => model.id === "grok-2-image-1212");
       },
       costPerImage: 0.07
-    },
-  };
-
-  modelRegistry.imageGeneration.registerAllModelSpecs(imageGenerationModels);
+    }
+  ]);
 }

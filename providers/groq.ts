@@ -42,27 +42,21 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
   ) as () => Promise<ModelList | null>;
 
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId">): ChatModelSpec {
     return {
-      [modelId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: groq(modelId),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some((model) => model.id === modelId);
-        },
-        ...modelSpec,
+      modelId,
+      providerDisplayName: config.providerDisplayName,
+      impl: groq(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some((model) => model.id === modelId);
       },
-    }
+      ...modelSpec,
+    } as ChatModelSpec;
   }
 
-  /**
-   * A collection of Groq chat model specifications.
-   * Each key is a model ID, and the value is a `ChatModelSpec` object.
-   * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   */
-  const chatModels: Record<string, ChatModelSpec> = {
-    ...generateModelSpec("llama-3.1-8b-instant", {
+  modelRegistry.chat.registerAllModelSpecs([
+    generateModelSpec("llama-3.1-8b-instant", {
       contextLength: 131072,
       maxCompletionTokens: 131072,
       costPerMillionInputTokens: 0.05,
@@ -72,7 +66,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 6,
       tools: 2,
     }),
-    ...generateModelSpec("llama-3.3-70b-versatile", {
+    generateModelSpec("llama-3.3-70b-versatile", {
       contextLength: 131072,
       maxCompletionTokens: 32768,
       costPerMillionInputTokens: 0.59,
@@ -83,7 +77,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       tools: 3,
     }),
     // New and Updated Models
-    ...generateModelSpec("deepseek-r1-distill-llama-70b", {
+    generateModelSpec("deepseek-r1-distill-llama-70b", {
       contextLength: 131072,
       maxCompletionTokens: 131072,
       costPerMillionInputTokens: 0.75,
@@ -93,7 +87,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 4,
       tools: 4,
     }),
-    ...generateModelSpec("meta-llama/llama-4-maverick-17b-128e-instruct", {
+    generateModelSpec("meta-llama/llama-4-maverick-17b-128e-instruct", {
       contextLength: 131072,
       maxCompletionTokens: 8192,
       costPerMillionInputTokens: 0.2,
@@ -103,7 +97,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 4,
       tools: 3,
     }),
-    ...generateModelSpec("meta-llama/llama-4-scout-17b-16e-instruct", {
+    generateModelSpec("meta-llama/llama-4-scout-17b-16e-instruct", {
       contextLength: 131072,
       maxCompletionTokens: 8192,
       costPerMillionInputTokens: 0.11,
@@ -113,7 +107,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 4,
       tools: 3,
     }),
-    ...generateModelSpec("openai/gpt-oss-120b", {
+    generateModelSpec("openai/gpt-oss-120b", {
       contextLength: 131072,
       maxCompletionTokens: 65536,
       costPerMillionInputTokens: 0.15,
@@ -123,7 +117,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 3,
       tools: 5,
     }),
-    ...generateModelSpec("openai/gpt-oss-20b", {
+    generateModelSpec("openai/gpt-oss-20b", {
       contextLength: 131072,
       maxCompletionTokens: 65536,
       costPerMillionInputTokens: 0.10,
@@ -133,7 +127,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 4,
       tools: 4,
     }),
-    ...generateModelSpec("qwen/qwen3-32b", {
+    generateModelSpec("qwen/qwen3-32b", {
       contextLength: 131072,
       maxCompletionTokens: 40960,
       costPerMillionInputTokens: 0.29,
@@ -143,7 +137,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 4,
       tools: 3,
     }),
-    ...generateModelSpec("moonshotai/kimi-k2-instruct-0905", {
+    generateModelSpec("moonshotai/kimi-k2-instruct-0905", {
       contextLength: 131072,
       maxCompletionTokens: 16384,
       costPerMillionInputTokens: 1,
@@ -153,7 +147,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 5,
       tools: 5,
     }),
-    ...generateModelSpec("meta-llama/llama-guard-4-12b", {
+    generateModelSpec("meta-llama/llama-guard-4-12b", {
       contextLength: 131072,
       maxCompletionTokens: 1024,
       costPerMillionInputTokens: 0.20,
@@ -163,7 +157,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 5,
       tools: 1,
     }),
-    ...generateModelSpec("meta-llama/llama-prompt-guard-2-22m", {
+    generateModelSpec("meta-llama/llama-prompt-guard-2-22m", {
       contextLength: 512,
       maxCompletionTokens: 512,
       costPerMillionInputTokens: 0.03,
@@ -173,7 +167,7 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 6,
       tools: 1,
     }),
-    ...generateModelSpec("meta-llama/llama-prompt-guard-2-86m", {
+    generateModelSpec("meta-llama/llama-prompt-guard-2-86m", {
       contextLength: 512,
       maxCompletionTokens: 512,
       costPerMillionInputTokens: 0.04,
@@ -183,7 +177,5 @@ export async function init(modelRegistry: ModelRegistry, config: GroqModelProvid
       speed: 6,
       tools: 1,
     }),
-  };
-
-  modelRegistry.chat.registerAllModelSpecs(chatModels);
+  ]);
 }

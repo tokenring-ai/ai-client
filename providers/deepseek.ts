@@ -53,22 +53,23 @@ export async function init(modelRegistry: ModelRegistry, config: DeepSeekModelPr
     apiKey: config.apiKey
   });
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName">, offPeakAdjustment: {
+  function generateModelSpecs(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "modelId">, offPeakAdjustment: {
     costPerMillionInputTokens: number
     costPerMillionOutputTokens: number,
-  }): Record<string, ChatModelSpec> {
-    return {
-      [`${modelId}-peak`]: {
+  }): ChatModelSpec[] {
+    return [
+      {
+        modelId: `${modelId}-peak`,
         providerDisplayName: config.providerDisplayName,
         async isAvailable() {
           if (isOffPeak) return false;
           const modelList = await getModels();
           return !!modelList?.data.some((model) => model.id === modelId);
-
         },
         ...modelSpec,
-      },
-      [`${modelId}-offpeak`]: {
+      } as ChatModelSpec,
+      {
+        modelId: `${modelId}-offpeak`,
         providerDisplayName: config.providerDisplayName,
         async isAvailable() {
           if (!isOffPeak) return false;
@@ -77,17 +78,12 @@ export async function init(modelRegistry: ModelRegistry, config: DeepSeekModelPr
         },
         ...modelSpec,
         ...offPeakAdjustment,
-      }
-    }
+      } as ChatModelSpec
+    ];
   }
 
-  /**
-   * A collection of DeepSeek chat model specifications.]
-   * Each key is a model ID, and the value is a `ChatModelSpec` object.
-   * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   */
-  const chatModels: Record<string, ChatModelSpec> = {
-    ...generateModelSpec("deepseek-chat", {
+  modelRegistry.chat.registerAllModelSpecs([
+    ...generateModelSpecs("deepseek-chat", {
         impl: deepseekProvider("deepseek-chat"),
         costPerMillionInputTokens: 0.27,
         costPerMillionOutputTokens: 1.1,
@@ -101,7 +97,7 @@ export async function init(modelRegistry: ModelRegistry, config: DeepSeekModelPr
         costPerMillionInputTokens: 0.135,
         costPerMillionOutputTokens: 0.55
       }),
-    ...generateModelSpec("deepseek-reasoner", {
+    ...generateModelSpecs("deepseek-reasoner", {
       impl: deepseekProvider("deepseek-reasoner"),
       costPerMillionInputTokens: 0.55,
       costPerMillionOutputTokens: 2.19,
@@ -114,7 +110,5 @@ export async function init(modelRegistry: ModelRegistry, config: DeepSeekModelPr
       costPerMillionInputTokens: 0.135,
       costPerMillionOutputTokens: 0.55,
     })
-  };
-
-  modelRegistry.chat.registerAllModelSpecs(chatModels);
+  ]);
 }

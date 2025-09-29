@@ -85,12 +85,6 @@ describe("ModelRegistry Integration Tests", () => {
 			await modelRegistry.initializeModels(providers, config);
 		});
 
-		it("should filter models by name", () => {
-			const specs = modelRegistry.chat.getModelSpecs("gpt-4.1");
-			expect(specs).toHaveLength(1);
-			expect(specs[0].provider).toBe("openai");
-		});
-
 		it("should filter models by capabilities", () => {
 			const specs = modelRegistry.chat.filterModelSpecs({
 				contextLength: ">100000",

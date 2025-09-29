@@ -44,26 +44,21 @@ export async function init(modelRegistry: ModelRegistry, config: AzureModelProvi
     baseURL: config.baseURL,
   });
 
-  function generateModelSpec(deploymentName: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(deploymentName: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId">): ChatModelSpec {
     return {
-      [deploymentName]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: azureProvider(deploymentName),
-        async isAvailable() {
-          const deploymentList = await getModels();
-          return !!deploymentList?.data.some((deployment) => deployment.id === deploymentName && deployment.status === "succeeded");
-        },
-        ...modelSpec,
+      modelId: deploymentName,
+      providerDisplayName: config.providerDisplayName,
+      impl: azureProvider(deploymentName),
+      async isAvailable() {
+        const deploymentList = await getModels();
+        return !!deploymentList?.data.some((deployment) => deployment.id === deploymentName && deployment.status === "succeeded");
       },
-    }
+      ...modelSpec,
+    } as ChatModelSpec;
   }
 
-  /**
-   * A collection of Azure OpenAI chat model specifications.
-   * Each key is a deployment name, and the value is a `ChatModelSpec` object.
-   */
-  const chatModels: Record<string, ChatModelSpec> = {
-    ...generateModelSpec("deepseek-v3-0324", {
+  await modelRegistry.chat.registerAllModelSpecs([
+    generateModelSpec("deepseek-v3-0324", {
       costPerMillionInputTokens: 0.0,
       costPerMillionOutputTokens: 0.0,
       reasoningText: 6,
@@ -72,7 +67,5 @@ export async function init(modelRegistry: ModelRegistry, config: AzureModelProvi
       speed: 3,
       contextLength: 65536,
     }),
-  };
-
-  await modelRegistry.chat.registerAllModelSpecs(chatModels);
+  ]);
 }

@@ -74,7 +74,7 @@ async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, co
 
   const isAvailable = async () => true; // Models are available if we got data
 
-  const chatModelsSpec: Record<string, ChatModelSpec> = {};
+  const chatModelsSpec: ChatModelSpec[] = [];
 
   for (const model of modelsData.data) {
     if (!model.id) {
@@ -92,7 +92,8 @@ async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, co
       model.architecture?.input_modalities?.includes("text");
 
     if (isChatModel) {
-      chatModelsSpec[model.id] = {
+      chatModelsSpec.push({
+        modelId: model.id,
         providerDisplayName: config.providerDisplayName,
         impl: openrouter(model.id),
         isAvailable,
@@ -108,11 +109,11 @@ async function fetchAndRegisterOpenRouterModels(modelRegistry: ModelRegistry, co
         //reasoning: model.supported_parameters?.includes('include_reasoning') ? 2 : 0,
         //tools: model.supported_parameters?.includes('tools') ? 2 : 0,
         //webSearch: model.pricing?.web_search && model.pricing?.web_search !== "0" && model.pricing?.web_search !== null ? 1 : 0,
-      };
+      });
     }
   }
 
-  if (Object.keys(chatModelsSpec).length > 0) {
+  if (chatModelsSpec.length > 0) {
     modelRegistry.chat.registerAllModelSpecs(chatModelsSpec);
   }
 }

@@ -35,40 +35,40 @@ export async function execute(remainder: string, agent: Agent): Promise<void> {
       name: "Model Selection",
       children: [],
     };
-    const sortedProviders = Object.keys(modelsByProvider).sort((a, b) =>
+
+    const sortedProviders = Object.entries(modelsByProvider).sort(([a], [b]) =>
       a.localeCompare(b),
     );
 
-    for (const provider of sortedProviders) {
-      const providerModels = modelsByProvider[provider];
-
+    for (const [provider, providerModels] of sortedProviders) {
       // Sort models by status (online first) then by name
-      const sortedModels = providerModels.sort((a, b) => {
+      const sortedModels = Object.entries(providerModels).sort(
+        ([,a], [, b]) => {
         if (a.status === b.status) {
-          return a.name.localeCompare(b.name);
+          return a.modelSpec.modelId.localeCompare(b.modelSpec.modelId);
         } else {
           return a.status.localeCompare(b.status);
         }
       });
 
-      const children = sortedModels.map((model) => ({
-        value: model.name,
+      const children = sortedModels.map(([modelName, model]) => ({
+        value: modelName,
         name:
           model.status === "online"
-            ? `✅ ${model.name}`
+            ? `✅ ${model.modelSpec.modelId}`
             : model.status === "cold"
-              ? `🧊 ${model.name} (cold)`
-              : `🔴 ${model.name} (offline)`,
+              ? `🧊 ${model.modelSpec.modelId} (cold)`
+              : `🔴 ${model.modelSpec.modelId} (offline)`,
       }));
 
       // Count online models for provider display
-      const onlineCount = providerModels.filter(
+      const onlineCount = Object.values(providerModels).filter(
         (m) => m.status === "online",
       ).length;
-      const coldCount = providerModels.filter(
+      const coldCount = Object.values(providerModels).filter(
         (m) => m.status === "cold",
       ).length;
-      const totalCount = providerModels.length;
+      const totalCount = Object.keys(providerModels).length;
       const statusIcon = onlineCount > 0 ? "✅" : coldCount > 0 ? "🧊" : "🔴";
 
       tree.children?.push({

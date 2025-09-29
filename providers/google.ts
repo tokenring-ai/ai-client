@@ -37,58 +37,38 @@ export async function init(modelRegistry: ModelRegistry, config: GoogleModelProv
     apiKey: config.apiKey
   });
 
-  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl">): Record<string, ChatModelSpec> {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId">): ChatModelSpec {
     return {
-      [modelId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: googleProvider(modelId),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.models.some((model) => model.name.includes(modelId));
-        },
-        ...modelSpec,
+      modelId,
+      providerDisplayName: config.providerDisplayName,
+      impl: googleProvider(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.models.some((model) => model.name.includes(modelId));
       },
-    }
+      ...modelSpec,
+    } as ChatModelSpec;
   }
 
 
-  function generateImageModelSpec(modelId: string, costPerImage: number): Record<string, ImageModelSpec> {
+  function generateImageModelSpec(modelId: string, costPerImage: number): ImageModelSpec {
     return {
-      [modelId]: {
-        providerDisplayName: config.providerDisplayName,
-        impl: googleProvider.image(modelId),
-        async isAvailable() {
-          // TODO: figure out how to get this working
-          return true;
+      modelId,
+      providerDisplayName: config.providerDisplayName,
+      impl: googleProvider.image(modelId),
+      async isAvailable() {
+        // TODO: figure out how to get this working
+        return true;
 
-          //const modelList = await getModels();
-          //return !!modelList?.models.some((model) => model.name.includes(modelId));
-        },
-        costPerImage
+        //const modelList = await getModels();
+        //return !!modelList?.models.some((model) => model.name.includes(modelId));
       },
+      costPerImage
     };
   }
 
-  const chatModels: Record<string, ChatModelSpec> = {
-    ...generateModelSpec("gemini-1.5-pro", {
-      costPerMillionInputTokens: 7.0,
-      costPerMillionOutputTokens: 7.0,
-      reasoningText: 3,
-      intelligence: 3,
-      tools: 3,
-      speed: 2,
-      contextLength: 2000000,
-    }),
-    ...generateModelSpec("gemini-1.5-flash", {
-      costPerMillionInputTokens: 0.075,
-      costPerMillionOutputTokens: 0.3,
-      reasoningText: 1,
-      intelligence: 3,
-      tools: 3,
-      speed: 5,
-      contextLength: 128000,
-    }),
-    ...generateModelSpec("gemini-2.5-pro", {
+  const chatModels: ChatModelSpec[] = [
+    generateModelSpec("gemini-2.5-pro", {
       costPerMillionInputTokens: 4.0,
       costPerMillionOutputTokens: 20.0,
       reasoningText: 6,
@@ -98,7 +78,7 @@ export async function init(modelRegistry: ModelRegistry, config: GoogleModelProv
       webSearch: 1,
       contextLength: 1000000,
     }),
-    ...generateModelSpec("gemini-2.5-flash", {
+    generateModelSpec("gemini-2.5-flash", {
       costPerMillionInputTokens: 0.3,
       costPerMillionOutputTokens: 2.5,
       reasoningText: 5,
@@ -108,7 +88,7 @@ export async function init(modelRegistry: ModelRegistry, config: GoogleModelProv
       webSearch: 1,
       contextLength: 1000000,
     }),
-    ...generateModelSpec("gemini-2.5-flash-lite", {
+    generateModelSpec("gemini-2.5-flash-lite", {
       costPerMillionInputTokens: 0.1,
       costPerMillionOutputTokens: 0.4,
       reasoningText: 2,
@@ -117,35 +97,33 @@ export async function init(modelRegistry: ModelRegistry, config: GoogleModelProv
       speed: 5,
       contextLength: 1000000,
     }),
-  };
+  ];
 
-  for (const modelName of Object.keys(chatModels)) {
-    const model = chatModels[modelName];
-    const newModel = {
-      ...model,
-      mangleRequest(req: ChatRequest) {
-        (req.tools ??= {}).google_search = googleProvider.tools.googleSearch({})
-        return undefined;
-      },
-      costPerMillionInputTokens: model.costPerMillionInputTokens + 0.001, // Adjust the cost slightly so that these models are only used for search
-      costPerMillionOutputTokens: model.costPerMillionOutputTokens + 0.001,
-    };
+  const webSearchModels: ChatModelSpec[] = [];
+  
+  for (const model of chatModels) {
+    if (model.webSearch) {
+      const newModel = {
+        ...model,
+        modelId: `${model.modelId}-web-search`,
+        mangleRequest(req: ChatRequest) {
+          (req.tools ??= {}).google_search = googleProvider.tools.googleSearch({})
+          return undefined;
+        },
+        costPerMillionInputTokens: model.costPerMillionInputTokens + 0.001, // Adjust the cost slightly so that these models are only used for search
+        costPerMillionOutputTokens: model.costPerMillionOutputTokens + 0.001,
+      };
 
-    delete model.webSearch;
-
-    chatModels[`${modelName}-web-search`] = newModel;
+      delete model.webSearch;
+      webSearchModels.push(newModel);
+    }
   }
 
-  modelRegistry.chat.registerAllModelSpecs(chatModels);
+  modelRegistry.chat.registerAllModelSpecs([...chatModels, ...webSearchModels]);
 
-  /**
-   * A collection of Google image generation model specifications.
-   * Each key is a model ID, and the value is an `ImageModelSpec` object.
-   */
-  const imageGenerationModels: Record<string, ImageModelSpec> = {
-    ...generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
-    ...generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
-    ...generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
-  };
-  modelRegistry.imageGeneration.registerAllModelSpecs(imageGenerationModels);
+  modelRegistry.imageGeneration.registerAllModelSpecs([
+    generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
+    generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
+    generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
+  ]);
 }

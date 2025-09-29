@@ -38,7 +38,7 @@
  "types": "./index.ts",
  "license": "MIT",
  "scripts": {
-  "build": "tsc -p tsconfig.tson",
+  "build": "tsc -p tsconfig.json",
   "test": "vitest run",
   "test:watch": "vitest",
   "test:coverage": "vitest run --coverage"
