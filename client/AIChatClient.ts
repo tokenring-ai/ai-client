@@ -173,8 +173,6 @@ export default class AIChatClient {
       experimental_context: { agent }
     });
 
-    let mode = "text";
-
     const stream = result.fullStream;
     for await (const part of stream) {
       switch (part.type) {

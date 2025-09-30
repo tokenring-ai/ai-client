@@ -62,39 +62,21 @@ export async function init(modelRegistry: ModelRegistry, config: AnthropicModelP
       speed: 2,
       contextLength: 200000,
     }),
-    generateModelSpec("claude-4-opus", "claude-opus-4-20250514", {
-      costPerMillionInputTokens: 15.0, // $15 / MTok
-      costPerMillionOutputTokens: 75.0, // $75 / MTok
-      reasoningText: 6,
-      intelligence: 6,
-      tools: 6,
-      speed: 2,
-      contextLength: 200000,
+    generateModelSpec("claude-4.5-sonnet-long-context", "claude-sonnet-4-5-2025092", {
+      costPerMillionInputTokens: 6.0,
+      costPerMillionOutputTokens: 22.5,
+      reasoningText: 5,
+      intelligence: 5,
+      tools: 5,
+      speed: 3,
+      contextLength: 1000000,
     }),
-    generateModelSpec("claude-4-sonnet", "claude-sonnet-4-20250514", {
+    generateModelSpec("claude-4.5-sonnet", "claude-sonnet-4-5-2025092", {
       costPerMillionInputTokens: 3.0, // $3 / MTok
       costPerMillionOutputTokens: 15.0, // $15 / MTok
       reasoningText: 5,
       intelligence: 5,
       tools: 5,
-      speed: 3,
-      contextLength: 200000,
-    }),
-    generateModelSpec("claude-3.7-sonnet", "claude-3-7-sonnet-20250219", {
-      costPerMillionInputTokens: 3.0, // $3 / MTok
-      costPerMillionOutputTokens: 15.0, // $15 / MTok
-      reasoningText: 4,
-      intelligence: 4,
-      tools: 4,
-      speed: 3,
-      contextLength: 200000,
-    }),
-    generateModelSpec("claude-3.5-sonnet-new", "claude-3-5-sonnet-20241022", {
-      costPerMillionInputTokens: 3.0, // $3 / MTok
-      costPerMillionOutputTokens: 15.0, // $15 / MTok
-      reasoningText: 4,
-      intelligence: 4,
-      tools: 4,
       speed: 3,
       contextLength: 200000,
     }),
@@ -107,15 +89,6 @@ export async function init(modelRegistry: ModelRegistry, config: AnthropicModelP
       speed: 4,
       contextLength: 200000,
     }),
-    generateModelSpec("claude-3.5-sonnet", "claude-3-5-sonnet-20240620", {
-      costPerMillionInputTokens: 3.0, // $3 / MTok
-      costPerMillionOutputTokens: 15.0, // $15 / MTok
-      reasoningText: 3,
-      intelligence: 3,
-      tools: 3,
-      speed: 3,
-      contextLength: 200000,
-    }),
     generateModelSpec("claude-3-haiku", "claude-3-haiku-20240307", {
       costPerMillionInputTokens: 0.25, // $0.25 / MTok
       costPerMillionOutputTokens: 1.25, // $1.25 / MTok
@@ -123,15 +96,6 @@ export async function init(modelRegistry: ModelRegistry, config: AnthropicModelP
       intelligence: 2,
       tools: 2,
       speed: 5,
-      contextLength: 200000,
-    }),
-    generateModelSpec("claude-3-opus", "claude-3-opus-20240229", {
-      costPerMillionInputTokens: 15.0, // $15 / MTok
-      costPerMillionOutputTokens: 75.0, // $75 / MTok
-      reasoningText: 5,
-      intelligence: 5,
-      tools: 5,
-      speed: 2,
       contextLength: 200000,
     }),
   ]);
