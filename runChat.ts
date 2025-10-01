@@ -56,9 +56,9 @@ export default async function runChat(
       const contextLength = client.getModelSpec().contextLength;
       
       if (totalTokens > contextLength * 0.9) {
-        console.log("compact!");
         const config = aiService.getAIConfig(agent);
         if (config.autoCompact) {
+          agent.infoLine("Context is getting long. Automatically compacting context...");
           await compactContext(agent);
         } else {
           const shouldCompact = await agent.askHuman({
@@ -67,6 +67,7 @@ export default async function runChat(
           });
           
           if (shouldCompact) {
+            agent.infoLine("Compacting context...");
             await compactContext(agent);
           }
         }
