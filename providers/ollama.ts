@@ -1,123 +1,127 @@
-import {abandon} from "@tokenring-ai/utility/abandon";
-import {createOllama} from "ollama-ai-provider-v2";
-import {ChatModelSpec} from "../client/AIChatClient.js";
-import {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
-import ModelRegistry, {ModelProviderInfo} from "../ModelRegistry.ts";
+import { abandon } from "@tokenring-ai/utility/abandon";
+import { createOllama } from "ollama-ai-provider-v2";
+import type { ChatModelSpec } from "../client/AIChatClient.js";
+import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.js";
+import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-
-export type OllamaModelConfigFunction = (modelInfo: OllamaModelTagItem) => ModelConfigResults;
+export type OllamaModelConfigFunction = (
+	modelInfo: OllamaModelTagItem,
+) => ModelConfigResults;
 
 export interface OllamaModelProviderConfig extends ModelProviderInfo {
-  baseURL: string;
-  generateModelSpec: OllamaModelConfigFunction;
+	baseURL: string;
+	generateModelSpec: OllamaModelConfigFunction;
 }
 
 type ModelConfigResults = {
-  type: string;
-  capabilities?: any;
-}
+	type: string;
+	capabilities?: any;
+};
 
 type OllamaModelTagItem = {
-  "name": string,
-  "model": string,
-  "modified_at": string;
-  "size": number,
-  "digest": string;
-  "details": Record<string, ModelDetails>,
-}
+	name: string;
+	model: string;
+	modified_at: string;
+	size: number;
+	digest: string;
+	details: Record<string, ModelDetails>;
+};
 
 type ModelTagResponse = {
-  "models": OllamaModelTagItem[],
-}
+	models: OllamaModelTagItem[];
+};
 
 type ModelDetails = {
-  "parent_model": string,
-  "format": string,
-  "family": string,
-  "families": string[],
-  "parameter_size": string,
-  "quantization_level": string,
+	parent_model: string;
+	format: string;
+	family: string;
+	families: string[];
+	parameter_size: string;
+	quantization_level: string;
 };
 
 type ModelPsItem = {
-  "name": string,
-  "model": string,
-  "size": number,
-  "digest": string,
-  "details": Record<string, ModelDetails>,
-  "expires_at": string,
-  "size_vram": number,
-}
+	name: string;
+	model: string;
+	size: number;
+	digest: string;
+	details: Record<string, ModelDetails>;
+	expires_at: string;
+	size_vram: number;
+};
 
 type ModelPsResponse = {
-  "models": ModelPsItem[],
-}
+	models: ModelPsItem[];
+};
 
-export async function init(modelRegistry: ModelRegistry, config: OllamaModelProviderConfig) {
-  const {baseURL, generateModelSpec} = config;
-  if (!baseURL) {
-    throw new Error("No config.baseURL provided for Ollama provider.");
-  }
-  if (!generateModelSpec) {
-    throw new Error(
-      "No config.generateModelSpec provided for Ollama provider.",
-    );
-  }
+export async function init(
+	modelRegistry: ModelRegistry,
+	config: OllamaModelProviderConfig,
+) {
+	const { baseURL, generateModelSpec } = config;
+	if (!baseURL) {
+		throw new Error("No config.baseURL provided for Ollama provider.");
+	}
+	if (!generateModelSpec) {
+		throw new Error(
+			"No config.generateModelSpec provided for Ollama provider.",
+		);
+	}
 
-  const chatModelSpecs: ChatModelSpec[] = [];
-  const embeddingModelSpecs: EmbeddingModelSpec[] = [];
+	const chatModelSpecs: ChatModelSpec[] = [];
+	const embeddingModelSpecs: EmbeddingModelSpec[] = [];
 
-  const ollama = createOllama({baseURL});
-  const getModelList = cachedDataRetriever(`${baseURL}/tags`, {
-    headers: {},
-    cacheTime: 60000,
-    timeout: 1000,
-  }) as () => Promise<ModelTagResponse>;
-  const getRunningModels = cachedDataRetriever(`${baseURL}/ps`, {
-    headers: {},
-    cacheTime: 60000,
-    timeout: 1000,
-  }) as () => Promise<ModelPsResponse>;
+	const ollama = createOllama({ baseURL });
+	const getModelList = cachedDataRetriever(`${baseURL}/tags`, {
+		headers: {},
+		cacheTime: 60000,
+		timeout: 1000,
+	}) as () => Promise<ModelTagResponse>;
+	const getRunningModels = cachedDataRetriever(`${baseURL}/ps`, {
+		headers: {},
+		cacheTime: 60000,
+		timeout: 1000,
+	}) as () => Promise<ModelPsResponse>;
 
-  abandon(getRunningModels()); // In background, fetch the list of running models.
+	abandon(getRunningModels()); // In background, fetch the list of running models.
 
-  const modelList = await getModelList();
-  if (!modelList?.models) return;
+	const modelList = await getModelList();
+	if (!modelList?.models) return;
 
-  for (const modelInfo of modelList.models) {
-    const {type, capabilities = {}} = generateModelSpec(modelInfo);
+	for (const modelInfo of modelList.models) {
+		const { type, capabilities = {} } = generateModelSpec(modelInfo);
 
-    if (type === "chat") {
-      chatModelSpecs.push({
-        modelId: modelInfo.model,
-        providerDisplayName: config.providerDisplayName,
-        impl: ollama.chat(modelInfo.model),
-        isAvailable: () => getModelList().then((data) => !!data),
-        isHot: () =>
-          capabilities.alwaysHot ||
-          getRunningModels().then(result =>
-            result?.models?.find?.(row => modelInfo.model === row.model),
-          ),
-        ...capabilities,
-      });
-    } else if (type === "embedding") {
-      embeddingModelSpecs.push({
-        modelId: modelInfo.model,
-        providerDisplayName: config.providerDisplayName,
-        impl: ollama.embedding(modelInfo.model),
-        contextLength: 2048,
-        costPerMillionInputTokens: 0,
-        isAvailable: () => getModelList().then((data) => !!data),
-        isHot: () =>
-          capabilities.alwaysHot ||
-          getRunningModels().then(result =>
-            result?.models?.find?.(row => modelInfo.model === row.model),
-          ),
-      });
-    }
-  }
+		if (type === "chat") {
+			chatModelSpecs.push({
+				modelId: modelInfo.model,
+				providerDisplayName: config.providerDisplayName,
+				impl: ollama.chat(modelInfo.model),
+				isAvailable: () => getModelList().then((data) => !!data),
+				isHot: () =>
+					capabilities.alwaysHot ||
+					getRunningModels().then((result) =>
+						result?.models?.find?.((row) => modelInfo.model === row.model),
+					),
+				...capabilities,
+			});
+		} else if (type === "embedding") {
+			embeddingModelSpecs.push({
+				modelId: modelInfo.model,
+				providerDisplayName: config.providerDisplayName,
+				impl: ollama.embedding(modelInfo.model),
+				contextLength: 2048,
+				costPerMillionInputTokens: 0,
+				isAvailable: () => getModelList().then((data) => !!data),
+				isHot: () =>
+					capabilities.alwaysHot ||
+					getRunningModels().then((result) =>
+						result?.models?.find?.((row) => modelInfo.model === row.model),
+					),
+			});
+		}
+	}
 
-  modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
-  modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
+	modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
+	modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
 }
