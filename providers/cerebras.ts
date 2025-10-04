@@ -1,9 +1,14 @@
-import { createCerebras } from "@ai-sdk/cerebras";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import {createCerebras} from "@ai-sdk/cerebras";
+import {z} from "zod";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export interface CerebrasModelProviderConfig extends ModelProviderInfo {}
+export const CerebrasModelProviderConfigSchema = z.object({
+  apiKey: z.string()
+});
+
+export type CerebrasModelProviderConfig = z.infer<typeof CerebrasModelProviderConfigSchema>;
 
 interface Model {
 	id: string;
@@ -17,11 +22,10 @@ interface ModelList {
 	data: Model[];
 }
 
-export interface CerebrasModelProviderConfig extends ModelProviderInfo {
-	apiKey: string;
-}
+
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: CerebrasModelProviderConfig,
 ) {
@@ -49,7 +53,7 @@ export async function init(
 	): ChatModelSpec {
 		return {
 			modelId,
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			impl: cerebrasProvider(modelId),
 			async isAvailable() {
 				const modelList = await getModels();

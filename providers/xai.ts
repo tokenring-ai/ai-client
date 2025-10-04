@@ -1,8 +1,14 @@
-import { xai } from "@ai-sdk/xai";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
-import type { ImageModelSpec } from "../client/AIImageGenerationClient.js";
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import {xai} from "@ai-sdk/xai";
+import {z} from "zod";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+
+export const XAIModelProviderConfigSchema = z.object({
+  apiKey: z.string()
+});
+
+export type XAIModelProviderConfig = z.infer<typeof XAIModelProviderConfigSchema>;
 
 interface Model {
 	id: string;
@@ -16,11 +22,10 @@ interface ModelList {
 	data: Model[];
 }
 
-export interface XAIModelProviderConfig extends ModelProviderInfo {
-	apiKey: string;
-}
+
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: XAIModelProviderConfig,
 ) {
@@ -43,7 +48,7 @@ export async function init(
 	): ChatModelSpec {
 		return {
 			modelId,
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			impl: xai(modelId),
 			async isAvailable() {
 				const modelList = await getModels();
@@ -134,7 +139,7 @@ export async function init(
 	modelRegistry.imageGeneration.registerAllModelSpecs([
 		{
 			modelId: "grok-2-image-1212",
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			impl: xai.imageModel("grok-2-image-1212"),
 			async isAvailable() {
 				const modelList = await getModels();

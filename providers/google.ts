@@ -1,8 +1,15 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
-import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import {createGoogleGenerativeAI} from "@ai-sdk/google";
+import {z} from "zod";
+import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
+import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+
+export const GoogleModelProviderConfigSchema = z.object({
+  apiKey: z.string()
+});
+
+export type GoogleModelProviderConfig = z.infer<typeof GoogleModelProviderConfigSchema>;
 
 interface Model {
 	name: string;
@@ -14,11 +21,10 @@ interface ModelList {
 	models: Model[];
 }
 
-export interface GoogleModelProviderConfig extends ModelProviderInfo {
-	apiKey: string;
-}
+
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: GoogleModelProviderConfig,
 ) {
@@ -48,7 +54,7 @@ export async function init(
 	): ChatModelSpec {
 		return {
 			modelId,
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			impl: googleProvider(modelId),
 			async isAvailable() {
 				const modelList = await getModels();
@@ -66,7 +72,7 @@ export async function init(
 	): ImageModelSpec {
 		return {
 			modelId,
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			impl: googleProvider.image(modelId),
 			async isAvailable() {
 				// TODO: figure out how to get this working

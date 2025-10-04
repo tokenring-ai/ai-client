@@ -1,7 +1,18 @@
-import { openrouter } from "@openrouter/ai-sdk-provider";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import {openrouter} from "@openrouter/ai-sdk-provider";
+import {z} from "zod";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+
+export const OpenRouterModelProviderConfigSchema = z.object({
+  apiKey: z.string(),
+  modelFilter: z.function({
+    input: z.tuple([z.any()]),
+    output: z.boolean()
+  }).optional()
+});
+
+export type OpenRouterModelProviderConfig = z.infer<typeof OpenRouterModelProviderConfigSchema>;
 
 interface ModelData {
 	id: string;
@@ -40,14 +51,7 @@ interface ApiResponse {
 	data: ModelData[];
 }
 
-export interface OpenRouterModelProviderConfig extends ModelProviderInfo {
-	apiKey: string;
-	modelFilter?: ModelFilter;
-}
-
 type ModelFilter = (model: ModelData) => boolean;
-
-const providerName = "OpenRouter";
 
 // Function to safely convert pricing string to number (cost per million tokens)
 function parsePricing(priceString: string | null | undefined): number {
@@ -63,6 +67,7 @@ function parsePricing(priceString: string | null | undefined): number {
 }
 
 async function fetchAndRegisterOpenRouterModels(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: OpenRouterModelProviderConfig,
 ) {
@@ -97,7 +102,7 @@ async function fetchAndRegisterOpenRouterModels(
 		if (isChatModel) {
 			chatModelsSpec.push({
 				modelId: model.id,
-				providerDisplayName: config.providerDisplayName,
+        providerDisplayName: providerDisplayName,
 				impl: openrouter(model.id),
 				isAvailable,
 				contextLength:
@@ -119,6 +124,7 @@ async function fetchAndRegisterOpenRouterModels(
 }
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: OpenRouterModelProviderConfig,
 ) {
@@ -126,5 +132,5 @@ export async function init(
 		throw new Error("No config.apiKey provided for OpenRouter provider.");
 	}
 
-	await fetchAndRegisterOpenRouterModels(modelRegistry, config);
+  await fetchAndRegisterOpenRouterModels(providerDisplayName, modelRegistry, config);
 }

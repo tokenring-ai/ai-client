@@ -1,68 +1,33 @@
-import { ModelRegistry } from "./index.js";
-import type { AnthropicModelProviderConfig } from "./providers/anthropic.js";
+import {z} from "zod";
+import {ModelRegistry} from "./index.js";
+import {AnthropicModelProviderConfigSchema} from "./providers/anthropic.js";
 
 import * as anthropic from "./providers/anthropic.ts";
-import type { AzureModelProviderConfig } from "./providers/azure.js";
+import {AzureModelProviderConfigSchema} from "./providers/azure.js";
 import * as azure from "./providers/azure.ts";
-import type { CerebrasModelProviderConfig } from "./providers/cerebras.js";
+import {CerebrasModelProviderConfigSchema} from "./providers/cerebras.js";
 import * as cerebras from "./providers/cerebras.ts";
-import type { DeepSeekModelProviderConfig } from "./providers/deepseek.js";
+import {DeepSeekModelProviderConfigSchema} from "./providers/deepseek.js";
 import * as deepseek from "./providers/deepseek.ts";
-import type { FalModelProviderConfig } from "./providers/fal.js";
+import {FalModelProviderConfigSchema} from "./providers/fal.js";
 import * as fal from "./providers/fal.ts";
-import type { GoogleModelProviderConfig } from "./providers/google.js";
+import {GoogleModelProviderConfigSchema} from "./providers/google.js";
 import * as google from "./providers/google.ts";
-import type { GroqModelProviderConfig } from "./providers/groq.js";
+import {GroqModelProviderConfigSchema} from "./providers/groq.js";
 import * as groq from "./providers/groq.ts";
-import type { OllamaModelProviderConfig } from "./providers/ollama.js";
+import {LlamaModelProviderConfigSchema} from "./providers/llama.js";
+import {OllamaModelProviderConfigSchema} from "./providers/ollama.js";
 import * as ollama from "./providers/ollama.ts";
-import type { OpenAIModelProviderConfig } from "./providers/openai.js";
+import {OpenAIModelProviderConfigSchema} from "./providers/openai.js";
 import * as openai from "./providers/openai.ts";
-import type { OAICompatibleModelConfig } from "./providers/openaiCompatible.js";
+import {OAICompatibleModelConfigSchema} from "./providers/openaiCompatible.js";
 import * as openaiCompatible from "./providers/openaiCompatible.ts";
-import type { OpenRouterModelProviderConfig } from "./providers/openrouter.js";
+import {OpenRouterModelProviderConfigSchema} from "./providers/openrouter.js";
 import * as openrouter from "./providers/openrouter.ts";
-import type { PerplexityModelProviderConfig } from "./providers/perplexity.js";
+import {PerplexityModelProviderConfigSchema} from "./providers/perplexity.js";
 import * as perplexity from "./providers/perplexity.ts";
-import type { XAIModelProviderConfig } from "./providers/xai.js";
+import {XAIModelProviderConfigSchema} from "./providers/xai.js";
 import * as xai from "./providers/xai.ts";
-
-export type ModelProviderConfig =
-	| (Omit<AnthropicModelProviderConfig, "providerDisplayName"> & {
-			provider: "anthropic";
-	  })
-	| (Omit<CerebrasModelProviderConfig, "providerDisplayName"> & {
-			provider: "cerebras";
-	  })
-	| (Omit<DeepSeekModelProviderConfig, "providerDisplayName"> & {
-			provider: "deepseek";
-	  })
-	| (Omit<FalModelProviderConfig, "providerDisplayName"> & { provider: "fal" })
-	| (Omit<GoogleModelProviderConfig, "providerDisplayName"> & {
-			provider: "google";
-	  })
-	| (Omit<GroqModelProviderConfig, "providerDisplayName"> & {
-			provider: "groq";
-	  })
-	| (Omit<OllamaModelProviderConfig, "providerDisplayName"> & {
-			provider: "ollama";
-	  })
-	| (Omit<OpenAIModelProviderConfig, "providerDisplayName"> & {
-			provider: "openai";
-	  })
-	| (Omit<OpenRouterModelProviderConfig, "providerDisplayName"> & {
-			provider: "openrouter";
-	  })
-	| (Omit<PerplexityModelProviderConfig, "providerDisplayName"> & {
-			provider: "perplexity";
-	  })
-	| (Omit<AzureModelProviderConfig, "providerDisplayName"> & {
-			provider: "azure";
-	  })
-	| (Omit<OAICompatibleModelConfig, "providerDisplayName"> & {
-			provider: "openaiCompatible";
-	  })
-	| (Omit<XAIModelProviderConfig, "providerDisplayName"> & { provider: "xai" });
 
 /**
  * Registers a key: value object of model specs
@@ -76,81 +41,68 @@ export async function registerModels(
 
 		switch (providerConfig.provider) {
 			case "anthropic":
-				await anthropic.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await anthropic.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "cerebras":
-				await cerebras.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await cerebras.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "deepseek":
-				await deepseek.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await deepseek.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "fal":
-				await fal.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await fal.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "google":
-				await google.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await google.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "groq":
-				await groq.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await groq.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "ollama":
-				await ollama.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await ollama.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "openai":
-				await openai.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await openai.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "openrouter":
-				await openrouter.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await openrouter.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "perplexity":
-				await perplexity.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await perplexity.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "azure":
-				await azure.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await azure.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "openaiCompatible":
-				await openaiCompatible.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await openaiCompatible.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			case "xai":
-				await xai.init(modelRegistry, {
-					providerDisplayName,
-					...providerConfig,
+        await xai.init(providerDisplayName, modelRegistry, {
+          ...providerConfig,
 				});
 				break;
 			default:
@@ -160,3 +112,21 @@ export async function registerModels(
 		}
 	}
 }
+
+export const ModelProviderConfigSchema = z.discriminatedUnion("provider", [
+  AnthropicModelProviderConfigSchema.extend({provider: z.literal("anthropic")}),
+  CerebrasModelProviderConfigSchema.extend({provider: z.literal("cerebras")}),
+  DeepSeekModelProviderConfigSchema.extend({provider: z.literal("deepseek")}),
+  FalModelProviderConfigSchema.extend({provider: z.literal("fal")}),
+  GoogleModelProviderConfigSchema.extend({provider: z.literal("google")}),
+  GroqModelProviderConfigSchema.extend({provider: z.literal("groq")}),
+  LlamaModelProviderConfigSchema.extend({provider: z.literal("llama")}),
+  OllamaModelProviderConfigSchema.extend({provider: z.literal("ollama")}),
+  OpenAIModelProviderConfigSchema.extend({provider: z.literal("openai")}),
+  OpenRouterModelProviderConfigSchema.extend({provider: z.literal("openrouter")}),
+  PerplexityModelProviderConfigSchema.extend({provider: z.literal("perplexity")}),
+  AzureModelProviderConfigSchema.extend({provider: z.literal("azure")}),
+  OAICompatibleModelConfigSchema.extend({provider: z.literal("openaiCompatible")}),
+  XAIModelProviderConfigSchema.extend({provider: z.literal("xai")}),
+]);
+export type ModelProviderConfig = z.infer<typeof ModelProviderConfigSchema>;

@@ -1,12 +1,15 @@
-import { createDeepSeek } from "@ai-sdk/deepseek";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import {createDeepSeek} from "@ai-sdk/deepseek";
+import {z} from "zod";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
 
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export interface DeepSeekModelProviderConfig extends ModelProviderInfo {
-	apiKey: string;
-}
+export const DeepSeekModelProviderConfigSchema = z.object({
+  apiKey: z.string()
+});
+
+export type DeepSeekModelProviderConfig = z.infer<typeof DeepSeekModelProviderConfigSchema>;
 
 interface Model {
 	id: string;
@@ -20,6 +23,7 @@ interface ModelsListResponse {
 }
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: DeepSeekModelProviderConfig,
 ) {
@@ -47,7 +51,7 @@ export async function init(
 		return {
 			modelId,
 			impl: deepseekProvider(modelId),
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			async isAvailable() {
 				const modelList = await getModels();
 				return !!modelList?.data.some((model) => model.id === modelId);

@@ -1,13 +1,31 @@
-import type { TokenRingPackage } from "@tokenring-ai/agent";
+import {AgentTeam, TokenRingPackage} from "@tokenring-ai/agent";
+import {z} from "zod";
+import AIService from "./AIService.js";
 
 import * as chatCommands from "./chatCommands.ts";
-import packageJSON from "./package.json" with { type: "json" };
+import ModelRegistry from "./ModelRegistry.js";
+import {ModelProviderConfigSchema, registerModels} from "./models.js";
+import packageJSON from "./package.json" with {type: "json"};
+
+const configSchema = z.object({
+  defaultModel: z.string(),
+  models: z.record(z.string(), ModelProviderConfigSchema)
+});
 
 export const packageInfo: TokenRingPackage = {
 	name: packageJSON.name,
 	version: packageJSON.version,
 	description: packageJSON.description,
-	chatCommands: chatCommands,
+  async install(agentTeam: AgentTeam) {
+    agentTeam.addChatCommands(chatCommands);
+    agentTeam.services.register(new ModelRegistry());
+
+    const config = agentTeam.getConfigSlice("ai", configSchema);
+    if (!config) return;
+    await registerModels(config.models, agentTeam.services.requireItemByType(ModelRegistry));
+
+    agentTeam.addServices(new AIService({model: config.defaultModel}));
+  },
 };
 
 export { createChatRequest } from "./chatRequestBuilder/createChatRequest.ts";

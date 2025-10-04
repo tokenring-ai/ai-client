@@ -1,18 +1,27 @@
-import { abandon } from "@tokenring-ai/utility/abandon";
-import { createOllama } from "ollama-ai-provider-v2";
-import type { ChatModelSpec } from "../client/AIChatClient.js";
-import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.js";
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import {abandon} from "@tokenring-ai/utility/abandon";
+import {createOllama} from "ollama-ai-provider-v2";
+import {z} from "zod";
+import type {ChatModelSpec} from "../client/AIChatClient.js";
+import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
+import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export type OllamaModelConfigFunction = (
 	modelInfo: OllamaModelTagItem,
 ) => ModelConfigResults;
 
-export interface OllamaModelProviderConfig extends ModelProviderInfo {
-	baseURL: string;
-	generateModelSpec: OllamaModelConfigFunction;
-}
+export const OllamaModelProviderConfigSchema = z.object({
+  baseURL: z.string(),
+  generateModelSpec: z.function({
+    input: z.tuple([z.any()]),
+    output: z.object({
+      type: z.string(),
+      capabilities: z.any().optional(),
+    })
+  })
+});
+
+export type OllamaModelProviderConfig = z.infer<typeof OllamaModelProviderConfigSchema>;
 
 type ModelConfigResults = {
 	type: string;
@@ -56,6 +65,7 @@ type ModelPsResponse = {
 };
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: OllamaModelProviderConfig,
 ) {
@@ -95,7 +105,7 @@ export async function init(
 		if (type === "chat") {
 			chatModelSpecs.push({
 				modelId: modelInfo.model,
-				providerDisplayName: config.providerDisplayName,
+        providerDisplayName: providerDisplayName,
 				impl: ollama.chat(modelInfo.model),
 				isAvailable: () => getModelList().then((data) => !!data),
 				isHot: () =>
@@ -108,7 +118,7 @@ export async function init(
 		} else if (type === "embedding") {
 			embeddingModelSpecs.push({
 				modelId: modelInfo.model,
-				providerDisplayName: config.providerDisplayName,
+        providerDisplayName: providerDisplayName,
 				impl: ollama.embedding(modelInfo.model),
 				contextLength: 2048,
 				costPerMillionInputTokens: 0,

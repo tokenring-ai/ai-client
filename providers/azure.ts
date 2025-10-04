@@ -1,7 +1,15 @@
-import { createAzure } from "@ai-sdk/azure";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import {createAzure} from "@ai-sdk/azure";
+import {z} from "zod";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+
+export const AzureModelProviderConfigSchema = z.object({
+  apiKey: z.string(),
+  baseURL: z.string()
+});
+
+export type AzureModelProviderConfig = z.infer<typeof AzureModelProviderConfigSchema>;
 
 interface Deployment {
 	id: string;
@@ -13,17 +21,10 @@ interface DeploymentList {
 	data: Deployment[];
 }
 
-/**
- * The name of the AI provider.
- */
-const providerName = "Azure";
 
-export interface AzureModelProviderConfig extends ModelProviderInfo {
-	apiKey: string;
-	baseURL: string;
-}
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: AzureModelProviderConfig,
 ) {
@@ -58,7 +59,7 @@ export async function init(
 	): ChatModelSpec {
 		return {
 			modelId: deploymentName,
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			impl: azureProvider(deploymentName),
 			async isAvailable() {
 				const deploymentList = await getModels();

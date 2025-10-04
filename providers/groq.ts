@@ -1,9 +1,14 @@
-import { groq } from "@ai-sdk/groq";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import {groq} from "@ai-sdk/groq";
+import {z} from "zod";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export interface GroqModelProviderConfig extends ModelProviderInfo {}
+export const GroqModelProviderConfigSchema = z.object({
+  apiKey: z.string()
+});
+
+export type GroqModelProviderConfig = z.infer<typeof GroqModelProviderConfigSchema>;
 
 interface Model {
 	id: string;
@@ -17,16 +22,10 @@ interface ModelList {
 	data: Model[];
 }
 
-export interface GroqModelProviderConfig extends ModelProviderInfo {
-	apiKey: string;
-}
 
-/**
- * The name of the AI provider.
- */
-const providerName = "Groq";
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: GroqModelProviderConfig,
 ) {
@@ -52,7 +51,7 @@ export async function init(
 	): ChatModelSpec {
 		return {
 			modelId,
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			impl: groq(modelId),
 			async isAvailable() {
 				const modelList = await getModels();

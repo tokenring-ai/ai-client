@@ -1,17 +1,16 @@
-import { createFal } from "@ai-sdk/fal";
-import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import {createFal} from "@ai-sdk/fal";
+import {z} from "zod";
+import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 
-export interface FalModelProviderConfig extends ModelProviderInfo {
-	apiKey: string;
-}
+export const FalModelProviderConfigSchema = z.object({
+  apiKey: z.string(),
+});
 
-/**
- * The name of the AI provider.
- */
-const providerName = "Fal";
+export type FalModelProviderConfig = z.infer<typeof FalModelProviderConfigSchema>;
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: FalModelProviderConfig,
 ) {
@@ -31,7 +30,7 @@ export async function init(
 	): ImageModelSpec {
 		return {
 			modelId,
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			impl: fal.image(modelId),
 			async isAvailable() {
 				// For Fal, we'll assume most popular models are available

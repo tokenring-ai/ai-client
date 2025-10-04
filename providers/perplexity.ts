@@ -1,21 +1,21 @@
-import { perplexity } from "@ai-sdk/perplexity";
-import type {
-	ChatInputMessage,
-	ChatModelSpec,
-	ChatRequest,
-} from "../client/AIChatClient.ts";
+import {perplexity} from "@ai-sdk/perplexity";
+import {z} from "zod";
+import type {ChatInputMessage, ChatModelSpec, ChatRequest,} from "../client/AIChatClient.ts";
 
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 
-export interface PerplexityModelProviderConfig extends ModelProviderInfo {
-	apiKey: string;
-}
+export const PerplexityModelProviderConfigSchema = z.object({
+  apiKey: z.string()
+});
+
+export type PerplexityModelProviderConfig = z.infer<typeof PerplexityModelProviderConfigSchema>;
 
 /**
  * Initializes the Perplexity AI provider and registers its chat models with the model agent.
  *
  */
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: PerplexityModelProviderConfig,
 ) {
@@ -37,7 +37,7 @@ export async function init(
 	): ChatModelSpec {
 		return {
 			modelId,
-			providerDisplayName: config.providerDisplayName,
+      providerDisplayName: providerDisplayName,
 			impl: perplexity(modelId),
 			mangleRequest,
 			async isAvailable() {

@@ -1,18 +1,27 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
-import type { EmbeddingModelSpec as EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
-import ModelRegistry, { type ModelProviderInfo } from "../ModelRegistry.ts";
+import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
+import {z} from "zod";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import type {EmbeddingModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
+import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export type OAICompatibleModelConfigFunction = (
 	modelInfo: ModelListData,
 ) => ModelConfigResults;
 
-export type OAICompatibleModelConfig = ModelProviderInfo & {
-	apiKey?: string;
-	baseURL: string;
-	generateModelSpec: OAICompatibleModelConfigFunction;
-};
+export const OAICompatibleModelConfigSchema = z.object({
+  apiKey: z.string().optional(),
+  baseURL: z.string(),
+  generateModelSpec: z.function({
+    input: z.tuple([z.any()]),
+    output: z.object({
+      type: z.string(),
+      capabilities: z.record(z.string(), z.any()).optional(),
+    })
+  })
+});
+
+export type OAICompatibleModelConfig = z.infer<typeof OAICompatibleModelConfigSchema>;
 type ModelConfigResults = {
 	type: string;
 	capabilities?: Record<string, any>;
@@ -34,10 +43,11 @@ type ModelListResponse = {
 };
 
 export async function init(
+  providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: OAICompatibleModelConfig,
 ) {
-	const { baseURL, apiKey, generateModelSpec, providerDisplayName } = config;
+  const {baseURL, apiKey, generateModelSpec} = config;
 	if (!baseURL) {
 		throw new Error(
 			`No config.baseURL provided for ${providerDisplayName} provider.`,
@@ -53,9 +63,9 @@ export async function init(
 	const embeddingModelSpecs: EmbeddingModelSpec[] = [];
 
 	const openai = createOpenAICompatible({
-		name: config.providerDisplayName,
+    name: providerDisplayName,
 		baseURL,
-		apiKey,
+    apiKey: apiKey ?? "",
 	});
 
 	const getModelList = cachedDataRetriever(`${baseURL}/models`, {
@@ -77,7 +87,7 @@ export async function init(
 				if (type === "chat") {
 					chatModelSpecs.push({
 						modelId: modelInfo.id,
-						providerDisplayName: config.providerDisplayName,
+            providerDisplayName: providerDisplayName,
 						impl: openai.chatModel(modelInfo.id),
 						isAvailable: () => getModelList().then((data) => !!data),
 						isHot: () => Promise.resolve(true),
@@ -90,7 +100,7 @@ export async function init(
 				} else if (type === "embedding") {
 					embeddingModelSpecs.push({
 						modelId: modelInfo.id,
-						providerDisplayName: config.providerDisplayName,
+            providerDisplayName: providerDisplayName,
 						contextLength: capabilities.contextLength || 8192,
 						costPerMillionInputTokens:
 							capabilities.costPerMillionInputTokens || 0,
