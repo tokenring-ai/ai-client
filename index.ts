@@ -7,7 +7,7 @@ import ModelRegistry from "./ModelRegistry.js";
 import {ModelProviderConfigSchema, registerModels} from "./models.js";
 import packageJSON from "./package.json" with {type: "json"};
 
-const configSchema = z.object({
+export const AIClientConfigSchema = z.object({
   defaultModel: z.string(),
   models: z.record(z.string(), ModelProviderConfigSchema)
 });
@@ -20,7 +20,7 @@ export const packageInfo: TokenRingPackage = {
     agentTeam.addChatCommands(chatCommands);
     agentTeam.services.register(new ModelRegistry());
 
-    const config = agentTeam.getConfigSlice("ai", configSchema);
+    const config = agentTeam.getConfigSlice("ai", AIClientConfigSchema);
     if (!config) return;
     await registerModels(config.models, agentTeam.services.requireItemByType(ModelRegistry));
 
