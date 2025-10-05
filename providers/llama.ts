@@ -1,14 +1,16 @@
-import {createOpenAI} from "@ai-sdk/openai";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import { createOpenAI } from "@ai-sdk/openai";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const LlamaModelProviderConfigSchema = z.object({
-  apiKey: z.string()
+	apiKey: z.string(),
 });
 
-export type LlamaModelProviderConfig = z.infer<typeof LlamaModelProviderConfigSchema>;
+export type LlamaModelProviderConfig = z.infer<
+	typeof LlamaModelProviderConfigSchema
+>;
 
 interface Model {
 	id: string;
@@ -22,10 +24,8 @@ interface ModelList {
 	data: Model[];
 }
 
-
-
 export async function init(
-  providerDisplayName: string,
+	providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: LlamaModelProviderConfig,
 ) {
@@ -56,7 +56,7 @@ export async function init(
 	): ChatModelSpec {
 		return {
 			modelId,
-      providerDisplayName: providerDisplayName,
+			providerDisplayName: providerDisplayName,
 			impl: openai(modelId),
 			async isAvailable() {
 				const modelList = await getModels();

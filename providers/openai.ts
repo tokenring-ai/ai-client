@@ -1,15 +1,17 @@
-import {createOpenAI} from "@ai-sdk/openai";
-import {z} from "zod";
-import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
-import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
+import { createOpenAI } from "@ai-sdk/openai";
+import { z } from "zod";
+import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
+import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const OpenAIModelProviderConfigSchema = z.object({
-  apiKey: z.string()
+	apiKey: z.string(),
 });
 
-export type OpenAIModelProviderConfig = z.infer<typeof OpenAIModelProviderConfigSchema>;
+export type OpenAIModelProviderConfig = z.infer<
+	typeof OpenAIModelProviderConfigSchema
+>;
 
 type ModelListData = {
 	id: string;
@@ -23,10 +25,8 @@ type ModelList = {
 	data: ModelListData[];
 };
 
-
-
 export async function init(
-  providerDisplayName: string,
+	providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: OpenAIModelProviderConfig,
 ) {
@@ -52,7 +52,7 @@ export async function init(
 	): ChatModelSpec {
 		return {
 			modelId,
-      providerDisplayName: providerDisplayName,
+			providerDisplayName: providerDisplayName,
 			impl: openai(modelId),
 			async isAvailable() {
 				const modelList = await getModels();
@@ -72,7 +72,7 @@ export async function init(
 	): ImageModelSpec {
 		return {
 			modelId: variantId,
-      providerDisplayName: providerDisplayName,
+			providerDisplayName: providerDisplayName,
 			impl: openai.imageModel(modelId),
 			async isAvailable() {
 				const modelList = await getModels();

@@ -1,15 +1,17 @@
-import {createAnthropic} from "@ai-sdk/anthropic";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
 
 import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const AnthropicModelProviderConfigSchema = z.object({
-  apiKey: z.string()
+	apiKey: z.string(),
 });
 
-export type AnthropicModelProviderConfig = z.infer<typeof AnthropicModelProviderConfigSchema>;
+export type AnthropicModelProviderConfig = z.infer<
+	typeof AnthropicModelProviderConfigSchema
+>;
 
 interface Model {
 	created_at: string;
@@ -25,10 +27,8 @@ interface ModelsResponse {
 	last_id: string;
 }
 
-
-
 export async function init(
-  providerDisplayName: string,
+	providerDisplayName: string,
 	modelRegistry: ModelRegistry,
 	config: AnthropicModelProviderConfig,
 ) {
@@ -57,7 +57,7 @@ export async function init(
 	): ChatModelSpec {
 		return {
 			modelId,
-      providerDisplayName: providerDisplayName,
+			providerDisplayName: providerDisplayName,
 			impl: anthropicProvider(anthropicModelId),
 			async isAvailable() {
 				const modelList = await getModels();
