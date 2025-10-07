@@ -18,10 +18,21 @@ export const OAICompatibleModelConfigSchema = z.object({
       type: z.string(),
       capabilities: z.record(z.string(), z.any()).optional(),
     })
-  })
+  }).optional(),
 });
 
 export type OAICompatibleModelConfig = z.infer<typeof OAICompatibleModelConfigSchema>;
+
+
+function defaultModelSpecGenerator(modelInfo: ModelListData) : ModelConfigResults {
+  let {id} = modelInfo;
+  let type = "chat";
+  if (id.match(/embed/i)) {
+    type = "embedding";
+  }
+  return {type};
+}
+
 type ModelConfigResults = {
 	type: string;
 	capabilities?: Record<string, any>;
@@ -47,17 +58,13 @@ export async function init(
 	modelRegistry: ModelRegistry,
 	config: OAICompatibleModelConfig,
 ) {
-  const {baseURL, apiKey, generateModelSpec} = config;
+  let {baseURL, apiKey, generateModelSpec} = config;
 	if (!baseURL) {
 		throw new Error(
 			`No config.baseURL provided for ${providerDisplayName} provider.`,
 		);
 	}
-	if (!generateModelSpec) {
-		throw new Error(
-			`No config.generateModelSpec provided for ${providerDisplayName} provider.`,
-		);
-	}
+  generateModelSpec ??= defaultModelSpecGenerator;
 
 	const chatModelSpecs: ChatModelSpec[] = [];
 	const embeddingModelSpecs: EmbeddingModelSpec[] = [];

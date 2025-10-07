@@ -79,7 +79,7 @@ export async function init(
 		}),
 		generateModelSpec(
 			"claude-4.5-sonnet-long-context",
-			"claude-sonnet-4-5-2025092",
+			"claude-sonnet-4-5-20250929",
 			{
 				costPerMillionInputTokens: 6.0,
 				costPerMillionOutputTokens: 22.5,
@@ -90,7 +90,7 @@ export async function init(
 				contextLength: 1000000,
 			},
 		),
-		generateModelSpec("claude-4.5-sonnet", "claude-sonnet-4-5-2025092", {
+		generateModelSpec("claude-4.5-sonnet", "claude-sonnet-4-5-20250929", {
 			costPerMillionInputTokens: 3.0, // $3 / MTok
 			costPerMillionOutputTokens: 15.0, // $15 / MTok
 			reasoningText: 5,

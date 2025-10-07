@@ -23,6 +23,16 @@ export const OllamaModelProviderConfigSchema = z.object({
 
 export type OllamaModelProviderConfig = z.infer<typeof OllamaModelProviderConfigSchema>;
 
+function defaultModelSpecGenerator(modelInfo: OllamaModelTagItem) : ModelConfigResults {
+  let {model} = modelInfo;
+  let type = "chat";
+  if (model.match(/embed/i)) {
+    type = "embedding";
+  }
+  return {type};
+}
+
+
 type ModelConfigResults = {
 	type: string;
 	capabilities?: any;
@@ -69,15 +79,12 @@ export async function init(
 	modelRegistry: ModelRegistry,
 	config: OllamaModelProviderConfig,
 ) {
-	const { baseURL, generateModelSpec } = config;
+	let { baseURL, generateModelSpec } = config;
 	if (!baseURL) {
 		throw new Error("No config.baseURL provided for Ollama provider.");
 	}
-	if (!generateModelSpec) {
-		throw new Error(
-			"No config.generateModelSpec provided for Ollama provider.",
-		);
-	}
+
+  generateModelSpec ??= defaultModelSpecGenerator;
 
 	const chatModelSpecs: ChatModelSpec[] = [];
 	const embeddingModelSpecs: EmbeddingModelSpec[] = [];
