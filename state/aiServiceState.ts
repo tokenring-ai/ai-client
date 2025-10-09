@@ -1,7 +1,7 @@
-import type { AgentStateSlice } from "@tokenring-ai/agent/Agent";
-import type { ResetWhat } from "@tokenring-ai/agent/AgentEvents";
+import type {ResetWhat} from "@tokenring-ai/agent/AgentEvents";
+import type {AgentStateSlice} from "@tokenring-ai/agent/types";
 import async from "async";
-import type { AIConfig, StoredChatMessage } from "../AIService.js";
+import type {AIConfig, StoredChatMessage} from "../AIService.js";
 
 export class AIServiceState implements AgentStateSlice {
 	name = "AIServiceState";
