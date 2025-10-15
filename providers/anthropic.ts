@@ -68,6 +68,15 @@ export async function init(
 	}
 
 	modelRegistry.chat.registerAllModelSpecs([
+    generateModelSpec("claude-4.5-haiku", "claude-haiku-4-5-20251001", {
+      costPerMillionInputTokens: 1, // $0.80 / MTok
+      costPerMillionOutputTokens: 5.0, // $4 / MTok
+      reasoningText: 3,
+      intelligence: 4,
+      tools: 3,
+      speed: 4,
+      contextLength: 200000,
+    }),
 		generateModelSpec("claude-4.1-opus", "claude-opus-4-1-20250805", {
 			costPerMillionInputTokens: 15, // Unknown cost
 			costPerMillionOutputTokens: 75, // Unknown cost
