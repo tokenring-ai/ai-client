@@ -193,6 +193,27 @@ export async function init(
 
 	modelRegistry.chat.registerAllModelSpecs([...chatModels, ...webSearchModels]);
 	modelRegistry.imageGeneration.registerAllModelSpecs([
+    generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-high", {
+      providerOptions: {
+        openai: { quality: "high" },
+      },
+      costPerMillionInputTokens: 10,
+      costPerMegapixel: 0.067,
+    }),
+    generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-medium", {
+      providerOptions: {
+        openai: { quality: "medium" },
+      },
+      costPerMillionInputTokens: 10,
+      costPerMegapixel: 0.042,
+    }),
+    generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-low", {
+      providerOptions: {
+        openai: { quality: "low" },
+      },
+      costPerMillionInputTokens: 10,
+      costPerMegapixel: 0.011,
+    }),
 		generateImageModelSpec("gpt-image-1", "gpt-image-1-high", {
 			providerOptions: {
 				openai: { quality: "high" },
