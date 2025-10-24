@@ -236,4 +236,37 @@ export async function init(
 			costPerMegapixel: 0.011,
 		}),
 	]);
+
+	modelRegistry.speech.registerAllModelSpecs([
+		{
+			modelId: "tts-1",
+			providerDisplayName: providerDisplayName,
+			impl: openai.speech("tts-1"),
+			async isAvailable() {
+				return true;
+			},
+			costPerMillionCharacters: 15,
+		},
+		{
+			modelId: "tts-1-hd",
+			providerDisplayName: providerDisplayName,
+			impl: openai.speech("tts-1-hd"),
+			async isAvailable() {
+				return true;
+			},
+			costPerMillionCharacters: 30,
+		},
+	]);
+
+	modelRegistry.transcription.registerAllModelSpecs([
+		{
+			modelId: "whisper-1",
+			providerDisplayName: providerDisplayName,
+			impl: openai.transcription("whisper-1"),
+			async isAvailable() {
+				return true;
+			},
+			costPerMinute: 0.006,
+		},
+	]);
 }

@@ -13,6 +13,7 @@
 		"@ai-sdk/openai": "^2.0.53",
 		"@ai-sdk/openai-compatible": "^1.0.22",
 		"@ai-sdk/perplexity": "^2.0.13",
+  "@ai-sdk/provider": "^2.0.0",
 		"@ai-sdk/xai": "^2.0.26",
 		"@openrouter/ai-sdk-provider": "^1.2.0",
 		"@tokenring-ai/agent": "0.1.0",

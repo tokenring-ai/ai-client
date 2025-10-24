@@ -2,6 +2,8 @@ import type { TokenRingService } from "@tokenring-ai/agent/types";
 import AIChatClient from "./client/AIChatClient.js";
 import AIEmbeddingClient from "./client/AIEmbeddingClient.js";
 import AIImageGenerationClient from "./client/AIImageGenerationClient.js";
+import AISpeechClient from "./client/AISpeechClient.js";
+import AITranscriptionClient from "./client/AITranscriptionClient.js";
 import { ModelTypeRegistry } from "./ModelTypeRegistry.js";
 
 export interface ModelProviderInfo {
@@ -76,6 +78,8 @@ export default class ModelRegistry implements TokenRingService {
 	chat = new ModelTypeRegistry(AIChatClient);
 	embedding = new ModelTypeRegistry(AIEmbeddingClient);
 	imageGeneration = new ModelTypeRegistry(AIImageGenerationClient);
+	speech = new ModelTypeRegistry(AISpeechClient);
+	transcription = new ModelTypeRegistry(AITranscriptionClient);
 
 	/**
 	 * Registers a key: value object of model specs

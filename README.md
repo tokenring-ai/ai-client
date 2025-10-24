@@ -74,6 +74,8 @@ Manages AI models across providers. Automatically installed as a service in Agen
 - `chat.getModelsByProvider()` - Group models by provider
 - `embedding.getFirstOnlineClient(modelName)` - Get embedding client
 - `imageGeneration.getFirstOnlineClient(modelName)` - Get image generation client
+- `speech.getFirstOnlineClient(modelName)` - Get speech generation client
+- `transcription.getFirstOnlineClient(modelName)` - Get transcription client
 
 **Model Requirements:**
 ```typescript
@@ -181,6 +183,38 @@ Generate images from prompts.
 }
 ```
 
+### AISpeechClient
+
+Generate speech from text.
+
+**Methods:**
+- `generateSpeech(request, agent)` - Generate speech audio
+
+**Request:**
+```typescript
+{
+  text: string,
+  voice?: string,
+  speed?: number
+}
+```
+
+### AITranscriptionClient
+
+Transcribe audio to text.
+
+**Methods:**
+- `transcribe(request, agent)` - Transcribe audio
+
+**Request:**
+```typescript
+{
+  audio: Uint8Array | ArrayBuffer,
+  language?: string,
+  prompt?: string
+}
+```
+
 ## Usage
 
 ### Running a Chat
@@ -264,6 +298,34 @@ const [image, result] = await imageClient.generateImage(
 );
 ```
 
+### Generating Speech
+
+```typescript
+const speechClient = await modelRegistry.speech.getFirstOnlineClient('tts-1-hd');
+const [audioData, result] = await speechClient.generateSpeech(
+  {
+    text: 'Hello, world!',
+    voice: 'alloy',
+    speed: 1.0
+  },
+  agent
+);
+```
+
+### Transcribing Audio
+
+```typescript
+const transcriptionClient = await modelRegistry.transcription.getFirstOnlineClient('whisper-1');
+const audioBuffer = fs.readFileSync('audio.mp3');
+const [text, result] = await transcriptionClient.transcribe(
+  {
+    audio: audioBuffer,
+    language: 'en'
+  },
+  agent
+);
+```
+
 ## Commands
 
 The package provides chat commands for interactive use:
@@ -308,21 +370,21 @@ Manually compact the conversation context by summarizing prior messages.
 
 ## Supported Providers
 
-| Provider | Chat | Embeddings | Images | Notes |
-|----------|------|------------|--------|-------|
-| OpenAI | ✅ | ✅ | ✅ | GPT-4.1, GPT-5, O3, O4-mini |
-| Anthropic | ✅ | ❌ | ❌ | Claude 3.5, 4, 4.1 |
-| Google | ✅ | ❌ | ✅ | Gemini 2.5 Pro/Flash, web search |
-| xAI | ✅ | ❌ | ✅ | Grok 3, 4, code models |
-| DeepSeek | ✅ | ❌ | ❌ | DeepSeek Chat, Reasoner |
-| Groq | ✅ | ❌ | ❌ | Fast inference, Llama models |
-| Cerebras | ✅ | ❌ | ❌ | Ultra-fast inference |
-| Perplexity | ✅ | ❌ | ❌ | Sonar models with web search |
-| Azure | ✅ | ❌ | ❌ | Azure OpenAI Service |
-| Ollama | ✅ | ✅ | ❌ | Local models |
-| OpenRouter | ✅ | ❌ | ❌ | Access to many providers |
-| Fal | ❌ | ❌ | ✅ | Image generation |
-| OpenAI-Compatible | ✅ | ✅ | ❌ | Custom endpoints |
+| Provider | Chat | Embeddings | Images | Speech | Transcription | Notes |
+|----------|------|------------|--------|--------|---------------|-------|
+| OpenAI | ✅ | ✅ | ✅ | ✅ | ✅ | GPT-4.1, GPT-5, O3, O4-mini, TTS, Whisper |
+| Anthropic | ✅ | ❌ | ❌ | ❌ | ❌ | Claude 3.5, 4, 4.1 |
+| Google | ✅ | ❌ | ✅ | ❌ | ❌ | Gemini 2.5 Pro/Flash, web search |
+| xAI | ✅ | ❌ | ✅ | ❌ | ❌ | Grok 3, 4, code models |
+| DeepSeek | ✅ | ❌ | ❌ | ❌ | ❌ | DeepSeek Chat, Reasoner |
+| Groq | ✅ | ❌ | ❌ | ❌ | ❌ | Fast inference, Llama models |
+| Cerebras | ✅ | ❌ | ❌ | ❌ | ❌ | Ultra-fast inference |
+| Perplexity | ✅ | ❌ | ❌ | ❌ | ❌ | Sonar models with web search |
+| Azure | ✅ | ❌ | ❌ | ❌ | ❌ | Azure OpenAI Service |
+| Ollama | ✅ | ✅ | ❌ | ❌ | ❌ | Local models |
+| OpenRouter | ✅ | ❌ | ❌ | ❌ | ❌ | Access to many providers |
+| Fal | ❌ | ❌ | ✅ | ❌ | ❌ | Image generation |
+| OpenAI-Compatible | ✅ | ✅ | ❌ | ❌ | ❌ | Custom endpoints |
 
 ## Model Capabilities
 

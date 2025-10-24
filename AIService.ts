@@ -2,7 +2,9 @@ import Agent from "@tokenring-ai/agent/Agent";
 import type { TokenRingService } from "@tokenring-ai/agent/types";
 import type { AIResponse, ChatRequest } from "./client/AIChatClient.js";
 import { AIServiceState } from "./state/aiServiceState.js";
+import type { Tool } from "ai";
 
+export type AITool = Tool;
 export type AIConfig = {
 	systemPrompt: string | ((agent: Agent) => string);
 	temperature?: number;
