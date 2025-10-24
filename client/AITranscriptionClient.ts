@@ -1,5 +1,4 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {TranscriptionResult} from "@tokenring-ai/audio/AudioProvider";
 import {
   type DataContent,
   experimental_transcribe as transcribe,
@@ -7,6 +6,10 @@ import {
 } from "ai";
 import type { ModelSpec } from "../ModelTypeRegistry.js";
 
+
+export interface TranscriptionResult {
+  text: string;
+}
 export type TranscriptionRequest = {
 	audio: DataContent | URL;
 	language?: string;
