@@ -1,4 +1,4 @@
-import {AgentTeam, TokenRingPackage} from "@tokenring-ai/agent";
+import {AgentCommandService, AgentTeam, TokenRingPackage} from "@tokenring-ai/agent";
 import {z} from "zod";
 import AIService from "./AIService.js";
 
@@ -17,14 +17,16 @@ export default {
   version: packageJSON.version,
   description: packageJSON.description,
   async install(agentTeam: AgentTeam) {
-    agentTeam.addChatCommands(chatCommands);
-    agentTeam.services.register(new ModelRegistry());
+    agentTeam.waitForService(AgentCommandService, agentCommandService =>
+      agentCommandService.addAgentCommands(chatCommands)
+    );
+    agentTeam.addServices(new ModelRegistry());
 
     const config = agentTeam.getConfigSlice("ai", AIClientConfigSchema);
     if (!config) return;
     await registerModels(
       config.models,
-      agentTeam.services.requireItemByType(ModelRegistry),
+      agentTeam.requireService(ModelRegistry),
     );
 
     agentTeam.addServices(new AIService({model: config.defaultModel}));
@@ -33,3 +35,4 @@ export default {
 
 export {createChatRequest} from "./chatRequestBuilder/createChatRequest.ts";
 export {default as ModelRegistry} from "./ModelRegistry.ts";
+export {default as AIService} from "./AIService.ts";

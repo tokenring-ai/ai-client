@@ -52,4 +52,18 @@ export class AIServiceState implements AgentStateSlice {
 		this.currentConfig = data.currentConfig || { ...this.initialConfig };
 		this.messages = data.messages || [];
 	}
+
+  show(): string[] {
+    const lines = [
+      `Messages: ${this.messages.length}`,
+      `Enabled Tools: ${this.currentConfig.enabledTools?.join(", ") || "None"}`,
+    ];
+    if (this.currentConfig.temperature !== undefined) {
+      lines.push(`Temperature: ${this.currentConfig.temperature}`);
+    }
+    if (this.currentConfig.maxTokens !== undefined) {
+      lines.push(`Max Tokens: ${this.currentConfig.maxTokens}`);
+    }
+    return lines;
+  }
 }

@@ -1,7 +1,7 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import { stepCountIs, type UserModelMessage } from "ai";
-import AIService, { type AIConfig } from "../AIService.js";
-import type { ChatInputMessage, ChatRequest } from "../client/AIChatClient.js";
+import {stepCountIs, type UserModelMessage} from "ai";
+import AIService, {type AIConfig} from "../AIService.js";
+import type {ChatInputMessage, ChatRequest} from "../client/AIChatClient.js";
 
 export interface ChatRequestConfig {
 	input: string | ChatInputMessage | ChatInputMessage[];
@@ -90,7 +90,7 @@ export async function createChatRequest(
 	}
 
 	if (includeContextItems) {
-		for (const service of agent.team.services.getItems()) {
+    for (const service of agent.team.getServices()) {
 			if (!service.getContextItems) continue;
 			for await (const { content, position } of service.getContextItems(
 				agent,
@@ -133,9 +133,10 @@ export async function createChatRequest(
 	};
 
 	if (includeTools) {
-		for (const namedTool of Object.values(agent.tools.getActiveItemEntries())) {
-			const sanitizedName = namedTool.name.replace(/[^a-zA-Z0-9_-]/g, "_");
-			request.tools[sanitizedName] = namedTool.tool;
+    for (const toolName of Object.values(aiService.getEnabledTools(agent))) {
+      const {name, tool} = aiService.requireTool(toolName);
+      const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, "_");
+      request.tools[sanitizedName] = tool;
 		}
 	}
 

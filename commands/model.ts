@@ -13,6 +13,7 @@ export const description: string =
 	"/model [model_name] - Set or show the target model for chat";
 
 export async function execute(remainder: string, agent: Agent): Promise<void> {
+  debugger;
 	const modelRegistry = agent.requireServiceByType(ModelRegistry);
 	const aiService = agent.requireServiceByType(AIService);
 

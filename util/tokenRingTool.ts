@@ -1,7 +1,7 @@
-import { Agent } from "@tokenring-ai/agent";
-import type { TokenRingToolDefinition } from "@tokenring-ai/agent/types";
-import { tool as aiTool } from "ai";
-import { AIServiceState } from "../state/aiServiceState.js";
+import {Agent} from "@tokenring-ai/agent";
+import {tool as aiTool} from "ai";
+import {TokenRingToolDefinition} from "../AIService.js";
+import {AIServiceState} from "../state/aiServiceState.js";
 
 export function tokenRingTool({
 	name,

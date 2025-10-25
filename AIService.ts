@@ -1,10 +1,17 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import type { TokenRingService } from "@tokenring-ai/agent/types";
-import type { AIResponse, ChatRequest } from "./client/AIChatClient.js";
-import { AIServiceState } from "./state/aiServiceState.js";
-import type { Tool } from "ai";
+import type {TokenRingService} from "@tokenring-ai/agent/types";
+import KeyedRegistry from "@tokenring-ai/utility/KeyedRegistry";
+import type {Tool} from "ai";
+import type {AIResponse, ChatRequest} from "./client/AIChatClient.js";
+import {AIServiceState} from "./state/aiServiceState.js";
+import {tokenRingTool} from "./util/tokenRingTool.js";
 
 export type AITool = Tool;
+
+export type NamedTool = {
+  name: string;
+  tool: AITool;
+};
 export type AIConfig = {
 	systemPrompt: string | ((agent: Agent) => string);
 	temperature?: number;
@@ -15,6 +22,7 @@ export type AIConfig = {
 	presencePenalty?: number;
 	stopSequences?: string[];
 	autoCompact?: boolean;
+  enabledTools?: string[];
 };
 
 /**
@@ -35,12 +43,33 @@ export type AIServiceOptions = {
 	model: string;
 };
 
+export type TokenRingToolDefinition = {
+  name: string;
+  description: string;
+  execute: (input: object, agent: Agent) => Promise<string | object>;
+  inputSchema: AITool["inputSchema"];
+  start?: (agent: Agent) => Promise<void>;
+  stop?: (agent: Agent) => Promise<void>;
+};
+export type TokenRingTool = {
+  packageName: string;
+} & TokenRingToolDefinition;
 export default class AIService implements TokenRingService {
 	name = "AIService";
 	description = "A service for managing AI configuration";
 	model: string;
 
-	constructor(options: AIServiceOptions) {
+
+  private tools = new KeyedRegistry<NamedTool>();
+
+  requireTool = this.tools.requireItemByName;
+  registerTool = this.tools.register;
+  getAvailableToolNames = this.tools.getAllItemNames;
+
+  getToolNamesLike = this.tools.getItemNamesLike;
+  ensureToolNamesLike = this.tools.ensureItemNamesLike;
+
+  constructor(options: AIServiceOptions) {
 		this.model = options.model;
 	}
 
@@ -48,7 +77,27 @@ export default class AIService implements TokenRingService {
 		agent.initializeState(AIServiceState, agent.options.ai);
 	}
 
-	/**
+
+  addTools(
+    pkgName: string,
+    tools: Record<string, TokenRingToolDefinition>,
+  ) {
+    for (const toolName in tools) {
+      const fullName = `${pkgName}/${toolName}`;
+
+      // Check for duplicate tool registration
+      if (this.tools.getItemByName(fullName)) {
+        throw new Error(`Tool "${fullName}" is already registered`);
+      }
+
+      this.tools.register(
+        fullName,
+        tokenRingTool({...tools[toolName]}),
+      );
+    }
+  }
+
+  /**
 	 * Set model for the current persona or global model
 	 */
 	setModel(model: string): void {
@@ -121,4 +170,39 @@ export default class AIService implements TokenRingService {
 			}
 		});
 	}
+
+  getEnabledTools(agent: Agent): string[] {
+    return agent.getState(AIServiceState).currentConfig.enabledTools ?? [];
+  }
+
+  setEnabledTools(toolNames: string[], agent: Agent): void {
+    this.tools.ensureItems(toolNames);
+
+    agent.mutateState(AIServiceState, (state) => {
+      state.currentConfig.enabledTools = toolNames;
+    })
+  }
+
+  enableTools(toolNames: string[], agent: Agent): void {
+    this.tools.ensureItems(toolNames);
+
+    agent.mutateState(AIServiceState, (state) => {
+      state.currentConfig.enabledTools ??= [];
+      for (const tool of toolNames) {
+        if (!state.currentConfig.enabledTools.includes(tool)) {
+          state.currentConfig.enabledTools.push(tool);
+        }
+      }
+    })
+  }
+
+  disableTools(toolNames: string[], agent: Agent): void {
+    this.tools.ensureItems(toolNames);
+    agent.mutateState(AIServiceState, (state) => {
+      state.currentConfig.enabledTools = (state.currentConfig.enabledTools ?? [])
+        .filter((tool) =>
+          toolNames.includes(tool)
+        )
+    });
+  }
 }

@@ -1,12 +1,10 @@
+import {AgentLifecycleService} from "@tokenring-ai/agent";
 import Agent from "@tokenring-ai/agent/Agent";
 import AIService from "./AIService.js";
-import {
-	type ChatRequestConfig,
-	createChatRequest,
-} from "./chatRequestBuilder/createChatRequest.ts";
-import type { AIResponse } from "./client/AIChatClient.ts";
+import {type ChatRequestConfig, createChatRequest,} from "./chatRequestBuilder/createChatRequest.ts";
+import type {AIResponse} from "./client/AIChatClient.ts";
 import ModelRegistry from "./ModelRegistry.js";
-import { compactContext } from "./util/compactContext.js";
+import {compactContext} from "./util/compactContext.js";
 
 /**
  * runChat tool: Runs a chat with the AI model, combining streamChat and runChat functionality.
@@ -57,7 +55,7 @@ export default async function runChat(
 
 		const finalOutput: string = output ?? "";
 
-		await agent.executeHooks("afterChatCompletion", finalOutput, response);
+    await agent.getServiceByType(AgentLifecycleService)?.executeHooks(agent, "afterChatCompletion", finalOutput, response);
 
 		// Check if context compacting is needed
 		const messages = aiService.getChatMessages(agent);

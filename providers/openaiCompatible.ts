@@ -12,6 +12,10 @@ export type OAICompatibleModelConfigFunction = (
 export const OAICompatibleModelConfigSchema = z.object({
   apiKey: z.string().optional(),
   baseURL: z.string(),
+  headers: z.record(z.string(), z.string()).optional(),
+  queryParams: z.record(z.string(), z.string()).optional(),
+  includeUsage: z.boolean().optional(),
+  supportsStructuredOutputs: z.boolean().optional(),
   generateModelSpec: z.function({
     input: z.tuple([z.any()]),
     output: z.object({
@@ -58,7 +62,15 @@ export async function init(
 	modelRegistry: ModelRegistry,
 	config: OAICompatibleModelConfig,
 ) {
-  let {baseURL, apiKey, generateModelSpec} = config;
+  let {
+    baseURL,
+    apiKey,
+    generateModelSpec,
+    supportsStructuredOutputs = true,
+    queryParams,
+    includeUsage = true,
+    headers
+  } = config;
 	if (!baseURL) {
 		throw new Error(
 			`No config.baseURL provided for ${providerDisplayName} provider.`,
@@ -72,12 +84,17 @@ export async function init(
 	const openai = createOpenAICompatible({
     name: providerDisplayName,
 		baseURL,
-    apiKey: apiKey ?? "",
+    apiKey,
+    supportsStructuredOutputs,
+    queryParams,
+    includeUsage,
+    headers,
 	});
 
 	const getModelList = cachedDataRetriever(`${baseURL}/models`, {
 		headers: {
-			Authorization: `Bearer ${apiKey}`,
+      ...(apiKey && {Authorization: `Bearer ${apiKey}`}),
+      ...headers,
 			"Content-Type": "application/json",
 		},
 		cacheTime: 60000,
