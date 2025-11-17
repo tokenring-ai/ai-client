@@ -124,7 +124,43 @@ export async function init(
 			webSearch: 1,
 			contextLength: 400000,
 		}),
-		generateModelSpec("gpt-5-mini", {
+
+    generateModelSpec("gpt-5.1", {
+      costPerMillionInputTokens: 1.25,
+      costPerMillionCachedInputTokens: 0.125,
+      costPerMillionOutputTokens: 10,
+      reasoningText: 4,
+      intelligence: 6,
+      tools: 6,
+      speed: 3,
+      webSearch: 1,
+      contextLength: 400000,
+    }),
+    generateModelSpec("gpt-5-codex", {
+      costPerMillionInputTokens: 1.25,
+      costPerMillionCachedInputTokens: 0.125,
+      costPerMillionOutputTokens: 10,
+      reasoningText: 4,
+      intelligence: 6,
+      tools: 6,
+      speed: 3,
+      webSearch: 1,
+      contextLength: 400000,
+    }),
+
+    generateModelSpec("gpt-5.1-codex", {
+      costPerMillionInputTokens: 1.25,
+      costPerMillionCachedInputTokens: 0.125,
+      costPerMillionOutputTokens: 10,
+      reasoningText: 4,
+      intelligence: 6,
+      tools: 6,
+      speed: 3,
+      webSearch: 1,
+      contextLength: 400000,
+    }),
+
+    generateModelSpec("gpt-5-mini", {
 			costPerMillionInputTokens: 0.25,
 			costPerMillionOutputTokens: 2,
 			costPerMillionCachedInputTokens: 0.025,
