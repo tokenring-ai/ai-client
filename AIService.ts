@@ -98,7 +98,7 @@ export default class AIService implements TokenRingService {
   }
 
   /**
-	 * Set model for the current persona or global model
+	 * Set model for the current agent
 	 */
 	setModel(model: string): void {
 		this.model = model;
