@@ -13,6 +13,7 @@ export type NamedTool = {
   tool: AITool;
 };
 export type AIConfig = {
+  model: string;
 	systemPrompt: string | ((agent: Agent) => string);
 	temperature?: number;
 	maxTokens?: number;
@@ -100,11 +101,11 @@ export default class AIService implements TokenRingService {
   /**
 	 * Set model for the current agent
 	 */
-	setModel(model: string): void {
-		this.model = model;
+	setModel(model: string, agent: Agent): void {
+    this.updateAIConfig({model}, agent);
 	}
-	getModel(): string {
-		return this.model;
+	getModel(agent: Agent): string {
+    return this.getAIConfig(agent).model ?? this.model;
 	}
 
 	getAIConfig(agent: Agent): AIConfig {

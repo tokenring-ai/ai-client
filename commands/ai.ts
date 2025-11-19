@@ -127,7 +127,7 @@ function serializeModel(base: string, features: Record<string, any>): string {
 
 async function handleFeatureSubcommand(args: string[], agent: Agent): Promise<void> {
     const aiService = agent.requireServiceByType(AIService);
-    const currentModel = aiService.getModel();
+    const currentModel = aiService.getModel(agent);
     const { base, features } = parseModelAndFeatures(currentModel);
 
     const action = args[0];
@@ -197,7 +197,7 @@ async function handleFeatureSubcommand(args: string[], agent: Agent): Promise<vo
             }
         }
         const newModel = serializeModel(base, features);
-        aiService.setModel(newModel);
+        aiService.setModel(newModel, agent);
         agent.infoLine(`Enabled features. New model: ${newModel}`);
         return;
     }
@@ -213,7 +213,7 @@ async function handleFeatureSubcommand(args: string[], agent: Agent): Promise<vo
         delete features[key];
     }
     const newModel = serializeModel(base, features);
-    aiService.setModel(newModel);
+    aiService.setModel(newModel, agent);
     agent.infoLine(`Disabled features. New model: ${newModel}`);
 }
 

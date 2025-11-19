@@ -23,7 +23,7 @@ export async function compactContext(agent: Agent): Promise<void> {
 	);
 
 	const client = await modelRegistry.chat.getFirstOnlineClient(
-		aiService.getModel(),
+		aiService.getModel(agent),
 	);
 
 	const [output, response] = await agent.busyWhile(

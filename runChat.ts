@@ -20,7 +20,7 @@ export default async function runChat(
 	const aiService = agent.requireServiceByType(AIService);
 
 	const defaultRequestOptions = aiService.getAIConfig(agent);
-	const model = aiService.getModel();
+	const model = aiService.getModel(agent);
 
 	const request = await createChatRequest(
 		{ ...defaultRequestOptions, ...requestOptions },

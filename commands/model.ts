@@ -17,12 +17,12 @@ export async function execute(remainder: string, agent: Agent): Promise<void> {
 	const modelRegistry = agent.requireServiceByType(ModelRegistry);
 	const aiService = agent.requireServiceByType(AIService);
 
-	const model = aiService.getModel();
+	const model = aiService.getModel(agent);
 
 	// Handle direct model name input, e.g. /model gpt-4
 	const directModelName = remainder?.trim();
 	if (directModelName) {
-		aiService.setModel(directModelName);
+		aiService.setModel(directModelName, agent);
 		agent.infoLine(`Model set to ${directModelName}`);
 		return;
 	}
@@ -95,7 +95,7 @@ export async function execute(remainder: string, agent: Agent): Promise<void> {
 		});
 
 		if (selectedModel) {
-			aiService.setModel(selectedModel);
+			aiService.setModel(selectedModel, agent);
 			agent.infoLine(`Model set to ${selectedModel}`);
 		} else {
 			agent.infoLine("Model selection cancelled. No changes made.");
