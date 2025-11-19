@@ -95,8 +95,8 @@ export async function init(
 
   modelRegistry.chat.registerAllModelSpecs([
     generateModelSpec("gemini-3-pro-preview", {
-      costPerMillionInputTokens: 2.0,
-      costPerMillionOutputTokens: 12.0,
+      costPerMillionInputTokens: 4.0,
+      costPerMillionOutputTokens: 18.0,
       reasoningText: 7,
       intelligence: 7,
       tools: 7,
@@ -111,8 +111,8 @@ export async function init(
       contextLength: 1000000,
     }),
     generateModelSpec("gemini-2.5-pro", {
-			costPerMillionInputTokens: 4.0,
-			costPerMillionOutputTokens: 20.0,
+			costPerMillionInputTokens: 2.5,
+			costPerMillionOutputTokens: 15.0,
 			reasoningText: 6,
 			intelligence: 6,
 			tools: 6,
