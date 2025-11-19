@@ -3,13 +3,13 @@ import KeyedRegistry from "@tokenring-ai/utility/KeyedRegistry";
 export type FeatureSpec = {
   description: string;
 } & ({
-	type: "boolean";
-	defaultValue: boolean;
+  type: "boolean";
+  defaultValue: boolean;
 } | {
-	type: "number";
-	defaultValue: number;
+  type: "number";
+  defaultValue: number;
 } | {
-	type: "string";
+  type: "string";
   defaultValue: string;
 } | {
   type: "enum";
@@ -18,38 +18,43 @@ export type FeatureSpec = {
 });
 
 export type ModelSpec = {
-	modelId: string;
-	providerDisplayName: string;
-	isAvailable?: () => Promise<boolean>;
-	isHot?: () => Promise<boolean>;
+  modelId: string;
+  providerDisplayName: string;
+  isAvailable?: () => Promise<boolean>;
+  isHot?: () => Promise<boolean>;
   features?: Record<string, FeatureSpec>;
   //metaData?: Record<string, number>;
 };
 
 export interface ModelStatus<T> {
-	status: string;
-	available: boolean;
-	hot: boolean;
-	modelSpec: T;
+  status: string;
+  available: boolean;
+  hot: boolean;
+  modelSpec: T;
 }
 
 export interface GenericAIClient {
   setFeatures?(features: Record<string, string | boolean | number>): void;
 }
+
 /**
  * Registry for AI model specifications that uses a templated type for ModelSpec
  *   with optional fields used by the registry helper methods
  *   (e.g., isAvailable, isHot, provider)
  */
 export class ModelTypeRegistry<
-	T extends ModelSpec,
-	C extends GenericAIClient
+  T extends ModelSpec,
+  C extends GenericAIClient
 > {
   AIClient: new (
     modelSpec: T,
     features: Record<string, string | boolean | number>
   ) => C;
   modelSpecs = new KeyedRegistry<T>();
+  /**
+   * Registers a model with its metadata
+   */
+  registerModelSpec = this.modelSpecs.register;
 
   /**
    * Creates a new ModelTypeRegistry instance
@@ -57,11 +62,6 @@ export class ModelTypeRegistry<
   constructor(AIClient: typeof this.AIClient) {
     this.AIClient = AIClient;
   }
-
-  /**
-   * Registers a model with its metadata
-   */
-  registerModelSpec = this.modelSpecs.register;
 
   /**
    * Registers a key: value object of model specs

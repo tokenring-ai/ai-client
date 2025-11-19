@@ -6,7 +6,7 @@ import type {ChatModelRequirements} from "../ModelRegistry.ts";
 import type {ModelTypeRegistry} from "../ModelTypeRegistry.ts";
 
 export default async function getFirstOnlineClientByRequirements(
-  registry: ModelTypeRegistry<ChatModelSpec>,
+  registry: ModelTypeRegistry<ChatModelSpec, AIChatClient>,
   requirements: ChatModelRequirements,
 ) {
   const modelSpecs = getModelSpecsByRequirements(registry, requirements);

@@ -1,129 +1,129 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {
-	experimental_generateImage as generateImage,
-	type Experimental_GenerateImageResult,
-	type GeneratedFile,
-	type ImageModel,
+  experimental_generateImage as generateImage,
+  type Experimental_GenerateImageResult,
+  type GeneratedFile,
+  type ImageModel,
 } from "ai";
-import type { ModelSpec } from "../ModelTypeRegistry.js";
+import type {ModelSpec} from "../ModelTypeRegistry.js";
 
 export type ImageRequest = {
-	prompt: string;
-	quality?: string;
-	size: `${number}x${number}`;
-	n: number;
+  prompt: string;
+  quality?: string;
+  size: `${number}x${number}`;
+  n: number;
 };
 
 export type ImageResponse = {
-	mediaType: string;
+  mediaType: string;
 
-	uint8Array: Uint8Array;
+  uint8Array: Uint8Array;
 };
 
 export type ImageModelSpec = ModelSpec & {
-	/**
-	 * - Maximum context length in tokens
-	 */
-	contextLength?: number;
-	/**
-	 * - Cost per million input tokens (may be used for prompt processing).
-	 */
-	costPerMillionInputTokens?: number;
-	/**
-	 * - Cost per generated image (common pricing model for image generation).
-	 */
-	costPerImage?: number;
+  /**
+   * - Maximum context length in tokens
+   */
+  contextLength?: number;
+  /**
+   * - Cost per million input tokens (may be used for prompt processing).
+   */
+  costPerMillionInputTokens?: number;
+  /**
+   * - Cost per generated image (common pricing model for image generation).
+   */
+  costPerImage?: number;
 
-	/**
-	 * - Cost per megapixel (may not be applicable, or cost is per image).
-	 */
-	costPerMegapixel?: number;
-	/**
-	 * - The AI SDK image generation model implementation.
-	 */
-	impl: ImageModel;
+  /**
+   * - Cost per megapixel (may not be applicable, or cost is per image).
+   */
+  costPerMegapixel?: number;
+  /**
+   * - The AI SDK image generation model implementation.
+   */
+  impl: ImageModel;
 
-	/**
-	 * - Provider-specific options for the image generation model.
-	 */
-	providerOptions?: any;
-    /**
-     * - A callback to calculate the image cost
-     */
-    calculateImageCost?: (req: ImageRequest, res: ImageResponse) => number;
+  /**
+   * - Provider-specific options for the image generation model.
+   */
+  providerOptions?: any;
+  /**
+   * - A callback to calculate the image cost
+   */
+  calculateImageCost?: (req: ImageRequest, res: ImageResponse) => number;
 
-    /**
-     * - Optional hook to adjust the request prior to sending.
-     *   Receives the runtime feature flags as the second parameter.
-     */
-    mangleRequest?: (
-        req: ImageRequest,
-        features?: Record<string, any>,
-    ) => void;
+  /**
+   * - Optional hook to adjust the request prior to sending.
+   *   Receives the runtime feature flags as the second parameter.
+   */
+  mangleRequest?: (
+    req: ImageRequest,
+    features?: Record<string, any>,
+  ) => void;
 };
 
 /**
  * Client for generating images using the Vercel AI SDK's experimental image generation features.
  */
 export default class AIImageGenerationClient {
-    modelSpec: ImageModelSpec;
-    private features: Record<string, number | boolean | string> = {};
+  modelSpec: ImageModelSpec;
+  private features: Record<string, number | boolean | string> = {};
 
-	/**
-	 * Creates an instance of AIImageGenerationClient.
-	 */
- constructor(modelSpec: ImageModelSpec, features: typeof this.features = {}) {
-        this.modelSpec = modelSpec;
-        this.features = features;
+  /**
+   * Creates an instance of AIImageGenerationClient.
+   */
+  constructor(modelSpec: ImageModelSpec, features: typeof this.features = {}) {
+    this.modelSpec = modelSpec;
+    this.features = features;
+  }
+
+  /**
+   * Set feature flags for this client instance.
+   */
+  setFeatures(features: Record<string, any> | undefined): void {
+    this.features = {...(features ?? {})};
+  }
+
+  /**
+   * Get a copy of the feature flags.
+   */
+  getFeatures(): Record<string, any> {
+    return {...this.features};
+  }
+
+  /**
+   * Get the model ID.
+   */
+  getModelId(): string {
+    return this.modelSpec.modelId;
+  }
+
+  /**
+   * Generates an image based on a prompt using the specified model.
+   */
+  async generateImage(
+    request: ImageRequest,
+    agent: Agent,
+  ): Promise<[GeneratedFile, Experimental_GenerateImageResult]> {
+    const signal = agent.getAbortSignal();
+
+    try {
+      if (this.modelSpec.mangleRequest) {
+        request = {...request};
+        this.modelSpec.mangleRequest(request, this.features);
+      }
+      const result = await generateImage({
+        ...request,
+        n: 1,
+        model: this.modelSpec.impl,
+        providerOptions: this.modelSpec.providerOptions ?? {},
+        abortSignal: signal,
+      });
+
+      return [result.image, result];
+    } catch (error) {
+      agent.errorLine("Error generating image: ", error as Error);
+      throw error;
     }
-
-    /**
-     * Set feature flags for this client instance.
-     */
-    setFeatures(features: Record<string, any> | undefined): void {
-        this.features = { ...(features ?? {}) };
-    }
-
-    /**
-     * Get a copy of the feature flags.
-     */
-    getFeatures(): Record<string, any> {
-        return { ...this.features };
-    }
-
-	/**
-	 * Get the model ID.
-	 */
-	getModelId(): string {
-		return this.modelSpec.impl.modelId;
-	}
-
-	/**
-	 * Generates an image based on a prompt using the specified model.
-	 */
- async generateImage(
-        request: ImageRequest,
-        agent: Agent,
-    ): Promise<[GeneratedFile, Experimental_GenerateImageResult]> {
-        const signal = agent.getAbortSignal();
-
-        try {
-            if (this.modelSpec.mangleRequest) {
-                request = { ...request };
-                this.modelSpec.mangleRequest(request, this.features);
-            }
-            const result = await generateImage({
-                ...request,
-                n: 1,
-                model: this.modelSpec.impl,
-                providerOptions: this.modelSpec.providerOptions ?? {},
-                abortSignal: signal,
-            });
-
-			return [result.image, result];
-		} catch (error) {
-			agent.errorLine("Error generating image: ", error as Error);
-			throw error;
-		}
-	}
+  }
 }

@@ -1,68 +1,68 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { z } from "zod";
-import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
-import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
+import {createGoogleGenerativeAI} from "@ai-sdk/google";
+import {z} from "zod";
+import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
+import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import ModelRegistry from "../ModelRegistry.ts";
 import {FeatureSpec} from "../ModelTypeRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const GoogleModelProviderConfigSchema = z.object({
-	apiKey: z.string(),
+  apiKey: z.string(),
 });
 
 export type GoogleModelProviderConfig = z.infer<
-	typeof GoogleModelProviderConfigSchema
+  typeof GoogleModelProviderConfigSchema
 >;
 
 interface Model {
-	name: string;
-	displayName: string;
-	description: string;
+  name: string;
+  displayName: string;
+  description: string;
 }
 
 interface ModelList {
-	models: Model[];
+  models: Model[];
 }
 
 export async function init(
-	providerDisplayName: string,
-	modelRegistry: ModelRegistry,
-	config: GoogleModelProviderConfig,
+  providerDisplayName: string,
+  modelRegistry: ModelRegistry,
+  config: GoogleModelProviderConfig,
 ) {
-	if (!config.apiKey) {
-		throw new Error("No config.apiKey provided for Google provider.");
-	}
+  if (!config.apiKey) {
+    throw new Error("No config.apiKey provided for Google provider.");
+  }
 
-	const getModels = cachedDataRetriever(
-		"https://generativelanguage.googleapis.com/v1beta/models",
-		{
-			headers: {
-				"x-goog-api-key": config.apiKey,
-			},
-		},
-	) as () => Promise<ModelList | null>;
+  const getModels = cachedDataRetriever(
+    "https://generativelanguage.googleapis.com/v1beta/models",
+    {
+      headers: {
+        "x-goog-api-key": config.apiKey,
+      },
+    },
+  ) as () => Promise<ModelList | null>;
 
-	const googleProvider = createGoogleGenerativeAI({
-		apiKey: config.apiKey,
-	});
+  const googleProvider = createGoogleGenerativeAI({
+    apiKey: config.apiKey,
+  });
 
-	function generateModelSpec(
-		modelId: string,
-		modelSpec: Omit<
-			ChatModelSpec,
-			"isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"
-		>,
-	): ChatModelSpec {
-		return {
-			modelId,
-			providerDisplayName: providerDisplayName,
-			impl: googleProvider(modelId),
-			async isAvailable() {
-				const modelList = await getModels();
-				return !!modelList?.models.some((model) =>
-					model.name.includes(modelId),
-				);
-			},
+  function generateModelSpec(
+    modelId: string,
+    modelSpec: Omit<
+      ChatModelSpec,
+      "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"
+    >,
+  ): ChatModelSpec {
+    return {
+      modelId,
+      providerDisplayName: providerDisplayName,
+      impl: googleProvider(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.models.some((model) =>
+          model.name.includes(modelId),
+        );
+      },
       mangleRequest(req: ChatRequest, features?: Record<string, FeatureSpec>) {
         if (features?.websearch) {
           (req.tools ??= {}).google_search = googleProvider.tools.googleSearch(
@@ -70,28 +70,28 @@ export async function init(
           );
         }
       },
-			...modelSpec,
-		} as ChatModelSpec;
-	}
+      ...modelSpec,
+    } as ChatModelSpec;
+  }
 
-	function generateImageModelSpec(
-		modelId: string,
-		costPerImage: number,
-	): ImageModelSpec {
-		return {
-			modelId,
-			providerDisplayName: providerDisplayName,
-			impl: googleProvider.image(modelId),
-			async isAvailable() {
-				// TODO: figure out how to get this working
-				return true;
+  function generateImageModelSpec(
+    modelId: string,
+    costPerImage: number,
+  ): ImageModelSpec {
+    return {
+      modelId,
+      providerDisplayName: providerDisplayName,
+      impl: googleProvider.image(modelId),
+      async isAvailable() {
+        // TODO: figure out how to get this working
+        return true;
 
-				//const modelList = await getModels();
-				//return !!modelList?.models.some((model) => model.name.includes(modelId));
-			},
-			costPerImage,
-		};
-	}
+        //const modelList = await getModels();
+        //return !!modelList?.models.some((model) => model.name.includes(modelId));
+      },
+      costPerImage,
+    };
+  }
 
   modelRegistry.chat.registerAllModelSpecs([
     generateModelSpec("gemini-3-pro-preview", {
@@ -111,51 +111,51 @@ export async function init(
       contextLength: 1000000,
     }),
     generateModelSpec("gemini-2.5-pro", {
-			costPerMillionInputTokens: 2.5,
-			costPerMillionOutputTokens: 15.0,
-			reasoningText: 6,
-			intelligence: 6,
-			tools: 6,
-			speed: 2,
-			features: {
+      costPerMillionInputTokens: 2.5,
+      costPerMillionOutputTokens: 15.0,
+      reasoningText: 6,
+      intelligence: 6,
+      tools: 6,
+      speed: 2,
+      features: {
         websearch: {
-         description: "Enables web search",
-         defaultValue: false,
-         type: "boolean",
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
         }
       },
-			contextLength: 1000000,
-		}),
-		generateModelSpec("gemini-2.5-flash", {
-			costPerMillionInputTokens: 0.3,
-			costPerMillionOutputTokens: 2.5,
-			reasoningText: 5,
-			intelligence: 4,
-			tools: 4,
-			speed: 4,
-			features: {
+      contextLength: 1000000,
+    }),
+    generateModelSpec("gemini-2.5-flash", {
+      costPerMillionInputTokens: 0.3,
+      costPerMillionOutputTokens: 2.5,
+      reasoningText: 5,
+      intelligence: 4,
+      tools: 4,
+      speed: 4,
+      features: {
         websearch: {
-         description: "Enables web search",
-         defaultValue: false,
-         type: "boolean",
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
         }
       },
-			contextLength: 1000000,
-		}),
-		generateModelSpec("gemini-2.5-flash-lite", {
-			costPerMillionInputTokens: 0.1,
-			costPerMillionOutputTokens: 0.4,
-			reasoningText: 2,
-			intelligence: 3,
-			tools: 3,
-			speed: 5,
-			contextLength: 1000000,
-		}),
-	]);
+      contextLength: 1000000,
+    }),
+    generateModelSpec("gemini-2.5-flash-lite", {
+      costPerMillionInputTokens: 0.1,
+      costPerMillionOutputTokens: 0.4,
+      reasoningText: 2,
+      intelligence: 3,
+      tools: 3,
+      speed: 5,
+      contextLength: 1000000,
+    }),
+  ]);
 
-	modelRegistry.imageGeneration.registerAllModelSpecs([
-		generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
-		generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
-		generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
-	]);
+  modelRegistry.imageGeneration.registerAllModelSpecs([
+    generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
+    generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
+    generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
+  ]);
 }

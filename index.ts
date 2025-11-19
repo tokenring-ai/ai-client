@@ -1,14 +1,15 @@
 import {AgentCommandService, AgentTeam, TokenRingPackage} from "@tokenring-ai/agent";
-import {z} from "zod";
-import AIService from "./AIService.js";
 
-import * as chatCommands from "./chatCommands.ts";
+import * as chatCommands from "@tokenring-ai/chat/chatCommands";
+import {z} from "zod";
 import ModelRegistry from "./ModelRegistry.js";
 import {ModelProviderConfigSchema, registerModels} from "./models.js";
 import packageJSON from "./package.json" with {type: "json"};
 
+export type {Tool, UserModelMessage} from "ai";
+export {tool as chatTool, stepCountIs} from 'ai';
+
 export const AIClientConfigSchema = z.object({
-  defaultModel: z.string(),
   models: z.record(z.string(), ModelProviderConfigSchema),
 });
 
@@ -28,11 +29,8 @@ export default {
       config.models,
       agentTeam.requireService(ModelRegistry),
     );
-
-    agentTeam.addServices(new AIService({model: config.defaultModel}));
   },
 } as TokenRingPackage;
 
-export {createChatRequest} from "./chatRequestBuilder/createChatRequest.ts";
 export {default as ModelRegistry} from "./ModelRegistry.ts";
-export {default as AIService} from "./AIService.ts";
+export {default as ChatService} from "@tokenring-ai/chat/ChatService";

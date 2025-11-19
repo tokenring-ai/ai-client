@@ -2,11 +2,16 @@
 
 ## Overview
 
-The `@tokenring-ai/ai-client` package provides a unified interface for interacting with multiple AI providers through the Vercel AI SDK. It integrates with the Token Ring Agent framework to manage AI configurations, model selection, chat history, and request building.
+The `@tokenring-ai/ai-client` package provides a unified interface for interacting with multiple AI providers through
+the Vercel AI SDK. It integrates with the Token Ring Agent framework to manage AI configurations, model selection, chat
+history, and request building.
 
 **Key Features:**
-- **Multi-Provider Support**: OpenAI, Anthropic, Google, Groq, DeepSeek, Cerebras, xAI, Perplexity, Azure, Ollama, OpenRouter, Fal, and OpenAI-compatible endpoints
-- **Model Registry**: Automatic model selection based on cost, capabilities (reasoning, intelligence, speed, tools), and availability
+
+- **Multi-Provider Support**: OpenAI, Anthropic, Google, Groq, DeepSeek, Cerebras, xAI, Perplexity, Azure, Ollama,
+  OpenRouter, Fal, and OpenAI-compatible endpoints
+- **Model Registry**: Automatic model selection based on cost, capabilities (reasoning, intelligence, speed, tools), and
+  availability
 - **Chat Management**: Conversation history, streaming responses, cost/timing analytics
 - **Context Compaction**: Automatic summarization when conversations grow long
 - **Multiple Modalities**: Chat completions, embeddings, and image generation
@@ -68,6 +73,7 @@ export default {
 Manages AI models across providers. Automatically installed as a service in AgentTeam.
 
 **Key Methods:**
+
 - `chat.getFirstOnlineClient(modelName)` - Get chat client by name
 - `chat.getFirstOnlineClientByRequirements(requirements)` - Select model by capabilities
 - `chat.getAllModelsWithOnlineStatus()` - List all models with status
@@ -78,6 +84,7 @@ Manages AI models across providers. Automatically installed as a service in Agen
 - `transcription.getFirstOnlineClient(modelName)` - Get transcription client
 
 **Model Requirements:**
+
 ```typescript
 {
   provider?: string,           // Provider name or 'auto'
@@ -95,6 +102,7 @@ Manages AI models across providers. Automatically installed as a service in Agen
 Manages AI configuration and chat history for an Agent.
 
 **Key Methods:**
+
 - `getModel()` / `setModel(model)` - Get/set current model
 - `getAIConfig(agent)` - Get AI configuration
 - `updateAIConfig(config, agent)` - Update configuration
@@ -105,6 +113,7 @@ Manages AI configuration and chat history for an Agent.
 - `popMessage(agent)` - Remove latest message
 
 **AIConfig:**
+
 ```typescript
 {
   systemPrompt: string | ((agent: Agent) => string),
@@ -124,6 +133,7 @@ Manages AI configuration and chat history for an Agent.
 Handles chat completions with streaming support.
 
 **Key Methods:**
+
 - `streamChat(request, agent)` - Stream chat response
 - `textChat(request, agent)` - Non-streaming chat
 - `generateObject(request, agent)` - Structured output with Zod schema
@@ -131,6 +141,7 @@ Handles chat completions with streaming support.
 - `calculateTiming(elapsedMs, usage)` - Calculate throughput
 
 **Response:**
+
 ```typescript
 {
   text?: string,
@@ -164,6 +175,7 @@ Handles chat completions with streaming support.
 Generate embeddings for text.
 
 **Methods:**
+
 - `getEmbeddings({ input: string[] })` - Generate embeddings
 
 ### AIImageGenerationClient
@@ -171,9 +183,11 @@ Generate embeddings for text.
 Generate images from prompts.
 
 **Methods:**
+
 - `generateImage(request, agent)` - Generate image
 
 **Request:**
+
 ```typescript
 {
   prompt: string,
@@ -188,9 +202,11 @@ Generate images from prompts.
 Generate speech from text.
 
 **Methods:**
+
 - `generateSpeech(request, agent)` - Generate speech audio
 
 **Request:**
+
 ```typescript
 {
   text: string,
@@ -204,9 +220,11 @@ Generate speech from text.
 Transcribe audio to text.
 
 **Methods:**
+
 - `transcribe(request, agent)` - Transcribe audio
 
 **Request:**
+
 ```typescript
 {
   audio: Uint8Array | ArrayBuffer,
@@ -331,6 +349,7 @@ const [text, result] = await transcriptionClient.transcribe(
 The package provides chat commands for interactive use:
 
 ### `/chat [message]`
+
 Send a message to the AI using the current model and configuration.
 
 ```
@@ -338,6 +357,7 @@ Send a message to the AI using the current model and configuration.
 ```
 
 ### `/model [model_name]`
+
 Set or show the current model. Without arguments, shows an interactive tree selection.
 
 ```
@@ -346,6 +366,7 @@ Set or show the current model. Without arguments, shows an interactive tree sele
 ```
 
 ### `/ai settings key=value [...]`
+
 Update AI configuration settings.
 
 ```
@@ -355,6 +376,7 @@ Update AI configuration settings.
 ```
 
 ### `/ai context`
+
 Show all context items that would be included in the next chat request.
 
 ```
@@ -362,6 +384,7 @@ Show all context items that would be included in the next chat request.
 ```
 
 ### `/compact`
+
 Manually compact the conversation context by summarizing prior messages.
 
 ```
@@ -370,21 +393,21 @@ Manually compact the conversation context by summarizing prior messages.
 
 ## Supported Providers
 
-| Provider | Chat | Embeddings | Images | Speech | Transcription | Notes |
-|----------|------|------------|--------|--------|---------------|-------|
-| OpenAI | ✅ | ✅ | ✅ | ✅ | ✅ | GPT-4.1, GPT-5, O3, O4-mini, TTS, Whisper |
-| Anthropic | ✅ | ❌ | ❌ | ❌ | ❌ | Claude 3.5, 4, 4.1 |
-| Google | ✅ | ❌ | ✅ | ❌ | ❌ | Gemini 2.5 Pro/Flash, web search |
-| xAI | ✅ | ❌ | ✅ | ❌ | ❌ | Grok 3, 4, code models |
-| DeepSeek | ✅ | ❌ | ❌ | ❌ | ❌ | DeepSeek Chat, Reasoner |
-| Groq | ✅ | ❌ | ❌ | ❌ | ❌ | Fast inference, Llama models |
-| Cerebras | ✅ | ❌ | ❌ | ❌ | ❌ | Ultra-fast inference |
-| Perplexity | ✅ | ❌ | ❌ | ❌ | ❌ | Sonar models with web search |
-| Azure | ✅ | ❌ | ❌ | ❌ | ❌ | Azure OpenAI Service |
-| Ollama | ✅ | ✅ | ❌ | ❌ | ❌ | Local models |
-| OpenRouter | ✅ | ❌ | ❌ | ❌ | ❌ | Access to many providers |
-| Fal | ❌ | ❌ | ✅ | ❌ | ❌ | Image generation |
-| OpenAI-Compatible | ✅ | ✅ | ❌ | ❌ | ❌ | Custom endpoints |
+| Provider          | Chat | Embeddings | Images | Speech | Transcription | Notes                                     |
+|-------------------|------|------------|--------|--------|---------------|-------------------------------------------|
+| OpenAI            | ✅    | ✅          | ✅      | ✅      | ✅             | GPT-4.1, GPT-5, O3, O4-mini, TTS, Whisper |
+| Anthropic         | ✅    | ❌          | ❌      | ❌      | ❌             | Claude 3.5, 4, 4.1                        |
+| Google            | ✅    | ❌          | ✅      | ❌      | ❌             | Gemini 2.5 Pro/Flash, web search          |
+| xAI               | ✅    | ❌          | ✅      | ❌      | ❌             | Grok 3, 4, code models                    |
+| DeepSeek          | ✅    | ❌          | ❌      | ❌      | ❌             | DeepSeek Chat, Reasoner                   |
+| Groq              | ✅    | ❌          | ❌      | ❌      | ❌             | Fast inference, Llama models              |
+| Cerebras          | ✅    | ❌          | ❌      | ❌      | ❌             | Ultra-fast inference                      |
+| Perplexity        | ✅    | ❌          | ❌      | ❌      | ❌             | Sonar models with web search              |
+| Azure             | ✅    | ❌          | ❌      | ❌      | ❌             | Azure OpenAI Service                      |
+| Ollama            | ✅    | ✅          | ❌      | ❌      | ❌             | Local models                              |
+| OpenRouter        | ✅    | ❌          | ❌      | ❌      | ❌             | Access to many providers                  |
+| Fal               | ❌    | ❌          | ✅      | ❌      | ❌             | Image generation                          |
+| OpenAI-Compatible | ✅    | ✅          | ❌      | ❌      | ❌             | Custom endpoints                          |
 
 ## Model Capabilities
 
