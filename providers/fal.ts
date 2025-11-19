@@ -24,16 +24,14 @@ export async function init(
 	const fal = createFal({ apiKey });
 
 	function generateImageModelSpec(
-		modelId: string,
 		modelSpec: Omit<
 			ImageModelSpec,
 			"isAvailable" | "provider" | "providerDisplayName" | "impl"
 		>,
 	): ImageModelSpec {
 		return {
-			modelId,
 			providerDisplayName: providerDisplayName,
-			impl: fal.image(modelId),
+			impl: fal.image(modelSpec.modelId),
 			async isAvailable() {
 				// For Fal, we'll assume most popular models are available
 				// In a real implementation, you might want to check the API
@@ -44,13 +42,16 @@ export async function init(
 	}
 
 	modelRegistry.imageGeneration.registerAllModelSpecs([
-		generateImageModelSpec("fal-ai/qwen-image", {
+		generateImageModelSpec({
+      modelId: "fal-ai/qwen-image",
 			costPerMegapixel: 0.02,
 		}),
-		generateImageModelSpec("fal-ai/flux-pro/v1.1-ultra", {
+		generateImageModelSpec({
+      modelId: "fal-ai/flux-pro/v1.1-ultra",
 			costPerMegapixel: 0.06,
 		}),
-		generateImageModelSpec("fal-ai/flux-pro/v1.1", {
+		generateImageModelSpec({
+      modelId: "fal-ai/flux-pro/v1.1",
 			costPerMegapixel: 0.04,
 		}),
 	]);

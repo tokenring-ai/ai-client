@@ -43,31 +43,38 @@ export async function init(
 		},
 	}) as () => Promise<ModelList | null>;
 
-	function generateModelSpec(
-		modelId: string,
-		modelSpec: Omit<
-			ChatModelSpec,
-			"isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"
-		>,
-	): ChatModelSpec {
-		return {
-			modelId,
-			providerDisplayName: providerDisplayName,
-			impl: openai(modelId),
-			async isAvailable() {
-				const modelList = await getModels();
-				return !!modelList?.data.some((model) => model.id === modelId);
-			},
-			...modelSpec,
-		} as ChatModelSpec;
-	}
+ function generateModelSpec(
+        modelId: string,
+        modelSpec: Omit<
+            ChatModelSpec,
+            "isAvailable" | "providerDisplayName" | "impl" | "modelId"
+        >,
+    ): ChatModelSpec {
+        return {
+            modelId,
+            providerDisplayName: providerDisplayName,
+            impl: openai(modelId),
+            async isAvailable() {
+                const modelList = await getModels();
+                return !!modelList?.data.some((model) => model.id === modelId);
+            },
+            // Generic mangleRequest that applies enabled features when present
+            mangleRequest(req, features) {
+                if (features?.websearch) {
+                    (req.tools ??= {}).web_search = openai.tools.webSearch({});
+                }
+                return undefined;
+            },
+            ...modelSpec,
+        } as ChatModelSpec;
+    }
 
 	function generateImageModelSpec(
 		modelId: string,
 		variantId: string,
 		modelSpec: Omit<
 			ImageModelSpec,
-			"isAvailable" | "provider" | "providerDisplayName" | "impl"
+			"isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"
 		>,
 	): ImageModelSpec {
 		return {
@@ -82,7 +89,7 @@ export async function init(
 		};
 	}
 
-	const chatModels: ChatModelSpec[] = [
+  modelRegistry.chat.registerAllModelSpecs([
 		generateModelSpec("gpt-4.1", {
 			costPerMillionInputTokens: 2.0,
 			costPerMillionOutputTokens: 8.0,
@@ -121,7 +128,13 @@ export async function init(
 			intelligence: 6,
 			tools: 6,
 			speed: 3,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
 			contextLength: 400000,
 		}),
 
@@ -133,7 +146,13 @@ export async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      webSearch: 1,
+      features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
       contextLength: 400000,
     }),
     generateModelSpec("gpt-5-codex", {
@@ -144,7 +163,13 @@ export async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      webSearch: 1,
+      features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
       contextLength: 400000,
     }),
 
@@ -156,7 +181,13 @@ export async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      webSearch: 1,
+      features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
       contextLength: 400000,
     }),
 
@@ -168,7 +199,13 @@ export async function init(
 			intelligence: 5,
 			tools: 5,
 			speed: 4,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
 			contextLength: 400000,
 		}),
 		generateModelSpec("gpt-5-nano", {
@@ -179,7 +216,13 @@ export async function init(
 			intelligence: 3,
 			tools: 3,
 			speed: 5,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
 			contextLength: 400000,
 		}),
 		generateModelSpec("o3", {
@@ -189,7 +232,13 @@ export async function init(
 			intelligence: 6,
 			tools: 6,
 			speed: 2,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
 			contextLength: 200000,
 		}),
 		generateModelSpec("o4-mini", {
@@ -200,34 +249,17 @@ export async function init(
 			intelligence: 5,
 			tools: 5,
 			speed: 3,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
 			contextLength: 200000,
 		}),
-	];
+	]);
 
-	const webSearchModels: ChatModelSpec[] = [];
-
-	for (const model of chatModels) {
-		if (model.webSearch) {
-			const newModel = {
-				...model,
-				modelId: `${model.modelId}-web-search`,
-				mangleRequest(req: ChatRequest) {
-					(req.tools ??= {}).web_search_preview = openai.tools.webSearchPreview(
-						{},
-					);
-					return undefined;
-				},
-				costPerMillionInputTokens: model.costPerMillionInputTokens + 0.001, // Adjust the cost slightly so that these models are only used for search
-				costPerMillionOutputTokens: model.costPerMillionOutputTokens + 0.001,
-			};
-
-			delete model.webSearch;
-			webSearchModels.push(newModel);
-		}
-	}
-
-	modelRegistry.chat.registerAllModelSpecs([...chatModels, ...webSearchModels]);
 	modelRegistry.imageGeneration.registerAllModelSpecs([
     generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-high", {
       providerOptions: {

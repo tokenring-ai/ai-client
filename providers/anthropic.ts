@@ -1,73 +1,90 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { z } from "zod";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import {createAnthropic} from "@ai-sdk/anthropic";
+import {z} from "zod";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
 
 import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const AnthropicModelProviderConfigSchema = z.object({
-	apiKey: z.string(),
+  apiKey: z.string(),
 });
 
 export type AnthropicModelProviderConfig = z.infer<
-	typeof AnthropicModelProviderConfigSchema
+  typeof AnthropicModelProviderConfigSchema
 >;
 
 interface Model {
-	created_at: string;
-	display_name: string;
-	id: string;
-	type: "model";
+  created_at: string;
+  display_name: string;
+  id: string;
+  type: "model";
 }
 
 interface ModelsResponse {
-	data: Model[];
-	first_id: string;
-	has_more: boolean;
-	last_id: string;
+  data: Model[];
+  first_id: string;
+  has_more: boolean;
+  last_id: string;
 }
 
 export async function init(
-	providerDisplayName: string,
-	modelRegistry: ModelRegistry,
-	config: AnthropicModelProviderConfig,
+  providerDisplayName: string,
+  modelRegistry: ModelRegistry,
+  config: AnthropicModelProviderConfig,
 ) {
-	if (!config.apiKey) {
-		throw new Error("No config.apiKey provided for Anthropic provider.");
-	}
+  if (!config.apiKey) {
+    throw new Error("No config.apiKey provided for Anthropic provider.");
+  }
 
-	const getModels = cachedDataRetriever("https://api.anthropic.com/v1/models", {
-		headers: {
-			"x-api-key": config.apiKey,
-			"anthropic-version": "2023-06-01",
-		},
-	}) as () => Promise<ModelsResponse | null>;
+  const getModels = cachedDataRetriever("https://api.anthropic.com/v1/models", {
+    headers: {
+      "x-api-key": config.apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+  }) as () => Promise<ModelsResponse | null>;
 
-	const anthropicProvider = createAnthropic({
-		apiKey: config.apiKey,
-	});
+  const anthropicProvider = createAnthropic({
+    apiKey: config.apiKey,
+  });
 
-	function generateModelSpec(
-		modelId: string,
-		anthropicModelId: string,
-		modelSpec: Omit<
-			ChatModelSpec,
-			"isAvailable" | "providerDisplayName" | "impl" | "modelId"
-		>,
-	): ChatModelSpec {
-		return {
-			modelId,
-			providerDisplayName: providerDisplayName,
-			impl: anthropicProvider(anthropicModelId),
-			async isAvailable() {
-				const modelList = await getModels();
-				return !!modelList?.data.some((model) => model.id === anthropicModelId);
-			},
-			...modelSpec,
-		} as ChatModelSpec;
-	}
+  function generateModelSpec(
+    modelId: string,
+    anthropicModelId: string,
+    modelSpec: Omit<
+      ChatModelSpec,
+      "isAvailable" | "providerDisplayName" | "impl" | "modelId" | "features" | "mangleRequest"
+    >,
+  ): ChatModelSpec {
+    return {
+      modelId,
+      providerDisplayName: providerDisplayName,
+      impl: anthropicProvider(anthropicModelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some((model) => model.id === anthropicModelId);
+      },
+      mangleRequest(req, features) {
+        // Add web search tool if enabled
+        if (features.maxSearchUses) {
+          (req.tools ??= {}).web_search = anthropicProvider.tools.webSearch_20250305({
+            maxUses: features.maxSearchUses as number,
+          });
+        }
+      },
+      features: {
+        maxSearchUses: {
+          description: "Maximum number of web searches Claude can perform (0 to disable)",
+          defaultValue: 0,
+          type: "number",
+          min: 0,
+          max: 20,
+        },
+      },
+      ...modelSpec,
+    } as ChatModelSpec;
+  }
 
-	modelRegistry.chat.registerAllModelSpecs([
+  modelRegistry.chat.registerAllModelSpecs([
     generateModelSpec("claude-4.5-haiku", "claude-haiku-4-5-20251001", {
       costPerMillionInputTokens: 1, // $0.80 / MTok
       costPerMillionOutputTokens: 5.0, // $4 / MTok

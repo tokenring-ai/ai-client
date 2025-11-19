@@ -13,35 +13,54 @@ export type SpeechRequest = {
 };
 
 export type SpeechModelSpec = ModelSpec & {
-	costPerMillionCharacters?: number;
-	impl: SpeechModel;
-	providerOptions?: any;
+    costPerMillionCharacters?: number;
+    impl: SpeechModel;
+    providerOptions?: any;
+    /** Optional hook to adjust the request prior to sending. */
+    mangleRequest?: (
+        req: SpeechRequest,
+        features?: Record<string, any>,
+    ) => void;
 };
 
 export default class AISpeechClient {
-	modelSpec: SpeechModelSpec;
+    modelSpec: SpeechModelSpec;
+    private features: Record<string, number | boolean | string> = {};
 
-	constructor(modelSpec: SpeechModelSpec) {
-		this.modelSpec = modelSpec;
-	}
+ constructor(modelSpec: SpeechModelSpec,features: typeof this.features = {}) {
+        this.modelSpec = modelSpec;
+        this.features = features;
+    }
+
+    setFeatures(features: Record<string, any> | undefined): void {
+        this.features = { ...(features ?? {}) };
+    }
+
+    getFeatures(): Record<string, any> {
+        return { ...this.features };
+    }
 
 	getModelId(): string {
 		return this.modelSpec.impl.modelId;
 	}
 
-	async generateSpeech(
-		request: SpeechRequest,
-		agent: Agent,
-	): Promise<[Uint8Array, Experimental_SpeechResult]> {
-		const signal = agent.getAbortSignal();
+ async generateSpeech(
+        request: SpeechRequest,
+        agent: Agent,
+    ): Promise<[Uint8Array, Experimental_SpeechResult]> {
+        const signal = agent.getAbortSignal();
 
-		try {
-			const result = await generateSpeech({
-				...request,
-				model: this.modelSpec.impl,
-				providerOptions: this.modelSpec.providerOptions ?? {},
-				abortSignal: signal,
-			});
+        try {
+            if (this.modelSpec.mangleRequest) {
+                request = { ...request };
+                this.modelSpec.mangleRequest(request, this.features);
+            }
+            const result = await generateSpeech({
+                ...request,
+                model: this.modelSpec.impl,
+                providerOptions: this.modelSpec.providerOptions ?? {},
+                abortSignal: signal,
+            });
 
 			return [result.audio.uint8Array, result];
 		} catch (error) {

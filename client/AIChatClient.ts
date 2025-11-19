@@ -30,17 +30,18 @@ export type ChatInputMessage =
 	| ToolModelMessage;
 
 export type ChatRequest = {
-	tools: Record<string, Tool>;
-	stopWhen?: StopCondition<any> | undefined;
-	messages: ChatInputMessage[];
-	temperature?: number;
-	topP?: number;
-	topK?: number;
-	stopSequences?: string[];
-	presencePenalty?: number;
+  tools: Record<string, Tool>;
+  stopWhen?: StopCondition<any> | undefined;
+  messages: ChatInputMessage[];
+  temperature?: number;
+  topP?: number;
+  topK?: number;
+  stopSequences?: string[];
+  presencePenalty?: number;
 	frequencyPenalty?: number;
 	parallelTools?: boolean;
 	_toolQueue?: any;
+  providerOptions?: any;
 };
 
 export type GenerateRequest = {
@@ -48,20 +49,22 @@ export type GenerateRequest = {
 } & ChatRequest;
 
 export type ChatModelSpec = ModelSpec & {
-	contextLength: number;
-	costPerMillionInputTokens: number;
-	costPerMillionOutputTokens: number;
-	costPerMillionCachedInputTokens?: number;
-	costPerMillionReasoningTokens?: number;
-	impl: Exclude<LanguageModel, string>;
-	mangleRequest?: (req: ChatRequest) => void;
-	research?: number;
-	reasoningText?: number;
-	tools?: number;
-	intelligence?: number;
-	speed?: number;
-	webSearch?: number;
-	maxCompletionTokens?: number;
+  impl: Exclude<LanguageModel, string>;
+  mangleRequest?: (
+      req: ChatRequest,
+      features: Record<string, string | boolean | number>,
+  ) => void;
+  speed?: number;
+  research?: number;
+  reasoningText?: number;
+  tools?: number;
+  intelligence?: number;
+  maxCompletionTokens?: number;
+  contextLength: number;
+  costPerMillionInputTokens: number;
+  costPerMillionOutputTokens: number;
+  costPerMillionCachedInputTokens?: number;
+  costPerMillionReasoningTokens?: number;
 };
 
 export type AIResponse = {
@@ -107,9 +110,25 @@ export type AIResponseTiming = {
  */
 export default class AIChatClient {
 	private readonly modelSpec: ChatModelSpec;
+	private features: Record<string, number | boolean | string> = {};
 
-	constructor(modelSpec: ChatModelSpec) {
+	constructor(modelSpec: ChatModelSpec, features: typeof this.features = {}) {
 		this.modelSpec = modelSpec;
+    this.features = features;
+	}
+
+	/**
+	 * Sets enabled features on this client instance. Does not mutate the modelSpec.
+	 */
+	setFeatures(features: Record<string, any> | undefined): void {
+		this.features = { ...(features ?? {}) };
+	}
+
+	/**
+	 * Returns a copy of the enabled features for this client instance.
+	 */
+	getFeatures(): Record<string, any> {
+		return { ...this.features };
 	}
 
 	/**
@@ -183,13 +202,13 @@ export default class AIChatClient {
 	async streamChat(
 		request: ChatRequest,
 		agent: Agent,
-	): Promise<[string | undefined, AIResponse]> {
-		const signal = agent.getAbortSignal();
+	): Promise<[string, AIResponse]> {
+  const signal = agent.getAbortSignal();
 
-		if (this.modelSpec.mangleRequest) {
-			request = { ...request };
-			this.modelSpec.mangleRequest(request);
-		}
+  if (this.modelSpec.mangleRequest) {
+      request = { ...request };
+      this.modelSpec.mangleRequest(request, this.features);
+  }
 
 		const isHot = this.modelSpec.isHot ? await this.modelSpec.isHot() : true;
 
@@ -233,20 +252,20 @@ export default class AIChatClient {
 
 		const response = await this.generateResponseObject(result, elapsedMs);
 
-		return [response.text, response];
+		return [response.text ?? '', response];
 	}
 
 	/**
 	 * Sends a chat completion request and returns the full text response.
 	 */
-	async textChat(
-		request: ChatRequest,
-		agent: Agent,
-	): Promise<[string, AIResponse]> {
-		if (this.modelSpec.mangleRequest) {
-			request = { ...request };
-			this.modelSpec.mangleRequest(request);
-		}
+ async textChat(
+        request: ChatRequest,
+        agent: Agent,
+    ): Promise<[string, AIResponse]> {
+        if (this.modelSpec.mangleRequest) {
+            request = { ...request };
+            this.modelSpec.mangleRequest(request, this.features);
+        }
 
 		const signal = agent.getAbortSignal();
 
@@ -265,14 +284,14 @@ export default class AIChatClient {
 	/**
 	 * Sends a chat completion request and returns the generated object response.
 	 */
-	async generateObject(
-		request: GenerateRequest,
-		agent: Agent,
-	): Promise<[any, AIResponse]> {
-		if (this.modelSpec.mangleRequest) {
-			request = { ...request };
-			this.modelSpec.mangleRequest(request);
-		}
+ async generateObject(
+        request: GenerateRequest,
+        agent: Agent,
+    ): Promise<[any, AIResponse]> {
+        if (this.modelSpec.mangleRequest) {
+            request = { ...request } as GenerateRequest;
+            this.modelSpec.mangleRequest(request, this.features);
+        }
 
 		const signal = agent.getAbortSignal();
 

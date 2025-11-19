@@ -1,6 +1,6 @@
 import { xai } from "@ai-sdk/xai";
 import { z } from "zod";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
@@ -39,24 +39,45 @@ export async function init(
 		},
 	}) as () => Promise<ModelList | null>;
 
-	function generateModelSpec(
-		modelId: string,
-		modelSpec: Omit<
-			ChatModelSpec,
-			"isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"
-		>,
-	): ChatModelSpec {
-		return {
-			modelId,
-			providerDisplayName: providerDisplayName,
-			impl: xai(modelId),
-			async isAvailable() {
-				const modelList = await getModels();
-				return !!modelList?.data.some((model) => model.id === modelId);
-			},
-			...modelSpec,
-		} as ChatModelSpec;
-	}
+  function generateModelSpec(
+    modelId: string,
+    modelSpec: Omit<
+      ChatModelSpec,
+      "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId" | "features" | "mangleRequest"
+    >,
+  ): ChatModelSpec {
+    return {
+      ...modelSpec,
+      modelId,
+      providerDisplayName: providerDisplayName,
+      impl: xai(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some((model) => model.id === modelId);
+      },
+      mangleRequest(req, features) {
+        const searchParameters = (((req.providerOptions ??= {}).xai ??= {}).searchParameters ??= {});
+
+        searchParameters.mode = features.websearch ?? 'off';
+        if (features.maxSearchResults) {
+          searchParameters.maxSearchResults = features.maxSearchResults;
+        }
+
+        if (features.returnCitations) {
+          searchParameters.returnCitations = features.returnCitations;
+        }
+      },
+      features: {
+        websearch: {
+          description: "Enables web search (on, auto, off)",
+          defaultValue: 'off',
+          type: "enum",
+          values: ["on","off","auto"],
+        },
+      },
+    };
+  }
+
 
 	/**
 	 * A collection of xAI chat model specifications.

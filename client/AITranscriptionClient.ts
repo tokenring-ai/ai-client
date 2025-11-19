@@ -17,39 +17,58 @@ export type TranscriptionRequest = {
 };
 
 export type TranscriptionModelSpec = ModelSpec & {
-	costPerMinute?: number;
-	impl: TranscriptionModel;
-	providerOptions?: any;
+    costPerMinute?: number;
+    impl: TranscriptionModel;
+    providerOptions?: any;
+    /** Optional hook to adjust the request prior to sending. */
+    mangleRequest?: (
+        req: TranscriptionRequest,
+        features?: Record<string, any>,
+    ) => void;
 };
 
 export default class AITranscriptionClient {
-	modelSpec: TranscriptionModelSpec;
+    modelSpec: TranscriptionModelSpec;
+    private features: Record<string, number | boolean | string> = {};
 
-	constructor(modelSpec: TranscriptionModelSpec) {
-		this.modelSpec = modelSpec;
-	}
+ constructor(modelSpec: TranscriptionModelSpec,features: typeof this.features = {}) {
+        this.modelSpec = modelSpec;
+        this.features = features;
+    }
+
+    setFeatures(features: Record<string, any> | undefined): void {
+        this.features = { ...(features ?? {}) };
+    }
+
+    getFeatures(): Record<string, any> {
+        return { ...this.features };
+    }
 
 	getModelId(): string {
 		return this.modelSpec.impl.modelId;
 	}
 
-	async transcribe(
-		request: TranscriptionRequest,
-		agent: Agent,
-	): Promise<[string, TranscriptionResult]> {
-		const signal = agent.getAbortSignal();
+ async transcribe(
+        request: TranscriptionRequest,
+        agent: Agent,
+    ): Promise<[string, TranscriptionResult]> {
+        const signal = agent.getAbortSignal();
 
-		try {
-			const result = await transcribe({
-				...request,
-				model: this.modelSpec.impl,
-				providerOptions: {
+        try {
+            if (this.modelSpec.mangleRequest) {
+                request = { ...request };
+                this.modelSpec.mangleRequest(request, this.features);
+            }
+            const result = await transcribe({
+                ...request,
+                model: this.modelSpec.impl,
+                providerOptions: {
           ...this.modelSpec.providerOptions,
           ...(request.language && { language: request.language}),
           ...(request.prompt && { prompt: request.prompt})
         },
-				abortSignal: signal,
-			});
+                abortSignal: signal,
+            });
 
 			return [result.text, result];
 		} catch (error) {

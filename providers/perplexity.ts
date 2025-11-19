@@ -53,7 +53,7 @@ export async function init(
 		} as ChatModelSpec;
 	}
 
-	await modelRegistry.chat.registerAllModelSpecs([
+	modelRegistry.chat.registerAllModelSpecs([
 		generateModelSpec("sonar", {
 			costPerMillionInputTokens: 1,
 			costPerMillionOutputTokens: 1,
@@ -61,7 +61,13 @@ export async function init(
 			intelligence: 3,
 			tools: 3,
 			speed: 2,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: true,
+         type: "boolean", 
+        }
+      },
 			contextLength: 128000,
 		}),
 		generateModelSpec("sonar-pro", {
@@ -71,7 +77,13 @@ export async function init(
 			intelligence: 3,
 			tools: 3,
 			speed: 3,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: true,
+         type: "boolean", 
+        }
+      },
 			contextLength: 200000,
 		}),
 		generateModelSpec("sonar-reasoning", {
@@ -81,7 +93,13 @@ export async function init(
 			intelligence: 3,
 			tools: 3,
 			speed: 2,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: true,
+         type: "boolean", 
+        }
+      },
 			contextLength: 128000,
 		}),
 		generateModelSpec("sonar-reasoning-pro", {
@@ -91,7 +109,13 @@ export async function init(
 			intelligence: 4,
 			tools: 4,
 			speed: 2,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: true,
+         type: "boolean", 
+        }
+      },
 			contextLength: 128000,
 		}),
 		generateModelSpec("sonar-deep-research", {
@@ -103,7 +127,13 @@ export async function init(
 			intelligence: 5,
 			tools: 5,
 			speed: 1,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: true,
+         type: "boolean", 
+        }
+      },
 			contextLength: 128000,
 		}),
 	]);

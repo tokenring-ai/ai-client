@@ -47,26 +47,49 @@ export type ImageModelSpec = ModelSpec & {
 	 * - Provider-specific options for the image generation model.
 	 */
 	providerOptions?: any;
-	/**
-	 * - A callback to calculate the image cost
-	 */
-	calculateImageCost?: (req: ImageRequest, res: ImageResponse) => number;
+    /**
+     * - A callback to calculate the image cost
+     */
+    calculateImageCost?: (req: ImageRequest, res: ImageResponse) => number;
 
-	mangleRequest?: (req: ImageRequest) => void;
+    /**
+     * - Optional hook to adjust the request prior to sending.
+     *   Receives the runtime feature flags as the second parameter.
+     */
+    mangleRequest?: (
+        req: ImageRequest,
+        features?: Record<string, any>,
+    ) => void;
 };
 
 /**
  * Client for generating images using the Vercel AI SDK's experimental image generation features.
  */
 export default class AIImageGenerationClient {
-	modelSpec: ImageModelSpec;
+    modelSpec: ImageModelSpec;
+    private features: Record<string, number | boolean | string> = {};
 
 	/**
 	 * Creates an instance of AIImageGenerationClient.
 	 */
-	constructor(modelSpec: ImageModelSpec) {
-		this.modelSpec = modelSpec;
-	}
+ constructor(modelSpec: ImageModelSpec, features: typeof this.features = {}) {
+        this.modelSpec = modelSpec;
+        this.features = features;
+    }
+
+    /**
+     * Set feature flags for this client instance.
+     */
+    setFeatures(features: Record<string, any> | undefined): void {
+        this.features = { ...(features ?? {}) };
+    }
+
+    /**
+     * Get a copy of the feature flags.
+     */
+    getFeatures(): Record<string, any> {
+        return { ...this.features };
+    }
 
 	/**
 	 * Get the model ID.
@@ -78,20 +101,24 @@ export default class AIImageGenerationClient {
 	/**
 	 * Generates an image based on a prompt using the specified model.
 	 */
-	async generateImage(
-		request: ImageRequest,
-		agent: Agent,
-	): Promise<[GeneratedFile, Experimental_GenerateImageResult]> {
-		const signal = agent.getAbortSignal();
+ async generateImage(
+        request: ImageRequest,
+        agent: Agent,
+    ): Promise<[GeneratedFile, Experimental_GenerateImageResult]> {
+        const signal = agent.getAbortSignal();
 
-		try {
-			const result = await generateImage({
-				...request,
-				n: 1,
-				model: this.modelSpec.impl,
-				providerOptions: this.modelSpec.providerOptions ?? {},
-				abortSignal: signal,
-			});
+        try {
+            if (this.modelSpec.mangleRequest) {
+                request = { ...request };
+                this.modelSpec.mangleRequest(request, this.features);
+            }
+            const result = await generateImage({
+                ...request,
+                n: 1,
+                model: this.modelSpec.impl,
+                providerOptions: this.modelSpec.providerOptions ?? {},
+                abortSignal: signal,
+            });
 
 			return [result.image, result];
 		} catch (error) {

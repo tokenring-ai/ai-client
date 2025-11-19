@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 import ModelRegistry from "../ModelRegistry.ts";
+import {FeatureSpec} from "../ModelTypeRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const GoogleModelProviderConfigSchema = z.object({
@@ -62,6 +63,13 @@ export async function init(
 					model.name.includes(modelId),
 				);
 			},
+      mangleRequest(req: ChatRequest, features?: Record<string, FeatureSpec>) {
+        if (features?.websearch) {
+          (req.tools ??= {}).google_search = googleProvider.tools.googleSearch(
+            {},
+          );
+        }
+      },
 			...modelSpec,
 		} as ChatModelSpec;
 	}
@@ -85,15 +93,37 @@ export async function init(
 		};
 	}
 
-	const chatModels: ChatModelSpec[] = [
-		generateModelSpec("gemini-2.5-pro", {
+  modelRegistry.chat.registerAllModelSpecs([
+    generateModelSpec("gemini-3-pro-preview", {
+      costPerMillionInputTokens: 2.0,
+      costPerMillionOutputTokens: 12.0,
+      reasoningText: 7,
+      intelligence: 7,
+      tools: 7,
+      speed: 3,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 1000000,
+    }),
+    generateModelSpec("gemini-2.5-pro", {
 			costPerMillionInputTokens: 4.0,
 			costPerMillionOutputTokens: 20.0,
 			reasoningText: 6,
 			intelligence: 6,
 			tools: 6,
 			speed: 2,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
 			contextLength: 1000000,
 		}),
 		generateModelSpec("gemini-2.5-flash", {
@@ -103,7 +133,13 @@ export async function init(
 			intelligence: 4,
 			tools: 4,
 			speed: 4,
-			webSearch: 1,
+			features: {
+        websearch: {
+         description: "Enables web search",
+         defaultValue: false,
+         type: "boolean",
+        }
+      },
 			contextLength: 1000000,
 		}),
 		generateModelSpec("gemini-2.5-flash-lite", {
@@ -115,31 +151,7 @@ export async function init(
 			speed: 5,
 			contextLength: 1000000,
 		}),
-	];
-
-	const webSearchModels: ChatModelSpec[] = [];
-
-	for (const model of chatModels) {
-		if (model.webSearch) {
-			const newModel = {
-				...model,
-				modelId: `${model.modelId}-web-search`,
-				mangleRequest(req: ChatRequest) {
-					(req.tools ??= {}).google_search = googleProvider.tools.googleSearch(
-						{},
-					);
-					return undefined;
-				},
-				costPerMillionInputTokens: model.costPerMillionInputTokens + 0.001, // Adjust the cost slightly so that these models are only used for search
-				costPerMillionOutputTokens: model.costPerMillionOutputTokens + 0.001,
-			};
-
-			delete model.webSearch;
-			webSearchModels.push(newModel);
-		}
-	}
-
-	modelRegistry.chat.registerAllModelSpecs([...chatModels, ...webSearchModels]);
+	]);
 
 	modelRegistry.imageGeneration.registerAllModelSpecs([
 		generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
