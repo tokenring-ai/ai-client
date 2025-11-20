@@ -35,6 +35,7 @@ export async function init(
       | "impl"
       | "mangleRequest"
       | "modelId"
+      | "features"
     >,
   ): ChatModelSpec {
     return {
@@ -44,6 +45,19 @@ export async function init(
       mangleRequest,
       async isAvailable() {
         return true;
+      },
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: true,
+          type: "boolean",
+        },
+        searchContextSize: {
+          description: "The searchContextSize parameter allows you to control how much search context is retrieved from the web during query resolution",
+          defaultValue: "low",
+          type: "enum",
+          values: ["low", "medium", "high"],
+        },
       },
       ...modelSpec,
     } as ChatModelSpec;
@@ -57,13 +71,6 @@ export async function init(
       intelligence: 3,
       tools: 3,
       speed: 2,
-      features: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: true,
-          type: "boolean",
-        }
-      },
       contextLength: 128000,
     }),
     generateModelSpec("sonar-pro", {
@@ -73,13 +80,6 @@ export async function init(
       intelligence: 3,
       tools: 3,
       speed: 3,
-      features: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: true,
-          type: "boolean",
-        }
-      },
       contextLength: 200000,
     }),
     generateModelSpec("sonar-reasoning", {
@@ -89,13 +89,6 @@ export async function init(
       intelligence: 3,
       tools: 3,
       speed: 2,
-      features: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: true,
-          type: "boolean",
-        }
-      },
       contextLength: 128000,
     }),
     generateModelSpec("sonar-reasoning-pro", {
@@ -105,13 +98,6 @@ export async function init(
       intelligence: 4,
       tools: 4,
       speed: 2,
-      features: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: true,
-          type: "boolean",
-        }
-      },
       contextLength: 128000,
     }),
     generateModelSpec("sonar-deep-research", {
@@ -123,13 +109,6 @@ export async function init(
       intelligence: 5,
       tools: 5,
       speed: 1,
-      features: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: true,
-          type: "boolean",
-        }
-      },
       contextLength: 128000,
     }),
   ]);
@@ -139,7 +118,20 @@ export async function init(
  * Mangles OpenAI-style chat input messages to ensure they follow the required alternating pattern.
  * This function combines consecutive messages from the same role and ensures user/assistant roles alternate.
  */
-function mangleRequest(request: ChatRequest): void {
+function mangleRequest(request: ChatRequest, features: Record<string,string|number|boolean> ): void {
+  const perplexityOptions = (request.providerOptions ??= {}).perplexity ??= {};
+  const webSearchOptions = perplexityOptions.web_search_options ??= {};
+
+  if (features.searchContextSize) {
+    webSearchOptions.search_context_size = features.searchContextSize;
+  }
+
+  if (! features?.websearch) {
+    perplexityOptions.disable_search = true;
+  }
+
+  console.log("Mangling request for Perplexity:", perplexityOptions, webSearchOptions);
+
   const {messages} = request;
   if (!messages || messages.length === 0) return;
 

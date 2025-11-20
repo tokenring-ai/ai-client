@@ -13,8 +13,8 @@ export type FeatureSpec = {
   defaultValue: string;
 } | {
   type: "enum";
-  defaultValue: string;
-  values: string[];
+  defaultValue: string | number | boolean | null | undefined;
+  values: (string | number | boolean | null | undefined)[];
 });
 
 export type ModelSpec = {
@@ -34,7 +34,7 @@ export interface ModelStatus<T> {
 }
 
 export interface GenericAIClient {
-  setFeatures?(features: Record<string, string | boolean | number>): void;
+  setFeatures?(features: Record<string, string | boolean | number | null | undefined>): void;
 }
 
 /**
@@ -48,7 +48,7 @@ export class ModelTypeRegistry<
 > {
   AIClient: new (
     modelSpec: T,
-    features: Record<string, string | boolean | number>
+    features: Record<string, string | boolean | number | null | undefined>
   ) => C;
   modelSpecs = new KeyedRegistry<T>();
   /**
@@ -163,7 +163,7 @@ export class ModelTypeRegistry<
       throw new Error(`Model ${lookupName} not found`);
     }
 
-    let features: Record<string, string | boolean | number> | undefined = {};
+    let features: Record<string, string | boolean | number | null | undefined | null | undefined> | undefined = {};
     if (qIndex >= 0 && modelSpec.features) {
       const query = name.substring(qIndex + 1);
       for (const part of query.split("&")) {
@@ -178,7 +178,7 @@ export class ModelTypeRegistry<
         const rawValue = rawV === undefined ? "1" : decodeURIComponent(rawV);
 
         // Parse based on feature spec type
-        let parsed: string | boolean | number;
+        let parsed: string | boolean | number | null | undefined;
         if (featureSpec.type === "boolean") {
           parsed = rawValue === "1" || rawValue.toLowerCase() === "true";
         } else if (featureSpec.type === "number") {

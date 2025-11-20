@@ -67,7 +67,7 @@ export type ImageModelSpec = ModelSpec & {
  */
 export default class AIImageGenerationClient {
   modelSpec: ImageModelSpec;
-  private features: Record<string, number | boolean | string> = {};
+  private features: Record<string, string | boolean | number | null | undefined> = {};
 
   /**
    * Creates an instance of AIImageGenerationClient.

@@ -21,7 +21,7 @@ export type EmbeddingModelSpec = ModelSpec & {
  */
 export default class AIEmbeddingClient {
   public readonly modelSpec: EmbeddingModelSpec;
-  private features: Record<string, number | boolean | string> = {};
+  private features: Record<string, string | boolean | number | null | undefined> = {};
 
   /**
    * Creates an instance of AIEmbeddingClient.

@@ -48,7 +48,7 @@ export type ChatModelSpec = ModelSpec & {
   impl: Exclude<LanguageModel, string>;
   mangleRequest?: (
     req: ChatRequest,
-    features: Record<string, string | boolean | number>,
+    features: Record<string, string | boolean | number | null | undefined>,
   ) => void;
   speed?: number;
   research?: number;
@@ -106,7 +106,7 @@ export type AIResponseTiming = {
  */
 export default class AIChatClient {
   private readonly modelSpec: ChatModelSpec;
-  private features: Record<string, number | boolean | string> = {};
+  private features: Record<string, string | boolean | number | null | undefined> = {};
 
   constructor(modelSpec: ChatModelSpec, features: typeof this.features = {}) {
     this.modelSpec = modelSpec;

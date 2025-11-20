@@ -115,6 +115,55 @@ async function fetchAndRegisterOpenRouterModels(
           model.topProvider?.max_completion_tokens ?? undefined,
         costPerMillionInputTokens: parsePricing(model.pricing?.prompt),
         costPerMillionOutputTokens: parsePricing(model.pricing?.completion),
+        mangleRequest(req, features) {
+          if (features.websearch) {
+
+            //const plugins = ((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= [];
+            const plugins = ((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= [];
+            const webPlugin: any = { id: "web" };
+            
+            if (features.searchEngine) {
+              webPlugin.engine = features.searchEngine;
+            }
+            if (features.maxResults) {
+              webPlugin.max_results = features.maxResults;
+            }
+            if (features.searchPrompt) {
+              webPlugin.search_prompt = features.searchPrompt;
+            }
+            
+            plugins.push(webPlugin);
+          }
+          
+          if (features.searchContextSize) {
+            const webSearchOptions = (req.providerOptions ??= {}).web_search_options ??= {};
+            webSearchOptions.search_context_size = features.searchContextSize;
+          }
+        },
+        features: {
+          websearch: {
+            description: "Enables web search plugin",
+            defaultValue: false,
+            type: "boolean",
+          },
+          searchEngine: {
+            description: "Search engine (native, exa, or undefined for auto)",
+            defaultValue: undefined,
+            type: "enum",
+            values: ["native", "exa"],
+          },
+          maxResults: {
+            description: "Maximum number of search results (default 5)",
+            defaultValue: 5,
+            type: "number",
+          },
+          searchContextSize: {
+            description: "Search context size for native search",
+            defaultValue: "low",
+            type: "enum",
+            values: ["low", "medium", "high"],
+          },
+        },
         //reasoning: model.supported_parameters?.includes('include_reasoning') ? 2 : 0,
         //tools: model.supported_parameters?.includes('tools') ? 2 : 0,
         //webSearch: model.pricing?.web_search && model.pricing?.web_search !== "0" && model.pricing?.web_search !== null ? 1 : 0,

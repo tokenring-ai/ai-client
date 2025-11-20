@@ -26,7 +26,7 @@ export type TranscriptionModelSpec = ModelSpec & {
 
 export default class AITranscriptionClient {
   modelSpec: TranscriptionModelSpec;
-  private features: Record<string, number | boolean | string> = {};
+  private features: Record<string, string | boolean | number | null | undefined> = {};
 
   constructor(modelSpec: TranscriptionModelSpec, features: typeof this.features = {}) {
     this.modelSpec = modelSpec;

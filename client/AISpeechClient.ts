@@ -21,7 +21,7 @@ export type SpeechModelSpec = ModelSpec & {
 
 export default class AISpeechClient {
   modelSpec: SpeechModelSpec;
-  private features: Record<string, number | boolean | string> = {};
+  private features: Record<string, string | boolean | number | null | undefined> = {};
 
   constructor(modelSpec: SpeechModelSpec, features: typeof this.features = {}) {
     this.modelSpec = modelSpec;
