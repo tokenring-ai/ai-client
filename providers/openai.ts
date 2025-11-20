@@ -225,22 +225,6 @@ export async function init(
       },
       contextLength: 400000,
     }),
-    generateModelSpec("o3", {
-      costPerMillionInputTokens: 10.0,
-      costPerMillionOutputTokens: 40.0,
-      reasoningText: 6,
-      intelligence: 6,
-      tools: 6,
-      speed: 2,
-      features: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        }
-      },
-      contextLength: 200000,
-    }),
     generateModelSpec("o4-mini", {
       costPerMillionInputTokens: 1.1,
       costPerMillionOutputTokens: 4.4,
@@ -257,6 +241,370 @@ export async function init(
         }
       },
       contextLength: 200000,
+    }),
+    generateModelSpec("o3", {
+      costPerMillionInputTokens: 2.0,
+      costPerMillionOutputTokens: 8.0,
+      costPerMillionCachedInputTokens: 0.5,
+      reasoningText: 6,
+      intelligence: 6,
+      tools: 6,
+      speed: 2,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 200000,
+    }),
+    generateModelSpec("o3-mini", {
+      costPerMillionInputTokens: 1.1,
+      costPerMillionOutputTokens: 4.4,
+      costPerMillionCachedInputTokens: 0.55,
+      reasoningText: 5,
+      intelligence: 5,
+      tools: 5,
+      speed: 3,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 200000,
+    }),
+    generateModelSpec("o3-pro", {
+      costPerMillionInputTokens: 20.0,
+      costPerMillionOutputTokens: 80.0,
+      reasoningText: 7,
+      intelligence: 7,
+      tools: 6,
+      speed: 1,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 200000,
+    }),
+    generateModelSpec("o3-deep-research", {
+      costPerMillionInputTokens: 10.0,
+      costPerMillionOutputTokens: 40.0,
+      costPerMillionCachedInputTokens: 2.5,
+      reasoningText: 7,
+      intelligence: 7,
+      tools: 6,
+      speed: 1,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 200000,
+    }),
+    generateModelSpec("o4-mini-deep-research", {
+      costPerMillionInputTokens: 2.0,
+      costPerMillionOutputTokens: 8.0,
+      costPerMillionCachedInputTokens: 0.5,
+      reasoningText: 6,
+      intelligence: 6,
+      tools: 5,
+      speed: 2,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 200000,
+    }),
+    generateModelSpec("o1", {
+      costPerMillionInputTokens: 15.0,
+      costPerMillionOutputTokens: 60.0,
+      costPerMillionCachedInputTokens: 7.5,
+      reasoningText: 6,
+      intelligence: 6,
+      tools: 6,
+      speed: 2,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 200000,
+    }),
+    generateModelSpec("o1-pro", {
+      costPerMillionInputTokens: 150.0,
+      costPerMillionOutputTokens: 600.0,
+      reasoningText: 8,
+      intelligence: 8,
+      tools: 6,
+      speed: 1,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 200000,
+    }),
+    generateModelSpec("gpt-5-pro", {
+      costPerMillionInputTokens: 15.0,
+      costPerMillionOutputTokens: 120.0,
+      reasoningText: 5,
+      intelligence: 7,
+      tools: 6,
+      speed: 2,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 400000,
+    }),
+    generateModelSpec("gpt-5-chat-latest", {
+      costPerMillionInputTokens: 1.25,
+      costPerMillionCachedInputTokens: 0.125,
+      costPerMillionOutputTokens: 10,
+      reasoningText: 4,
+      intelligence: 6,
+      tools: 6,
+      speed: 3,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 400000,
+    }),
+    generateModelSpec("gpt-5.1-chat-latest", {
+      costPerMillionInputTokens: 1.25,
+      costPerMillionCachedInputTokens: 0.125,
+      costPerMillionOutputTokens: 10,
+      reasoningText: 4,
+      intelligence: 6,
+      tools: 6,
+      speed: 3,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 400000,
+    }),
+    generateModelSpec("gpt-5.1-codex-mini", {
+      costPerMillionInputTokens: 0.25,
+      costPerMillionOutputTokens: 2,
+      costPerMillionCachedInputTokens: 0.025,
+      reasoningText: 3,
+      intelligence: 5,
+      tools: 5,
+      speed: 4,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 400000,
+    }),
+    generateModelSpec("codex-mini-latest", {
+      costPerMillionInputTokens: 1.5,
+      costPerMillionOutputTokens: 6,
+      costPerMillionCachedInputTokens: 0.375,
+      reasoningText: 4,
+      intelligence: 5,
+      tools: 5,
+      speed: 3,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        }
+      },
+      contextLength: 400000,
+    }),
+    generateModelSpec("gpt-5-search-api", {
+      costPerMillionInputTokens: 1.25,
+      costPerMillionCachedInputTokens: 0.125,
+      costPerMillionOutputTokens: 10,
+      reasoningText: 4,
+      intelligence: 6,
+      tools: 6,
+      speed: 3,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: true,
+          type: "boolean",
+        }
+      },
+      contextLength: 400000,
+    }),
+    generateModelSpec("gpt-4o", {
+      costPerMillionInputTokens: 2.5,
+      costPerMillionOutputTokens: 10,
+      costPerMillionCachedInputTokens: 1.25,
+      reasoningText: 4,
+      intelligence: 5,
+      tools: 5,
+      speed: 4,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-4o-2024-05-13", {
+      costPerMillionInputTokens: 5.0,
+      costPerMillionOutputTokens: 15.0,
+      reasoningText: 4,
+      intelligence: 5,
+      tools: 5,
+      speed: 4,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-4o-mini", {
+      costPerMillionInputTokens: 0.15,
+      costPerMillionOutputTokens: 0.6,
+      costPerMillionCachedInputTokens: 0.075,
+      reasoningText: 3,
+      intelligence: 4,
+      tools: 4,
+      speed: 5,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-4o-mini-search-preview", {
+      costPerMillionInputTokens: 0.15,
+      costPerMillionOutputTokens: 0.6,
+      reasoningText: 3,
+      intelligence: 4,
+      tools: 4,
+      speed: 5,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: true,
+          type: "boolean",
+        }
+      },
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-4o-search-preview", {
+      costPerMillionInputTokens: 2.5,
+      costPerMillionOutputTokens: 10,
+      reasoningText: 4,
+      intelligence: 5,
+      tools: 5,
+      speed: 4,
+      features: {
+        websearch: {
+          description: "Enables web search",
+          defaultValue: true,
+          type: "boolean",
+        }
+      },
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-realtime", {
+      costPerMillionInputTokens: 4.0,
+      costPerMillionOutputTokens: 16.0,
+      costPerMillionCachedInputTokens: 0.4,
+      reasoningText: 3,
+      intelligence: 4,
+      tools: 4,
+      speed: 5,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-realtime-mini", {
+      costPerMillionInputTokens: 0.6,
+      costPerMillionOutputTokens: 2.4,
+      costPerMillionCachedInputTokens: 0.06,
+      reasoningText: 2,
+      intelligence: 3,
+      tools: 3,
+      speed: 5,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-4o-realtime-preview", {
+      costPerMillionInputTokens: 5.0,
+      costPerMillionOutputTokens: 20.0,
+      costPerMillionCachedInputTokens: 2.5,
+      reasoningText: 4,
+      intelligence: 5,
+      tools: 5,
+      speed: 4,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-4o-mini-realtime-preview", {
+      costPerMillionInputTokens: 0.6,
+      costPerMillionOutputTokens: 2.4,
+      costPerMillionCachedInputTokens: 0.3,
+      reasoningText: 3,
+      intelligence: 4,
+      tools: 4,
+      speed: 5,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-audio", {
+      costPerMillionInputTokens: 2.5,
+      costPerMillionOutputTokens: 10.0,
+      reasoningText: 3,
+      intelligence: 4,
+      tools: 4,
+      speed: 4,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-audio-mini", {
+      costPerMillionInputTokens: 0.6,
+      costPerMillionOutputTokens: 2.4,
+      reasoningText: 2,
+      intelligence: 3,
+      tools: 3,
+      speed: 5,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-4o-audio-preview", {
+      costPerMillionInputTokens: 2.5,
+      costPerMillionOutputTokens: 10.0,
+      reasoningText: 4,
+      intelligence: 5,
+      tools: 5,
+      speed: 4,
+      contextLength: 128000,
+    }),
+    generateModelSpec("gpt-4o-mini-audio-preview", {
+      costPerMillionInputTokens: 0.15,
+      costPerMillionOutputTokens: 0.6,
+      reasoningText: 3,
+      intelligence: 4,
+      tools: 4,
+      speed: 5,
+      contextLength: 128000,
+    }),
+    generateModelSpec("computer-use-preview", {
+      costPerMillionInputTokens: 3.0,
+      costPerMillionOutputTokens: 12.0,
+      reasoningText: 4,
+      intelligence: 5,
+      tools: 6,
+      speed: 3,
+      contextLength: 128000,
     }),
   ]);
 
