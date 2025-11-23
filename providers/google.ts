@@ -1,9 +1,9 @@
-import {createGoogleGenerativeAI} from "@ai-sdk/google";
+import {createGoogleGenerativeAI, GoogleGenerativeAIProviderOptions} from "@ai-sdk/google";
 import {z} from "zod";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import ModelRegistry from "../ModelRegistry.ts";
-import {FeatureSpec} from "../ModelTypeRegistry.ts";
+import {FeatureOptions, FeatureSpec} from "../ModelTypeRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const GoogleModelProviderConfigSchema = z.object({
@@ -53,6 +53,42 @@ export async function init(
       "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"
     >,
   ): ChatModelSpec {
+    const isGemini3 = modelId.startsWith("gemini-3");
+    const isGemini25 = modelId.startsWith("gemini-2.5");
+    
+    const baseFeatures: Record<string, FeatureSpec> = {
+      responseModalities: {
+        description: "Response modalities (TEXT, IMAGE)",
+        defaultValue: ["TEXT"],
+        type: "array"
+      }
+    };
+    
+    if (isGemini3) {
+      baseFeatures.thinkingLevel = {
+        description: "Thinking depth (low, high)",
+        defaultValue: undefined,
+        type: "enum",
+        values: ["low", "high"]
+      };
+      baseFeatures.includeThoughts = {
+        description: "Include thought summaries",
+        defaultValue: false,
+        type: "boolean"
+      };
+    } else if (isGemini25) {
+      baseFeatures.thinkingBudget = {
+        description: "Thinking token budget (0 to disable)",
+        defaultValue: undefined,
+        type: "number"
+      };
+      baseFeatures.includeThoughts = {
+        description: "Include thought summaries",
+        defaultValue: false,
+        type: "boolean"
+      };
+    }
+    
     return {
       modelId,
       providerDisplayName: providerDisplayName,
@@ -63,13 +99,28 @@ export async function init(
           model.name.includes(modelId),
         );
       },
-      mangleRequest(req: ChatRequest, features?: Record<string, FeatureSpec>) {
+      mangleRequest(req: ChatRequest, features: Record<string, FeatureOptions>) {
         if (features?.websearch) {
           (req.tools ??= {}).google_search = googleProvider.tools.googleSearch(
             {},
           );
         }
+        
+        const googleOptions: GoogleGenerativeAIProviderOptions = (req.providerOptions ??= {}).google ??= {};
+        
+        if (features?.responseModalities !== undefined) {
+          googleOptions.responseModalities = (features.responseModalities as any)?.map((s: string) => s.toUpperCase());
+        }
+        
+        if (features?.thinkingLevel !== undefined || features?.thinkingBudget !== undefined || features?.includeThoughts !== undefined) {
+          const thinkingConfig: any = {};
+          if (features?.thinkingLevel !== undefined) thinkingConfig.thinkingLevel = features.thinkingLevel;
+          if (features?.thinkingBudget !== undefined) thinkingConfig.thinkingBudget = features.thinkingBudget;
+          if (features?.includeThoughts !== undefined) thinkingConfig.includeThoughts = features.includeThoughts;
+          googleOptions.thinkingConfig = thinkingConfig;
+        }
       },
+      features: { ...baseFeatures, ...modelSpec.features },
       ...modelSpec,
     } as ChatModelSpec;
   }

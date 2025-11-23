@@ -1,6 +1,6 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {type DataContent, experimental_transcribe as transcribe, type TranscriptionModel,} from "ai";
-import type {ModelSpec} from "../ModelTypeRegistry.js";
+import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 
 
 export interface TranscriptionResult {
@@ -26,14 +26,14 @@ export type TranscriptionModelSpec = ModelSpec & {
 
 export default class AITranscriptionClient {
   modelSpec: TranscriptionModelSpec;
-  private features: Record<string, string | boolean | number | null | undefined> = {};
+  private features: FeatureOptions = {};
 
   constructor(modelSpec: TranscriptionModelSpec, features: typeof this.features = {}) {
     this.modelSpec = modelSpec;
     this.features = features;
   }
 
-  setFeatures(features: Record<string, any> | undefined): void {
+  setFeatures(features: FeatureOptions | undefined): void {
     this.features = {...(features ?? {})};
   }
 

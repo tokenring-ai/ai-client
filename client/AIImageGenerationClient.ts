@@ -1,11 +1,12 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {PrimitiveType} from "@tokenring-ai/utility/types";
 import {
   experimental_generateImage as generateImage,
   type Experimental_GenerateImageResult,
   type GeneratedFile,
   type ImageModel,
 } from "ai";
-import type {ModelSpec} from "../ModelTypeRegistry.js";
+import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type ImageRequest = {
   prompt: string;
@@ -67,7 +68,7 @@ export type ImageModelSpec = ModelSpec & {
  */
 export default class AIImageGenerationClient {
   modelSpec: ImageModelSpec;
-  private features: Record<string, string | boolean | number | null | undefined> = {};
+  private features: FeatureOptions = {};
 
   /**
    * Creates an instance of AIImageGenerationClient.
@@ -80,7 +81,7 @@ export default class AIImageGenerationClient {
   /**
    * Set feature flags for this client instance.
    */
-  setFeatures(features: Record<string, any> | undefined): void {
+  setFeatures(features: FeatureOptions | undefined): void {
     this.features = {...(features ?? {})};
   }
 

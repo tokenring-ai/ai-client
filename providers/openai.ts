@@ -1,4 +1,4 @@
-import {createOpenAI} from "@ai-sdk/openai";
+import {createOpenAI, OpenAIResponsesProviderOptions} from "@ai-sdk/openai";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
@@ -50,6 +50,36 @@ export async function init(
       "isAvailable" | "providerDisplayName" | "impl" | "modelId"
     >,
   ): ChatModelSpec {
+    const isReasoningModel = modelId.startsWith("gpt-5") || modelId.startsWith("o");
+    const isGpt51 = modelId === "gpt-5.1" || modelId.startsWith("gpt-5.1-");
+    
+    const baseFeatures: any = {
+      websearch: { description: "Enables web search", defaultValue: false, type: "boolean" },
+      serviceTier: { description: "Service tier (auto, flex, priority, default)", defaultValue: "auto", type: "enum", values: ["auto", "flex", "priority", "default"] },
+      textVerbosity: { description: "Text verbosity (low, medium, high)", defaultValue: "medium", type: "enum", values: ["low", "medium", "high"] },
+      strictJsonSchema: {description: "Use strict JSON schema validation", defaultValue: false, type: "boolean"},
+
+    };
+    
+    if (isReasoningModel) {
+      if (isGpt51) {
+        baseFeatures.promptCacheRetention = {
+          description: "The retention policy for the prompt cache",
+            defaultValue: "in_memory",
+            type: "enum",
+            values: ["in_memory", "24h"]
+        };
+      }
+
+      baseFeatures.reasoningEffort = { 
+        description: `Reasoning effort (${isGpt51 ? "none, " : ""}minimal, low, medium, high)`, 
+        defaultValue: "medium", 
+        type: "enum", 
+        values: isGpt51 ? ["none", "minimal", "low", "medium", "high"] : ["minimal", "low", "medium", "high"] 
+      };
+      baseFeatures.reasoningSummary = { description: "Reasoning summary mode (auto, detailed)", defaultValue: undefined, type: "enum", values: ["auto", "detailed"] };
+    }
+
     return {
       modelId,
       providerDisplayName: providerDisplayName,
@@ -58,13 +88,35 @@ export async function init(
         const modelList = await getModels();
         return !!modelList?.data.some((model) => model.id === modelId);
       },
-      // Generic mangleRequest that applies enabled features when present
       mangleRequest(req, features) {
         if (features?.websearch) {
           (req.tools ??= {}).web_search = openai.tools.webSearch({});
         }
+        
+        const openaiOptions: OpenAIResponsesProviderOptions = (req.providerOptions ??= {}).openai ??= {};
+        
+        if (features?.reasoningEffort !== undefined) {
+          openaiOptions.reasoningEffort = features.reasoningEffort as string;
+        }
+        if (features?.reasoningSummary !== undefined) {
+          openaiOptions.reasoningSummary = features.reasoningSummary as string;
+        }
+        if (features?.strictJsonSchema !== undefined) {
+          openaiOptions.strictJsonSchema = features.strictJsonSchema as boolean;
+        }
+        if (features?.serviceTier !== undefined) {
+          openaiOptions.serviceTier = features.serviceTier as any;
+        }
+        if (features?.textVerbosity !== undefined) {
+          openaiOptions.textVerbosity = features.textVerbosity as any;
+        }
+        if (features?.promptCacheRetention !== undefined) {
+          openaiOptions.promptCacheRetention = features.promptCacheRetention as any;
+        }
+
         return undefined;
       },
+      features: { ...baseFeatures, ...modelSpec.features },
       ...modelSpec,
     } as ChatModelSpec;
   }
@@ -128,13 +180,6 @@ export async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      features: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        }
-      },
       contextLength: 400000,
     }),
 
@@ -146,13 +191,6 @@ export async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      features: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        }
-      },
       contextLength: 400000,
     }),
     generateModelSpec("gpt-5-codex", {

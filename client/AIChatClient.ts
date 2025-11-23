@@ -1,5 +1,6 @@
 import type {LanguageModelV2CallWarning, LanguageModelV2Source, LanguageModelV2Usage,} from "@ai-sdk/provider";
 import Agent from "@tokenring-ai/agent/Agent";
+import {PrimitiveType} from "@tokenring-ai/utility/types";
 
 import {
   type AssistantModelMessage,
@@ -17,7 +18,7 @@ import {
   type UserModelMessage,
 } from "ai";
 import {$ZodType} from "zod/v4/core";
-import type {ModelSpec} from "../ModelTypeRegistry.js";
+import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type ChatInputMessage =
   | SystemModelMessage
@@ -48,7 +49,7 @@ export type ChatModelSpec = ModelSpec & {
   impl: Exclude<LanguageModel, string>;
   mangleRequest?: (
     req: ChatRequest,
-    features: Record<string, string | boolean | number | null | undefined>,
+    features: FeatureOptions,
   ) => void;
   speed?: number;
   research?: number;
@@ -106,7 +107,7 @@ export type AIResponseTiming = {
  */
 export default class AIChatClient {
   private readonly modelSpec: ChatModelSpec;
-  private features: Record<string, string | boolean | number | null | undefined> = {};
+  private features: FeatureOptions = {};
 
   constructor(modelSpec: ChatModelSpec, features: typeof this.features = {}) {
     this.modelSpec = modelSpec;
@@ -116,7 +117,7 @@ export default class AIChatClient {
   /**
    * Sets enabled features on this client instance. Does not mutate the modelSpec.
    */
-  setFeatures(features: Record<string, any> | undefined): void {
+  setFeatures(features: FeatureOptions | undefined): void {
     this.features = {...(features ?? {})};
   }
 

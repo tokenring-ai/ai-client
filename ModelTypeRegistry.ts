@@ -1,21 +1,27 @@
-import KeyedRegistry from "@tokenring-ai/utility/KeyedRegistry";
+import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
+import {PrimitiveType} from "@tokenring-ai/utility/types";
 
 export type FeatureSpec = {
   description: string;
 } & ({
   type: "boolean";
-  defaultValue: boolean;
+  defaultValue?: boolean | undefined;
 } | {
   type: "number";
-  defaultValue: number;
+  defaultValue?: number | undefined;
 } | {
   type: "string";
-  defaultValue: string;
+  defaultValue?: string | undefined;
 } | {
   type: "enum";
-  defaultValue: string | number | boolean | null | undefined;
-  values: (string | number | boolean | null | undefined)[];
+  defaultValue?: PrimitiveType;
+  values: (PrimitiveType)[];
+} | {
+  type: "array";
+  defaultValue?: (PrimitiveType)[] | undefined;
 });
+
+export type FeatureOptions = Record<string, PrimitiveType | PrimitiveType[]>
 
 export type ModelSpec = {
   modelId: string;
@@ -34,7 +40,7 @@ export interface ModelStatus<T> {
 }
 
 export interface GenericAIClient {
-  setFeatures?(features: Record<string, string | boolean | number | null | undefined>): void;
+  setFeatures?(features: FeatureOptions): void;
 }
 
 /**
@@ -48,7 +54,7 @@ export class ModelTypeRegistry<
 > {
   AIClient: new (
     modelSpec: T,
-    features: Record<string, string | boolean | number | null | undefined>
+    features: FeatureOptions
   ) => C;
   modelSpecs = new KeyedRegistry<T>();
   /**
@@ -163,7 +169,7 @@ export class ModelTypeRegistry<
       throw new Error(`Model ${lookupName} not found`);
     }
 
-    let features: Record<string, string | boolean | number | null | undefined | null | undefined> | undefined = {};
+    let features: FeatureOptions = {};
     if (qIndex >= 0 && modelSpec.features) {
       const query = name.substring(qIndex + 1);
       for (const part of query.split("&")) {
@@ -178,7 +184,7 @@ export class ModelTypeRegistry<
         const rawValue = rawV === undefined ? "1" : decodeURIComponent(rawV);
 
         // Parse based on feature spec type
-        let parsed: string | boolean | number | null | undefined;
+        let parsed: PrimitiveType | PrimitiveType[];
         if (featureSpec.type === "boolean") {
           parsed = rawValue === "1" || rawValue.toLowerCase() === "true";
         } else if (featureSpec.type === "number") {
@@ -188,6 +194,8 @@ export class ModelTypeRegistry<
           parsed = featureSpec.values.includes(rawValue)
             ? rawValue
             : featureSpec.defaultValue;
+        } else if (featureSpec.type === "array") {
+          parsed = rawValue.split(",").map(v => v.trim());
         } else {
           parsed = rawValue;
         }

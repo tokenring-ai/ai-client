@@ -1,4 +1,4 @@
-import {abandon} from "@tokenring-ai/utility/abandon";
+import {abandon} from "@tokenring-ai/utility/promise/abandon";
 import {createOllama} from "ollama-ai-provider-v2";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.js";

@@ -1,5 +1,6 @@
+import {PrimitiveType} from "@tokenring-ai/utility/types";
 import {embed, type EmbeddingModel, type EmbedResult} from "ai";
-import type {ModelSpec} from "../ModelTypeRegistry.js";
+import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type EmbeddingModelSpec = ModelSpec & {
   contextLength: number;
@@ -21,7 +22,7 @@ export type EmbeddingModelSpec = ModelSpec & {
  */
 export default class AIEmbeddingClient {
   public readonly modelSpec: EmbeddingModelSpec;
-  private features: Record<string, string | boolean | number | null | undefined> = {};
+  private features: FeatureOptions = {};
 
   /**
    * Creates an instance of AIEmbeddingClient.
@@ -34,7 +35,7 @@ export default class AIEmbeddingClient {
   /**
    * Sets enabled features on this client instance. Does not mutate the modelSpec.
    */
-  setFeatures(features: Record<string, any> | undefined): void {
+  setFeatures(features: FeatureOptions | undefined): void {
     this.features = {...(features ?? {})};
   }
 

@@ -84,6 +84,7 @@ async function fetchAndRegisterOpenRouterModels(
   const modelsData = await getModels();
   if (modelsData == null) return;
 
+
   const isAvailable = async () => true; // Models are available if we got data
 
   const chatModelsSpec: ChatModelSpec[] = [];
@@ -116,9 +117,9 @@ async function fetchAndRegisterOpenRouterModels(
         costPerMillionInputTokens: parsePricing(model.pricing?.prompt),
         costPerMillionOutputTokens: parsePricing(model.pricing?.completion),
         mangleRequest(req, features) {
+          const supported = model.supported_parameters || [];
+          
           if (features.websearch) {
-
-            //const plugins = ((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= [];
             const plugins = ((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= [];
             const webPlugin: any = { id: "web" };
             
@@ -139,30 +140,38 @@ async function fetchAndRegisterOpenRouterModels(
             const webSearchOptions = (req.providerOptions ??= {}).web_search_options ??= {};
             webSearchOptions.search_context_size = features.searchContextSize;
           }
+
+          const params: Record<string, any> = {};
+          if (supported.includes('frequency_penalty') && features.frequencyPenalty !== undefined) params.frequency_penalty = features.frequencyPenalty;
+          if (supported.includes('max_tokens') && features.maxTokens !== undefined) params.max_tokens = features.maxTokens;
+          if (supported.includes('min_p') && features.minP !== undefined) params.min_p = features.minP;
+          if (supported.includes('presence_penalty') && features.presencePenalty !== undefined) params.presence_penalty = features.presencePenalty;
+          if (supported.includes('repetition_penalty') && features.repetitionPenalty !== undefined) params.repetition_penalty = features.repetitionPenalty;
+          if (supported.includes('temperature') && features.temperature !== undefined) params.temperature = features.temperature;
+          if (supported.includes('top_k') && features.topK !== undefined) params.top_k = features.topK;
+          if (supported.includes('top_p') && features.topP !== undefined) params.top_p = features.topP;
+          if (supported.includes('include_reasoning') && features.includeReasoning !== undefined) params.include_reasoning = features.includeReasoning;
+          if (supported.includes('reasoning') && features.reasoning !== undefined) params.reasoning = features.reasoning;
+
+          if (Object.keys(params).length > 0) {
+            Object.assign((req.providerOptions ??= {}).openrouter ??= {}, params);
+          }
         },
         features: {
-          websearch: {
-            description: "Enables web search plugin",
-            defaultValue: false,
-            type: "boolean",
-          },
-          searchEngine: {
-            description: "Search engine (native, exa, or undefined for auto)",
-            defaultValue: undefined,
-            type: "enum",
-            values: ["native", "exa"],
-          },
-          maxResults: {
-            description: "Maximum number of search results (default 5)",
-            defaultValue: 5,
-            type: "number",
-          },
-          searchContextSize: {
-            description: "Search context size for native search",
-            defaultValue: "low",
-            type: "enum",
-            values: ["low", "medium", "high"],
-          },
+          websearch: { description: "Enables web search plugin", defaultValue: false, type: "boolean" },
+          searchEngine: { description: "Search engine (native, exa, or undefined for auto)", defaultValue: undefined, type: "enum", values: ["native", "exa"] },
+          maxResults: { description: "Maximum number of search results (default 5)", defaultValue: 5, type: "number" },
+          searchContextSize: { description: "Search context size for native search", defaultValue: "low", type: "enum", values: ["low", "medium", "high"] },
+          ...(model.supported_parameters?.includes('frequency_penalty') && { frequencyPenalty: { description: "Frequency penalty", type: "number" } }),
+          ...(model.supported_parameters?.includes('max_tokens') && { maxTokens: { description: "Max tokens", type: "number" } }),
+          ...(model.supported_parameters?.includes('min_p') && { minP: { description: "Min P sampling", type: "number" } }),
+          ...(model.supported_parameters?.includes('presence_penalty') && { presencePenalty: { description: "Presence penalty", type: "number" } }),
+          ...(model.supported_parameters?.includes('repetition_penalty') && { repetitionPenalty: { description: "Repetition penalty", type: "number" } }),
+          ...(model.supported_parameters?.includes('temperature') && { temperature: { description: "Temperature", type: "number" } }),
+          ...(model.supported_parameters?.includes('top_k') && { topK: { description: "Top K sampling", type: "number" } }),
+          ...(model.supported_parameters?.includes('top_p') && { topP: { description: "Top P sampling", type: "number" } }),
+          ...(model.supported_parameters?.includes('include_reasoning') && { includeReasoning: { description: "Include reasoning", type: "boolean" } }),
+          ...(model.supported_parameters?.includes('reasoning') && { reasoning: { description: "Reasoning mode", type: "string" } }),
         },
         //reasoning: model.supported_parameters?.includes('include_reasoning') ? 2 : 0,
         //tools: model.supported_parameters?.includes('tools') ? 2 : 0,

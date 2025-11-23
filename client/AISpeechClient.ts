@@ -1,6 +1,6 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {experimental_generateSpeech as generateSpeech, Experimental_SpeechResult, type SpeechModel,} from "ai";
-import type {ModelSpec} from "../ModelTypeRegistry.js";
+import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type SpeechRequest = {
   text: string;
@@ -21,14 +21,14 @@ export type SpeechModelSpec = ModelSpec & {
 
 export default class AISpeechClient {
   modelSpec: SpeechModelSpec;
-  private features: Record<string, string | boolean | number | null | undefined> = {};
+  private features: FeatureOptions = {};
 
   constructor(modelSpec: SpeechModelSpec, features: typeof this.features = {}) {
     this.modelSpec = modelSpec;
     this.features = features;
   }
 
-  setFeatures(features: Record<string, any> | undefined): void {
+  setFeatures(features: FeatureOptions | undefined): void {
     this.features = {...(features ?? {})};
   }
 
