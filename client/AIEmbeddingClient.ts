@@ -1,4 +1,3 @@
-import {PrimitiveType} from "@tokenring-ai/utility/types";
 import {embed, type EmbeddingModel, type EmbedResult} from "ai";
 import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 

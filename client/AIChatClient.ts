@@ -1,6 +1,5 @@
 import type {LanguageModelV2CallWarning, LanguageModelV2Source, LanguageModelV2Usage,} from "@ai-sdk/provider";
 import Agent from "@tokenring-ai/agent/Agent";
-import {PrimitiveType} from "@tokenring-ai/utility/types";
 
 import {
   type AssistantModelMessage,

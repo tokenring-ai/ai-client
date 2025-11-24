@@ -1,5 +1,4 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {PrimitiveType} from "@tokenring-ai/utility/types";
 import {
   experimental_generateImage as generateImage,
   type Experimental_GenerateImageResult,
