@@ -2,6 +2,9 @@ import {TokenRingService} from "@tokenring-ai/app/types";
 import AIChatClient, {ChatModelSpec} from "./client/AIChatClient.js";
 import AIEmbeddingClient, {EmbeddingModelSpec} from "./client/AIEmbeddingClient.js";
 import AIImageGenerationClient, {ImageModelSpec} from "./client/AIImageGenerationClient.js";
+/* TODO This feature depends on the experimental_rerank function, which is only in AI SDK 6.
+import AIRerankingClient, {RerankingModelSpec} from "./client/AIRerankingClient.js";
+*/
 import AISpeechClient, {SpeechModelSpec} from "./client/AISpeechClient.js";
 import AITranscriptionClient, {TranscriptionModelSpec} from "./client/AITranscriptionClient.js";
 import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
@@ -78,6 +81,9 @@ export default class ModelRegistry implements TokenRingService {
   chat = new ModelTypeRegistry<ChatModelSpec, AIChatClient>(AIChatClient);
   embedding = new ModelTypeRegistry<EmbeddingModelSpec, AIEmbeddingClient>(AIEmbeddingClient);
   imageGeneration = new ModelTypeRegistry<ImageModelSpec, AIImageGenerationClient>(AIImageGenerationClient);
+  /* TODO This feature depends on the experimental_rerank function, which is only in AI SDK 6.
+  reranking = new ModelTypeRegistry<RerankingModelSpec, AIRerankingClient>(AIRerankingClient);
+  */
   speech = new ModelTypeRegistry<SpeechModelSpec, AISpeechClient>(AISpeechClient);
   transcription = new ModelTypeRegistry<TranscriptionModelSpec, AITranscriptionClient>(AITranscriptionClient);
 

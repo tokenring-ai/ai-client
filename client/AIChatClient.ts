@@ -7,7 +7,6 @@ import {
   generateText,
   type GenerateTextResult,
   type LanguageModel,
-  Schema,
   type StopCondition,
   streamText,
   type StreamTextResult,
@@ -16,7 +15,7 @@ import {
   type ToolModelMessage,
   type UserModelMessage,
 } from "ai";
-import {$ZodType} from "zod/v4/core";
+import {z, ZodObject} from "zod";
 import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type ChatInputMessage =
@@ -40,8 +39,14 @@ export type ChatRequest = {
   providerOptions?: any;
 };
 
-export type GenerateRequest = {
-  schema: $ZodType | Schema;
+export type RerankRequest = {
+  query: string;
+  documents: string[];
+  topK?: number;
+}
+
+export type GenerateRequest<T extends ZodObject> = {
+  schema: T;
 } & ChatRequest;
 
 export type ChatModelSpec = ModelSpec & {
@@ -98,6 +103,17 @@ export type AIResponseTiming = {
   tokensPerSec?: number;
   totalTokens?: number;
 };
+
+
+const rerankSchema = z.object({
+  rankings: z.array(
+    z.object({
+      index: z.number().int().describe("Original index of the document"),
+      score: z.number().min(0).max(1).describe("Relevance score between 0 and 1"),
+      reasoning: z.string().optional().describe("Brief explanation of the relevance score"),
+    })
+  ).describe("Ranked list of documents ordered by relevance (most relevant first)"),
+})
 
 /**
  * Chat client that relies on the Vercel AI SDK instead of the OpenAI SDK.
@@ -280,12 +296,12 @@ export default class AIChatClient {
   /**
    * Sends a chat completion request and returns the generated object response.
    */
-  async generateObject(
-    request: GenerateRequest,
+  async generateObject<T extends ZodObject>(
+    request: GenerateRequest<T>,
     agent: Agent,
-  ): Promise<[any, AIResponse]> {
+  ): Promise<[z.infer<typeof request.schema>, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
-      request = {...request} as GenerateRequest;
+      request = {...request};
       this.modelSpec.mangleRequest(request, this.features);
     }
 
@@ -297,6 +313,7 @@ export default class AIChatClient {
       abortSignal: signal,
       ...request,
     });
+
     const end = Date.now();
 
     const {timestamp, modelId} = result.response;
@@ -304,7 +321,7 @@ export default class AIChatClient {
     const usage = result.usage;
 
     return [
-      result.object,
+      result.object as z.infer<typeof request.schema>,
       {
         timestamp: timestamp.getTime(),
         modelId,
@@ -349,4 +366,65 @@ export default class AIChatClient {
   getModelSpec(): ChatModelSpec {
     return this.modelSpec;
   }
+
+
+  async rerank({
+                 query,
+                 documents,
+                 topK,
+               }: RerankRequest,
+    agent: Agent
+  ): Promise<z.infer<typeof rerankSchema>> {
+    // Format documents with indices
+    const documentsText = documents
+      .map((doc, idx) => `[${idx}] ${doc}`)
+      .join("\n\n");
+
+    const userPrompt = `Query: ${query}
+
+Documents to rank:
+${documentsText}
+
+Please rank these documents by their relevance to the query.`;
+
+    const req: GenerateRequest<typeof rerankSchema> = {
+      tools: {},
+      messages: [{
+        role: 'system',
+        content: `
+You are a relevance scoring system. Your task is to evaluate how relevant each document is to the given query and rank them accordingly.
+
+For each document:
+1. Assign a relevance score between 0 (completely irrelevant) and 1 (perfectly relevant)
+2. Consider semantic similarity, topic alignment, and how well the document answers or relates to the query
+3. Return the documents sorted by relevance (highest score first)
+
+Be objective and precise in your scoring.`.trim()
+      },
+        {
+          role: 'user',
+          content: userPrompt
+        }
+      ],
+      // Create a schema for the reranking output
+      schema: rerankSchema
+    };
+    // Use generateObject to get structured reranking results
+    const [result] = await this.generateObject(req, agent);
+
+    // Sort rankings by score (descending)
+    const sortedRankings = result.rankings.sort((a: any, b: any) => b.score - a.score);
+
+    // Apply topK if specified
+    const finalRankings = topK ? sortedRankings.slice(0, topK) : sortedRankings;
+
+    // Convert to RerankResult format
+    return {
+      rankings: finalRankings.map((ranking: any) => ({
+        index: ranking.index,
+        score: ranking.score,
+      })),
+    };
+  }
+
 }

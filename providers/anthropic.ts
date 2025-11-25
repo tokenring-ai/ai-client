@@ -85,7 +85,16 @@ export async function init(
   }
 
   modelRegistry.chat.registerAllModelSpecs([
-    generateModelSpec("claude-4.5-haiku", "claude-haiku-4-5-20251001", {
+    generateModelSpec("claude-4.5-opus", "claude-opus-4-5", {
+      costPerMillionInputTokens: 5, // $5 / MTok
+      costPerMillionOutputTokens: 25, // $25 / MTok
+      reasoningText: 7,
+      intelligence: 7,
+      tools: 7,
+      speed: 2,
+      contextLength: 200000,
+    }),
+    generateModelSpec("claude-4.5-haiku", "claude-haiku-4-5", {
       costPerMillionInputTokens: 1, // $0.80 / MTok
       costPerMillionOutputTokens: 5.0, // $4 / MTok
       reasoningText: 3,
@@ -94,7 +103,7 @@ export async function init(
       speed: 4,
       contextLength: 200000,
     }),
-    generateModelSpec("claude-4.1-opus", "claude-opus-4-1-20250805", {
+    generateModelSpec("claude-4.1-opus", "claude-opus-4-1", {
       costPerMillionInputTokens: 15, // Unknown cost
       costPerMillionOutputTokens: 75, // Unknown cost
       reasoningText: 6,
@@ -103,44 +112,13 @@ export async function init(
       speed: 2,
       contextLength: 200000,
     }),
-    generateModelSpec(
-      "claude-4.5-sonnet-long-context",
-      "claude-sonnet-4-5-20250929",
-      {
-        costPerMillionInputTokens: 6.0,
-        costPerMillionOutputTokens: 22.5,
-        reasoningText: 5,
-        intelligence: 5,
-        tools: 5,
-        speed: 3,
-        contextLength: 1000000,
-      },
-    ),
-    generateModelSpec("claude-4.5-sonnet", "claude-sonnet-4-5-20250929", {
+    generateModelSpec("claude-4.5-sonnet", "claude-sonnet-4-5", {
       costPerMillionInputTokens: 3.0, // $3 / MTok
       costPerMillionOutputTokens: 15.0, // $15 / MTok
       reasoningText: 5,
       intelligence: 5,
       tools: 5,
       speed: 3,
-      contextLength: 200000,
-    }),
-    generateModelSpec("claude-3.5-haiku", "claude-3-5-haiku-20241022", {
-      costPerMillionInputTokens: 0.8, // $0.80 / MTok
-      costPerMillionOutputTokens: 4.0, // $4 / MTok
-      reasoningText: 2,
-      intelligence: 3,
-      tools: 3,
-      speed: 4,
-      contextLength: 200000,
-    }),
-    generateModelSpec("claude-3-haiku", "claude-3-haiku-20240307", {
-      costPerMillionInputTokens: 0.25, // $0.25 / MTok
-      costPerMillionOutputTokens: 1.25, // $1.25 / MTok
-      reasoningText: 2,
-      intelligence: 2,
-      tools: 2,
-      speed: 5,
       contextLength: 200000,
     }),
   ]);
