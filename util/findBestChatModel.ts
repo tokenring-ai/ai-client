@@ -19,18 +19,18 @@ export default async function getFirstOnlineClientByRequirements(
     if (available) {
       const isHot = modelSpec.isHot ? await modelSpec.isHot() : true;
       if (isHot) {
-        return new registry.AIClient(modelSpec);
+        return new registry.AIClient(modelSpec, {});
       }
     }
   }
 
-// Fallback to a cold model
+  // Fallback to a cold model
   for (const modelSpec of modelSpecs) {
     const available = modelSpec.isAvailable
       ? await modelSpec.isAvailable()
       : true;
     if (available) {
-      return new registry.AIClient(modelSpec);
+      return new registry.AIClient(modelSpec, {});
     }
   }
 
@@ -40,7 +40,10 @@ export default async function getFirstOnlineClientByRequirements(
 /**
  * Finds the chatModels that match the requirements and sorts them by the expected price of the query
  */
-function getModelSpecsByRequirements(registry: ModelTypeRegistry<ChatModelSpec>, requirements: ChatModelRequirements): ChatModelSpec[] {
+function getModelSpecsByRequirements(
+  registry: ModelTypeRegistry<ChatModelSpec, AIChatClient>, 
+  requirements: ChatModelRequirements
+): ChatModelSpec[] {
   requirements = {...requirements};
   if (requirements.provider === "auto") delete requirements.provider;
 
@@ -57,12 +60,12 @@ function getModelSpecsByRequirements(registry: ModelTypeRegistry<ChatModelSpec>,
   }
 
   const eligibleModels = Object.entries(registry.modelSpecs.getAllItems()).filter(
-    ([modelName, metadata]): boolean => {
+    ([, metadata]) => {
       for (const [key, condition] of Object.entries(requirements)) {
         const [, operator, value] =
         String(condition).match(/^([<>]?[=<>]?)([^=<>].*)$/) ?? [];
 
-        const field = metadata[key as keyof ChatModelSpec];
+        const field = (metadata as ChatModelSpec)[key as keyof ChatModelSpec];
         if (typeof field === "number") {
           const numValue = Number(value);
           switch (operator) {
@@ -89,11 +92,7 @@ function getModelSpecsByRequirements(registry: ModelTypeRegistry<ChatModelSpec>,
           switch (operator) {
             case "":
             case "=":
-              if (key === "name") {
-                if (modelName !== value) return false;
-              } else {
-                if (field !== value) return false;
-              }
+              if (key !== "name" && field !== value) return false;
               break;
             default:
               throw new Error(`Operator '${operator}' not supported for strings`);
@@ -104,7 +103,7 @@ function getModelSpecsByRequirements(registry: ModelTypeRegistry<ChatModelSpec>,
       }
       return true;
     },
-  );
+  ) as [string, ChatModelSpec][];
 
   // Sort the matched chatModels by price, using the current context length + 1000 tokens to calculate the price
   return eligibleModels
