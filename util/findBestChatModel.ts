@@ -2,9 +2,50 @@
  * Gets the first chat client that matches the requirements and is online
  */
 import AIChatClient, {ChatModelSpec} from "../client/AIChatClient.ts";
-import type {ChatModelRequirements} from "../ModelRegistry.ts";
 import type {ModelTypeRegistry} from "../ModelTypeRegistry.ts";
 
+export type ChatModelRequirements = {
+  /**
+   * The model name to match against the model specification
+   */
+  name?: string;
+  /**
+   * The model provider code, or 'auto' or undefined for any provider
+   */
+  provider?: string;
+  /**
+   * The model provider code, or 'auto' or undefined for any provider
+   */
+  providerDisplayName?: string;
+  /**
+   * Maximum context length in tokens the model allows
+   */
+  contextLength?: number;
+  /**
+   * Maximum output tokens the model allows
+   */
+  maxCompletionTokens?: number;
+  /**
+   * Research ability (0-infinity)
+   */
+  research?: number;
+  /**
+   * Reasoning capability score (0-infinity)
+   */
+  reasoningText?: number;
+  /**
+   * Intelligence capability score (0-infinity)
+   */
+  intelligence?: number;
+  /**
+   * Speed capability score (0-infinity)
+   */
+  speed?: number;
+  /**
+   * Web search capability score (0-infinity)
+   */
+  webSearch?: number;
+};
 export default async function getFirstOnlineClientByRequirements(
   registry: ModelTypeRegistry<ChatModelSpec, AIChatClient>,
   requirements: ChatModelRequirements,

@@ -1,8 +1,9 @@
 import {createAnthropic} from "@ai-sdk/anthropic";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import {ChatModelRegistry} from "../ModelRegistry.ts";
 
-import ModelRegistry from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const AnthropicModelProviderConfigSchema = z.object({
@@ -29,8 +30,8 @@ interface ModelsResponse {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: AnthropicModelProviderConfig,
+  app: TokenRingApp
 ) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Anthropic provider.");
@@ -84,42 +85,57 @@ export async function init(
     } as ChatModelSpec;
   }
 
-  modelRegistry.chat.registerAllModelSpecs([
-    generateModelSpec("claude-4.5-opus", "claude-opus-4-5", {
-      costPerMillionInputTokens: 5, // $5 / MTok
-      costPerMillionOutputTokens: 25, // $25 / MTok
-      reasoningText: 7,
-      intelligence: 7,
-      tools: 7,
-      speed: 2,
-      contextLength: 200000,
-    }),
-    generateModelSpec("claude-4.5-haiku", "claude-haiku-4-5", {
-      costPerMillionInputTokens: 1, // $0.80 / MTok
-      costPerMillionOutputTokens: 5.0, // $4 / MTok
-      reasoningText: 3,
-      intelligence: 4,
-      tools: 3,
-      speed: 4,
-      contextLength: 200000,
-    }),
-    generateModelSpec("claude-4.1-opus", "claude-opus-4-1", {
-      costPerMillionInputTokens: 15, // Unknown cost
-      costPerMillionOutputTokens: 75, // Unknown cost
-      reasoningText: 6,
-      intelligence: 6,
-      tools: 6,
-      speed: 2,
-      contextLength: 200000,
-    }),
-    generateModelSpec("claude-4.5-sonnet", "claude-sonnet-4-5", {
-      costPerMillionInputTokens: 3.0, // $3 / MTok
-      costPerMillionOutputTokens: 15.0, // $15 / MTok
-      reasoningText: 5,
-      intelligence: 5,
-      tools: 5,
-      speed: 3,
-      contextLength: 200000,
-    }),
-  ]);
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs([
+      generateModelSpec("claude-4.5-opus", "claude-opus-4-5-20251101", {
+        costPerMillionInputTokens: 5, // $5 / MTok
+        costPerMillionOutputTokens: 25, // $25 / MTok
+        reasoningText: 7,
+        intelligence: 7,
+        tools: 7,
+        speed: 2,
+        contextLength: 200000,
+      }),
+      generateModelSpec("claude-4.5-haiku", "claude-haiku-4-5-20251001", {
+        costPerMillionInputTokens: 1, // $0.80 / MTok
+        costPerMillionOutputTokens: 5.0, // $4 / MTok
+        reasoningText: 3,
+        intelligence: 4,
+        tools: 3,
+        speed: 4,
+        contextLength: 200000,
+      }),
+		generateModelSpec("claude-4.1-opus", "claude-opus-4-1-20250805", {
+        costPerMillionInputTokens: 15, // Unknown cost
+        costPerMillionOutputTokens: 75, // Unknown cost
+        reasoningText: 6,
+        intelligence: 6,
+        tools: 6,
+        speed: 2,
+        contextLength: 200000,
+      }),
+		generateModelSpec(
+			"claude-4.5-sonnet-long-context",
+			"claude-sonnet-4-5-20250929",
+			{
+				costPerMillionInputTokens: 6.0,
+				costPerMillionOutputTokens: 22.5,
+				reasoningText: 5,
+				intelligence: 5,
+				tools: 5,
+				speed: 3,
+				contextLength: 1000000,
+			},
+		),
+		generateModelSpec("claude-4.5-sonnet", "claude-sonnet-4-5-20250929", {
+        costPerMillionInputTokens: 3.0, // $3 / MTok
+        costPerMillionOutputTokens: 15.0, // $15 / MTok
+        reasoningText: 5,
+        intelligence: 5,
+        tools: 5,
+        speed: 3,
+        contextLength: 200000,
+      }),
+    ]);
+  });
 }

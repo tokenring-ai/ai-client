@@ -1,9 +1,10 @@
+import TokenRingApp from "@tokenring-ai/app";
 import {abandon} from "@tokenring-ai/utility/promise/abandon";
 import {createOllama} from "ollama-ai-provider-v2";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.js";
 import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export type OllamaModelConfigFunction = (
@@ -78,8 +79,8 @@ type ModelPsResponse = {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: OllamaModelProviderConfig,
+  app: TokenRingApp,
 ) {
   let {baseURL, generateModelSpec} = config;
   if (!baseURL) {
@@ -141,6 +142,11 @@ export async function init(
     }
   }
 
-  modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
-  modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs(chatModelSpecs);
+  });
+  
+  app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
+    embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
+  });
 }

@@ -1,8 +1,9 @@
 import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {EmbeddingModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export type OAICompatibleModelConfigFunction = (
@@ -59,8 +60,8 @@ type ModelListResponse = {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: OAICompatibleModelConfig,
+  app: TokenRingApp,
 ) {
   let {
     baseURL,
@@ -135,8 +136,13 @@ export async function init(
         }
       }
 
-      modelRegistry.chat.registerAllModelSpecs(chatModelSpecs);
-      modelRegistry.embedding.registerAllModelSpecs(embeddingModelSpecs);
+      app.waitForService(ChatModelRegistry, chatModelRegistry => {
+        chatModelRegistry.registerAllModelSpecs(chatModelSpecs);
+      });
+      
+      app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
+        embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
+      });
     })
     .catch((e) => {
     });

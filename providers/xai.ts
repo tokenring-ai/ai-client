@@ -1,7 +1,8 @@
 import {xai} from "@ai-sdk/xai";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const XAIModelProviderConfigSchema = z.object({
@@ -26,8 +27,8 @@ interface ModelList {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: XAIModelProviderConfig,
+  app: TokenRingApp,
 ) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for xAI provider.");
@@ -84,7 +85,8 @@ export async function init(
    * Each key is a model ID, and the value is a `ChatModelSpec` object.
    * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
    */
-  modelRegistry.chat.registerAllModelSpecs([
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("grok-code-fast-1", {
       costPerMillionInputTokens: 0.2,
       costPerMillionCachedInputTokens: 0.02,
@@ -171,13 +173,15 @@ export async function init(
       speed: 3,
       contextLength: 256000,
     }),
-  ]);
+    ]);
+  });
 
   /**
    * A collection of xAI imageneration model specifications.
    * Each key is a model ID, and the value is an `ImageModelSpec` object.
    */
-  modelRegistry.imageGeneration.registerAllModelSpecs([
+  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
+    imageGenerationModelRegistry.registerAllModelSpecs([
     {
       modelId: "grok-2-image-1212",
       providerDisplayName: providerDisplayName,
@@ -190,5 +194,6 @@ export async function init(
       },
       costPerImage: 0.07,
     },
-  ]);
+    ]);
+  });
 }

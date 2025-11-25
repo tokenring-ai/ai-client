@@ -1,7 +1,8 @@
 import {createOpenAI} from "@ai-sdk/openai";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const LlamaModelProviderConfigSchema = z.object({
@@ -26,8 +27,8 @@ interface ModelList {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: LlamaModelProviderConfig,
+  app: TokenRingApp,
 ) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Llama provider.");
@@ -66,7 +67,8 @@ export async function init(
     } as ChatModelSpec;
   }
 
-  modelRegistry.chat.registerAllModelSpecs([
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("Llama-3.3-70B-Instruct", {
       contextLength: 131072,
       maxCompletionTokens: 32768,
@@ -107,5 +109,6 @@ export async function init(
       speed: 5, // Fewer experts and FP8 quantization should make it faster
       tools: 4, // Good tool capabilities expected from Llama 4
     }),
-  ]);
+    ]);
+  });
 }

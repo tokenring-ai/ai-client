@@ -1,8 +1,9 @@
 import {createGoogleGenerativeAI, GoogleGenerativeAIProviderOptions} from "@ai-sdk/google";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
 import {FeatureOptions, FeatureSpec} from "../ModelTypeRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
@@ -26,8 +27,8 @@ interface ModelList {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: GoogleModelProviderConfig,
+  app: TokenRingApp,
 ) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Google provider.");
@@ -144,7 +145,8 @@ export async function init(
     };
   }
 
-  modelRegistry.chat.registerAllModelSpecs([
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("gemini-3-pro-preview", {
       costPerMillionInputTokens: 4.0,
       costPerMillionOutputTokens: 18.0,
@@ -202,11 +204,14 @@ export async function init(
       speed: 5,
       contextLength: 1000000,
     }),
-  ]);
+    ]);
+  });
 
-  modelRegistry.imageGeneration.registerAllModelSpecs([
+  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
+    imageGenerationModelRegistry.registerAllModelSpecs([
     generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
     generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
     generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
-  ]);
+    ]);
+  });
 }

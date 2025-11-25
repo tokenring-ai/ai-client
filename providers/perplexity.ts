@@ -1,8 +1,8 @@
 import {perplexity} from "@ai-sdk/perplexity";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatInputMessage, ChatModelSpec, ChatRequest,} from "../client/AIChatClient.ts";
-
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry} from "../ModelRegistry.ts";
 
 export const PerplexityModelProviderConfigSchema = z.object({
   apiKey: z.string(),
@@ -18,8 +18,8 @@ export type PerplexityModelProviderConfig = z.infer<
  */
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: PerplexityModelProviderConfig,
+  app: TokenRingApp,
 ) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Perplexity provider.");
@@ -63,7 +63,8 @@ export async function init(
     } as ChatModelSpec;
   }
 
-  modelRegistry.chat.registerAllModelSpecs([
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("sonar", {
       costPerMillionInputTokens: 1,
       costPerMillionOutputTokens: 1,
@@ -111,7 +112,8 @@ export async function init(
       speed: 1,
       contextLength: 128000,
     }),
-  ]);
+    ]);
+  });
 }
 
 /**

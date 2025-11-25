@@ -1,7 +1,8 @@
 import {createAzure} from "@ai-sdk/azure";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const AzureModelProviderConfigSchema = z.object({
@@ -25,8 +26,8 @@ interface DeploymentList {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: AzureModelProviderConfig,
+  app: TokenRingApp,
 ) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Azure provider.");
@@ -73,15 +74,17 @@ export async function init(
     } as ChatModelSpec;
   }
 
-  await modelRegistry.chat.registerAllModelSpecs([
-    generateModelSpec("deepseek-v3-0324", {
-      costPerMillionInputTokens: 0.0,
-      costPerMillionOutputTokens: 0.0,
-      reasoningText: 6,
-      intelligence: 5,
-      tools: 4,
-      speed: 3,
-      contextLength: 65536,
-    }),
-  ]);
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs([
+      generateModelSpec("deepseek-v3-0324", {
+        costPerMillionInputTokens: 0.0,
+        costPerMillionOutputTokens: 0.0,
+        reasoningText: 6,
+        intelligence: 5,
+        tools: 4,
+        speed: 3,
+        contextLength: 65536,
+      }),
+    ]);
+  });
 }

@@ -1,7 +1,8 @@
 import {openrouter} from "@openrouter/ai-sdk-provider";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const OpenRouterModelProviderConfigSchema = z.object({
@@ -72,8 +73,8 @@ function parsePricing(priceString: string | null | undefined): number {
 
 async function fetchAndRegisterOpenRouterModels(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: OpenRouterModelProviderConfig,
+  app: TokenRingApp,
 ) {
   const getModels = cachedDataRetriever("https://openrouter.ai/api/v1/models", {
     headers: {
@@ -181,14 +182,16 @@ async function fetchAndRegisterOpenRouterModels(
   }
 
   if (chatModelsSpec.length > 0) {
-    modelRegistry.chat.registerAllModelSpecs(chatModelsSpec);
+    app.waitForService(ChatModelRegistry, chatModelRegistry => {
+      chatModelRegistry.registerAllModelSpecs(chatModelsSpec);
+    });
   }
 }
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: OpenRouterModelProviderConfig,
+  app: TokenRingApp,
 ) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for OpenRouter provider.");
@@ -196,7 +199,7 @@ export async function init(
 
   await fetchAndRegisterOpenRouterModels(
     providerDisplayName,
-    modelRegistry,
     config,
+    app,
   );
 }

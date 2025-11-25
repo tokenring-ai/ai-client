@@ -1,5 +1,5 @@
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
-import {ModelRegistry} from "./index.js";
 import {AnthropicModelProviderConfigSchema} from "./providers/anthropic.js";
 
 import * as anthropic from "./providers/anthropic.ts";
@@ -32,78 +32,78 @@ import * as xai from "./providers/xai.ts";
 /**
  * Registers a key: value object of model specs
  */
-export async function registerModels(
-  config: Record<string, ModelProviderConfig>,
-  modelRegistry: ModelRegistry,
+export async function registerProviders(
+  config: Record<string, AIProviderConfig>,
+  app: TokenRingApp,
 ): Promise<void> {
   for (const providerDisplayName in config) {
     const providerConfig = config[providerDisplayName];
 
     switch (providerConfig.provider) {
       case "anthropic":
-        await anthropic.init(providerDisplayName, modelRegistry, {
+        await anthropic.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "cerebras":
-        await cerebras.init(providerDisplayName, modelRegistry, {
+        await cerebras.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "deepseek":
-        await deepseek.init(providerDisplayName, modelRegistry, {
+        await deepseek.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "fal":
-        await fal.init(providerDisplayName, modelRegistry, {
+        await fal.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "google":
-        await google.init(providerDisplayName, modelRegistry, {
+        await google.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "groq":
-        await groq.init(providerDisplayName, modelRegistry, {
+        await groq.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "ollama":
-        await ollama.init(providerDisplayName, modelRegistry, {
+        await ollama.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "openai":
-        await openai.init(providerDisplayName, modelRegistry, {
+        await openai.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "openrouter":
-        await openrouter.init(providerDisplayName, modelRegistry, {
+        await openrouter.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "perplexity":
-        await perplexity.init(providerDisplayName, modelRegistry, {
+        await perplexity.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "azure":
-        await azure.init(providerDisplayName, modelRegistry, {
+        await azure.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "openaiCompatible":
-        await openaiCompatible.init(providerDisplayName, modelRegistry, {
+        await openaiCompatible.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       case "xai":
-        await xai.init(providerDisplayName, modelRegistry, {
+        await xai.init(providerDisplayName, {
           ...providerConfig,
-        });
+        }, app);
         break;
       default:
         throw new Error(
@@ -113,7 +113,7 @@ export async function registerModels(
   }
 }
 
-export const ModelProviderConfigSchema = z.discriminatedUnion("provider", [
+export const AIProviderConfigSchema = z.discriminatedUnion("provider", [
   AnthropicModelProviderConfigSchema.extend({
     provider: z.literal("anthropic"),
   }),
@@ -137,4 +137,4 @@ export const ModelProviderConfigSchema = z.discriminatedUnion("provider", [
   }),
   XAIModelProviderConfigSchema.extend({provider: z.literal("xai")}),
 ]);
-export type ModelProviderConfig = z.infer<typeof ModelProviderConfigSchema>;
+export type AIProviderConfig = z.infer<typeof AIProviderConfigSchema>;

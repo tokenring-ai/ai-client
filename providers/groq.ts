@@ -1,7 +1,8 @@
 import {groq} from "@ai-sdk/groq";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const GroqModelProviderConfigSchema = z.object({
@@ -26,8 +27,8 @@ interface ModelList {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: GroqModelProviderConfig,
+  app: TokenRingApp,
 ) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Groq provider.");
@@ -61,7 +62,8 @@ export async function init(
     } as ChatModelSpec;
   }
 
-  modelRegistry.chat.registerAllModelSpecs([
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("llama-3.1-8b-instant", {
       contextLength: 131072,
       maxCompletionTokens: 131072,
@@ -179,5 +181,6 @@ export async function init(
       speed: 4,
       tools: 3,
     }),
-  ]);
+    ]);
+  });
 }

@@ -1,8 +1,8 @@
 import {createDeepSeek} from "@ai-sdk/deepseek";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const DeepSeekModelProviderConfigSchema = z.object({
@@ -26,8 +26,8 @@ interface ModelsListResponse {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: DeepSeekModelProviderConfig,
+  app: TokenRingApp,
 ) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for DeepSeek provider.");
@@ -62,7 +62,8 @@ export async function init(
     } as ChatModelSpec;
   }
 
-  modelRegistry.chat.registerAllModelSpecs([
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs([
     generateModelSpecs("deepseek-chat", {
       costPerMillionInputTokens: 0.28,
       costPerMillionOutputTokens: 0.42,
@@ -81,5 +82,6 @@ export async function init(
       speed: 2,
       contextLength: 128000,
     }),
-  ]);
+    ]);
+  });
 }

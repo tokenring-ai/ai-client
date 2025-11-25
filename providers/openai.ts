@@ -1,8 +1,9 @@
 import {createOpenAI, OpenAIResponsesProviderOptions} from "@ai-sdk/openai";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
 export const OpenAIModelProviderConfigSchema = z.object({
@@ -27,8 +28,8 @@ type ModelList = {
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: OpenAIModelProviderConfig,
+  app: TokenRingApp,
 ) {
   let {apiKey} = config;
   if (!apiKey) {
@@ -141,7 +142,8 @@ export async function init(
     };
   }
 
-  modelRegistry.chat.registerAllModelSpecs([
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("gpt-4.1", {
       costPerMillionInputTokens: 2.0,
       costPerMillionOutputTokens: 8.0,
@@ -644,9 +646,11 @@ export async function init(
       speed: 3,
       contextLength: 128000,
     }),
-  ]);
+    ]);
+  });
 
-  modelRegistry.imageGeneration.registerAllModelSpecs([
+  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
+    imageGenerationModelRegistry.registerAllModelSpecs([
     generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-high", {
       providerOptions: {
         openai: {quality: "high"},
@@ -689,9 +693,11 @@ export async function init(
       costPerMillionInputTokens: 10,
       costPerMegapixel: 0.011,
     }),
-  ]);
+    ]);
+  });
 
-  modelRegistry.speech.registerAllModelSpecs([
+  app.waitForService(SpeechModelRegistry, speechModelRegistry => {
+    speechModelRegistry.registerAllModelSpecs([
     {
       modelId: "tts-1",
       providerDisplayName: providerDisplayName,
@@ -710,9 +716,11 @@ export async function init(
       },
       costPerMillionCharacters: 30,
     },
-  ]);
+    ]);
+  });
 
-  modelRegistry.transcription.registerAllModelSpecs([
+  app.waitForService(TranscriptionModelRegistry, transcriptionModelRegistry => {
+    transcriptionModelRegistry.registerAllModelSpecs([
     {
       modelId: "whisper-1",
       providerDisplayName: providerDisplayName,
@@ -722,5 +730,6 @@ export async function init(
       },
       costPerMinute: 0.006,
     },
-  ]);
+    ]);
+  });
 }

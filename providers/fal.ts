@@ -1,7 +1,8 @@
 import {createFal} from "@ai-sdk/fal";
+import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import ModelRegistry from "../ModelRegistry.ts";
+import {ImageGenerationModelRegistry} from "../ModelRegistry.ts";
 
 export const FalModelProviderConfigSchema = z.object({
   apiKey: z.string(),
@@ -13,8 +14,8 @@ export type FalModelProviderConfig = z.infer<
 
 export async function init(
   providerDisplayName: string,
-  modelRegistry: ModelRegistry,
   config: FalModelProviderConfig,
+  app: TokenRingApp,
 ) {
   let {apiKey} = config;
   if (!apiKey) {
@@ -41,7 +42,8 @@ export async function init(
     };
   }
 
-  modelRegistry.imageGeneration.registerAllModelSpecs([
+  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
+    imageGenerationModelRegistry.registerAllModelSpecs([
     generateImageModelSpec({
       modelId: "fal-ai/qwen-image",
       costPerMegapixel: 0.02,
@@ -54,5 +56,6 @@ export async function init(
       modelId: "fal-ai/flux-pro/v1.1",
       costPerMegapixel: 0.04,
     }),
-  ]);
+    ]);
+  });
 }
