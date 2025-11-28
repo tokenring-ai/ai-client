@@ -1,4 +1,3 @@
-import {TokenRingService} from "@tokenring-ai/app/types";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import {PrimitiveType} from "@tokenring-ai/utility/types";
 
@@ -30,7 +29,6 @@ export type ModelSpec = {
   isAvailable?: () => Promise<boolean>;
   isHot?: () => Promise<boolean>;
   features?: Record<string, FeatureSpec>;
-  //metaData?: Record<string, number>;
 };
 
 export interface ModelStatus<T> {
@@ -98,14 +96,6 @@ export class ModelTypeRegistry<
         /* empty */
       }
     }, 0).unref();
-  }
-
-  /**
-   * Gets all registered chatModels
-   * @returns {Array<string>} Array of model identifiers
-   */
-  getRegisteredModelSpecs(): Array<string> {
-    return Object.keys(this.modelSpecs);
   }
 
   /**

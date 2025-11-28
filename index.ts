@@ -1,7 +1,7 @@
 import TokenRingApp from "@tokenring-ai/app"; 
 import {AgentCommandService} from "@tokenring-ai/agent";
 
-import * as chatCommands from "@tokenring-ai/chat/chatCommands";
+import chatCommands from "@tokenring-ai/chat/chatCommands";
 import {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
 import {

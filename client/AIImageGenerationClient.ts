@@ -26,11 +26,11 @@ export type ImageModelSpec = ModelSpec & {
    */
   contextLength?: number;
   /**
-   * - Cost per million input tokens (may be used for prompt processing).
+   * - Cost per million input tokens
    */
   costPerMillionInputTokens?: number;
   /**
-   * - Cost per generated image (common pricing model for image generation).
+   * - Cost per generated image
    */
   costPerImage?: number;
 
