@@ -1,17 +1,14 @@
-import TokenRingApp from "@tokenring-ai/app"; 
-import {AgentCommandService} from "@tokenring-ai/agent";
-
-import chatCommands from "@tokenring-ai/chat/chatCommands";
-import {TokenRingPlugin} from "@tokenring-ai/app";
+import TokenRingApp, {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
 import {
   ChatModelRegistry,
   EmbeddingModelRegistry,
   ImageGenerationModelRegistry,
-  SpeechModelRegistry, TranscriptionModelRegistry
+  SpeechModelRegistry,
+  TranscriptionModelRegistry
 } from "./ModelRegistry.ts";
-import {AIProviderConfigSchema, registerProviders} from "./providers.js";
 import packageJSON from "./package.json" with {type: "json"};
+import {AIProviderConfigSchema, registerProviders} from "./providers.js";
 
 export type {Tool, UserModelMessage} from "ai";
 export {tool as chatTool, stepCountIs} from 'ai';
@@ -25,9 +22,6 @@ export default {
   version: packageJSON.version,
   description: packageJSON.description,
   async install(app: TokenRingApp) {
-    app.waitForService(AgentCommandService, agentCommandService =>
-      agentCommandService.addAgentCommands(chatCommands)
-    );
     app.addServices(new ChatModelRegistry());
     app.addServices(new ImageGenerationModelRegistry());
     app.addServices(new EmbeddingModelRegistry());
@@ -42,5 +36,3 @@ export default {
     );
   },
 } as TokenRingPlugin;
-
-export {default as ChatService} from "@tokenring-ai/chat/ChatService";

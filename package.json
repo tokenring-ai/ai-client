@@ -1,8 +1,9 @@
 {
  "name": "@tokenring-ai/ai-client",
- "version": "0.1.0",
+ "version": "0.2.0",
  "description": "AI client for the Token Ring ecosystem",
  "dependencies": {
+  "@tokenring-ai/app": "0.2.0",
   "@ai-sdk/anthropic": "^2.0.50",
   "@ai-sdk/azure": "^2.0.76",
   "@ai-sdk/cerebras": "^1.0.32",
@@ -16,8 +17,8 @@
   "@ai-sdk/provider": "^2.0.0",
   "@ai-sdk/xai": "^2.0.39",
   "@openrouter/ai-sdk-provider": "^1.2.8",
-  "@tokenring-ai/agent": "0.1.0",
-  "@tokenring-ai/utility": "0.1.0",
+  "@tokenring-ai/agent": "0.2.0",
+  "@tokenring-ai/utility": "0.2.0",
   "ai": "^5.0.104",
   "axios": "^1.13.2",
   "ollama-ai-provider-v2": "^1.5.5",
