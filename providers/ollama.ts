@@ -7,10 +7,6 @@ import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
 import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export type OllamaModelConfigFunction = (
-  modelInfo: OllamaModelTagItem,
-) => ModelConfigResults;
-
 export const OllamaModelProviderConfigSchema = z.object({
   baseURL: z.string(),
   generateModelSpec: z.function({

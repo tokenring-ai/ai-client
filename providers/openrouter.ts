@@ -56,8 +56,6 @@ interface ApiResponse {
   data: ModelData[];
 }
 
-type ModelFilter = (model: ModelData) => boolean;
-
 // Function to safely convert pricing string to number (cost per million tokens)
 function parsePricing(priceString: string | null | undefined): number {
   if (

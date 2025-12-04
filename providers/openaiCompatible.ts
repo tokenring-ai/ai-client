@@ -6,10 +6,6 @@ import type {EmbeddingModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddi
 import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export type OAICompatibleModelConfigFunction = (
-  modelInfo: ModelListData,
-) => ModelConfigResults;
-
 export const OAICompatibleModelConfigSchema = z.object({
   apiKey: z.string().optional(),
   baseURL: z.string(),
@@ -58,6 +54,13 @@ type ModelListResponse = {
   data: ModelListData[];
 };
 
+type PropsResponse = {
+  default_generation_settings?: {
+    n_ctx?: number;
+  };
+  [key: string]: any;
+};
+
 export async function init(
   providerDisplayName: string,
   config: OAICompatibleModelConfig,
@@ -102,14 +105,39 @@ export async function init(
     timeout: 5000,
   }) as () => Promise<ModelListResponse>;
 
+  const getProps = cachedDataRetriever(`${baseURL.replace("/v1","")}/props`, {
+    headers: {
+      ...(apiKey && {Authorization: `Bearer ${apiKey}`}),
+      ...headers,
+      "Content-Type": "application/json",
+    },
+    cacheTime: 60000,
+    timeout: 5000,
+  }) as () => Promise<PropsResponse>;
+
   getModelList()
-    .then((modelList) => {
+    .then(async (modelList) => {
       if (!modelList?.data) return;
+
+      // Fetch props to get n_ctx value
+      let propsNCtx: number | undefined;
+      try {
+        const props = await getProps();
+        propsNCtx = props?.default_generation_settings?.n_ctx;
+      } catch (e) {
+        // Props endpoint not available, continue without it
+      }
 
       for (const modelInfo of modelList.data) {
         const {type, capabilities = {}} = generateModelSpec(modelInfo);
 
         if (type === "chat") {
+          // Context length priority: max_model_len > n_ctx from props > 32000 fallback
+          const contextLength =
+            modelInfo.max_model_len ??
+            propsNCtx ??
+            32000;
+
           chatModelSpecs.push({
             modelId: modelInfo.id,
             providerDisplayName: providerDisplayName,
@@ -118,8 +146,7 @@ export async function init(
             isHot: () => Promise.resolve(true),
             costPerMillionInputTokens: 0,
             costPerMillionOutputTokens: 0,
-            contextLength:
-              modelInfo.max_model_len ?? modelInfo?.meta?.n_ctx_train ?? 4000,
+            contextLength,
             ...capabilities,
           });
         } else if (type === "embedding") {
@@ -144,6 +171,6 @@ export async function init(
         embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
       });
     })
-    .catch((e) => {
+    .catch(() => {
     });
 }
