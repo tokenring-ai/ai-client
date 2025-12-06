@@ -27,8 +27,9 @@ export async function init(
   function generateImageModelSpec(
     modelSpec: Omit<
       ImageModelSpec,
-      "isAvailable" | "provider" | "providerDisplayName" | "impl"
+      "isAvailable" | "provider" | "providerDisplayName" | "impl" | "calculateImageCost"
     >,
+    costPerMegapixel: number
   ): ImageModelSpec {
     return {
       providerDisplayName: providerDisplayName,
@@ -38,24 +39,19 @@ export async function init(
         // In a real implementation, you might want to check the API
         return true;
       },
+      calculateImageCost(req, result) {
+        const size = req.size.split("x").map(Number)
+        return costPerMegapixel * size[0] * size[1] / 1000000;
+      },
       ...modelSpec,
     };
   }
 
   app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
     imageGenerationModelRegistry.registerAllModelSpecs([
-    generateImageModelSpec({
-      modelId: "fal-ai/qwen-image",
-      costPerMegapixel: 0.02,
-    }),
-    generateImageModelSpec({
-      modelId: "fal-ai/flux-pro/v1.1-ultra",
-      costPerMegapixel: 0.06,
-    }),
-    generateImageModelSpec({
-      modelId: "fal-ai/flux-pro/v1.1",
-      costPerMegapixel: 0.04,
-    }),
-    ]);
+      generateImageModelSpec({modelId: "fal-ai/qwen-image"}, 0.02),
+      generateImageModelSpec({modelId: "fal-ai/flux-pro/v1.1-ultra"}, 0.06),
+      generateImageModelSpec({modelId: "fal-ai/flux-pro/v1.1"}, 0.04)
+    ])
   });
 }

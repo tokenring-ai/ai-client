@@ -141,7 +141,9 @@ export async function init(
         //const modelList = await getModels();
         //return !!modelList?.models.some((model) => model.name.includes(modelId));
       },
-      costPerImage,
+      calculateImageCost(req, result) {
+        return costPerImage
+      },
     };
   }
 

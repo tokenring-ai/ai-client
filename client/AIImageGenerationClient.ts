@@ -28,16 +28,16 @@ export type ImageModelSpec = ModelSpec & {
   /**
    * - Cost per million input tokens
    */
-  costPerMillionInputTokens?: number;
+  //costPerMillionInputTokens?: number;
   /**
    * - Cost per generated image
    */
-  costPerImage?: number;
+  //costPerImage?: number;
 
   /**
    * - Cost per megapixel (may not be applicable, or cost is per image).
    */
-  costPerMegapixel?: number;
+  //costPerMegapixel?: number;
   /**
    * - The AI SDK image generation model implementation.
    */
@@ -50,7 +50,7 @@ export type ImageModelSpec = ModelSpec & {
   /**
    * - A callback to calculate the image cost
    */
-  calculateImageCost?: (req: ImageRequest, res: ImageResponse) => number;
+  calculateImageCost: (req: ImageRequest, res: Experimental_GenerateImageResult) => number;
 
   /**
    * - Optional hook to adjust the request prior to sending.
@@ -119,6 +119,14 @@ export default class AIImageGenerationClient {
         providerOptions: this.modelSpec.providerOptions ?? {},
         abortSignal: signal,
       });
+
+      const size = request.size.split("x").map(Number);
+
+
+      const cost = this.modelSpec.calculateImageCost(request, result);
+
+      agent.addCost(`Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost);
+
 
       return [result.image, result];
     } catch (error) {

@@ -3,7 +3,7 @@ import Agent from "@tokenring-ai/agent/Agent";
 
 import {
   type AssistantModelMessage,
-  generateObject,
+  generateObject, GenerateObjectResult,
   generateText,
   type GenerateTextResult,
   type LanguageModel,
@@ -263,6 +263,7 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
+    agent.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0);
 
     return [response.text ?? '', response];
   }
@@ -290,6 +291,8 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
+    agent.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0);
+
     return [response.text ?? "", response];
   }
 
@@ -314,25 +317,12 @@ export default class AIChatClient {
       ...request,
     });
 
-    const end = Date.now();
+    const elapsedMs = Date.now() - start;
 
-    const {timestamp, modelId} = result.response;
+    const response = await this.generateResponseObject(result, elapsedMs);
+    agent.addCost(`GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0);
 
-    const usage = result.usage;
-
-    return [
-      result.object as z.infer<typeof request.schema>,
-      {
-        timestamp: timestamp.getTime(),
-        modelId,
-        finishReason: result.finishReason,
-        usage,
-        cost: this.calculateCost(usage),
-        timing: this.calculateTiming(end - start, usage),
-        warnings: result.warnings,
-        providerMetadata: result.providerMetadata,
-      },
-    ];
+    return [result.object as z.infer<typeof request.schema>, response];
   }
 
   /**
@@ -341,23 +331,24 @@ export default class AIChatClient {
   async generateResponseObject(
     result:
       | StreamTextResult<Record<string, Tool>, never>
-      | GenerateTextResult<Record<string, Tool>, never>,
+      | GenerateTextResult<Record<string, Tool>, never>
+      | GenerateObjectResult<any>,
     elapsedMs: number,
   ): Promise<AIResponse> {
-    const {timestamp, messages, modelId} = await result.response;
+    const responseData = await result.response;
 
     const usage = await result.usage;
 
     return {
-      timestamp: timestamp.getTime(),
-      modelId,
-      messages,
+      timestamp: responseData.timestamp.getTime(),
+      modelId: responseData.modelId,
+      messages: "messages" in responseData ? responseData.messages : [],
       finishReason: await result.finishReason,
       usage,
       cost: this.calculateCost(usage),
       timing: this.calculateTiming(elapsedMs, usage),
-      sources: await result.sources,
-      text: await result.text,
+      sources: "sources" in result ? await result.sources : undefined,
+      text: "text" in result ? await result.text : undefined,
       warnings: await result.warnings,
       providerMetadata: await result.providerMetadata,
     };

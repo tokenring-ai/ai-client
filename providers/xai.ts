@@ -192,7 +192,9 @@ export async function init(
           (model) => model.id === "grok-2-image-1212",
         );
       },
-      costPerImage: 0.07,
+      calculateImageCost(req, result) {
+        return 0.07;
+      },
     },
     ]);
   });

@@ -127,9 +127,10 @@ export async function init(
     variantId: string,
     modelSpec: Omit<
       ImageModelSpec,
-      "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"
+      "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId" | "calculateImageCost"
     >,
-  ): ImageModelSpec {
+    costPerMegapixel: number,
+   ): ImageModelSpec {
     return {
       modelId: variantId,
       providerDisplayName: providerDisplayName,
@@ -137,6 +138,10 @@ export async function init(
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some((model) => model.id === modelId);
+      },
+      calculateImageCost(req, result) {
+        const size = req.size.split("x").map(Number)
+        return costPerMegapixel * size[0] * size[1] / 1000000;
       },
       ...modelSpec,
     };
@@ -655,44 +660,44 @@ export async function init(
       providerOptions: {
         openai: {quality: "high"},
       },
-      costPerMillionInputTokens: 10,
-      costPerMegapixel: 0.067,
-    }),
+      //costPerMillionInputTokens: 10,
+      //costPerMegapixel: 0.067,
+    }, 0.036),
     generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-medium", {
       providerOptions: {
         openai: {quality: "medium"},
       },
-      costPerMillionInputTokens: 10,
-      costPerMegapixel: 0.042,
-    }),
+      //costPerMillionInputTokens: 10,
+      //costPerMegapixel: 0.042,
+    }, 0.011),
     generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-low", {
       providerOptions: {
         openai: {quality: "low"},
       },
-      costPerMillionInputTokens: 10,
-      costPerMegapixel: 0.011,
-    }),
+      //costPerMillionInputTokens: 10,
+      //costPerMegapixel: 0.011,
+    }, 0.005),
     generateImageModelSpec("gpt-image-1", "gpt-image-1-high", {
       providerOptions: {
         openai: {quality: "high"},
       },
-      costPerMillionInputTokens: 10,
-      costPerMegapixel: 0.067,
-    }),
+      //costPerMillionInputTokens: 10,
+      //costPerMegapixel: 0.067,
+    }, 0.167),
     generateImageModelSpec("gpt-image-1", "gpt-image-1-medium", {
       providerOptions: {
         openai: {quality: "medium"},
       },
-      costPerMillionInputTokens: 10,
-      costPerMegapixel: 0.042,
-    }),
+      //costPerMillionInputTokens: 10,
+      //costPerMegapixel: 0.042,
+    }, 0.042),
     generateImageModelSpec("gpt-image-1", "gpt-image-1-low", {
       providerOptions: {
         openai: {quality: "low"},
       },
-      costPerMillionInputTokens: 10,
-      costPerMegapixel: 0.011,
-    }),
+      //costPerMillionInputTokens: 10,
+      //costPerMegapixel: 0.011,
+    }, 0.011),
     ]);
   });
 
