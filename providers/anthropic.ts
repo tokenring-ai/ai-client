@@ -82,7 +82,7 @@ export async function init(
         },
       },
       ...modelSpec,
-    } as ChatModelSpec;
+    } satisfies ChatModelSpec;
   }
 
   app.waitForService(ChatModelRegistry, chatModelRegistry => {

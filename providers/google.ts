@@ -81,7 +81,9 @@ export async function init(
       baseFeatures.thinkingBudget = {
         description: "Thinking token budget (0 to disable)",
         defaultValue: undefined,
-        type: "number"
+        type: "number",
+        min: 0,
+        max: 32768
       };
       baseFeatures.includeThoughts = {
         description: "Include thought summaries",
@@ -100,7 +102,7 @@ export async function init(
           model.name.includes(modelId),
         );
       },
-      mangleRequest(req: ChatRequest, features: Record<string, FeatureOptions>) {
+      mangleRequest(req: ChatRequest, features: FeatureOptions) {
         if (features?.websearch) {
           (req.tools ??= {}).google_search = googleProvider.tools.googleSearch(
             {},
@@ -123,7 +125,7 @@ export async function init(
       },
       features: { ...baseFeatures, ...modelSpec.features },
       ...modelSpec,
-    } as ChatModelSpec;
+    } satisfies ChatModelSpec;
   }
 
   function generateImageModelSpec(

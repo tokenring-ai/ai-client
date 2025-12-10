@@ -35,4 +35,4 @@ export default {
       app
     );
   },
-} as TokenRingPlugin;
+} satisfies TokenRingPlugin;

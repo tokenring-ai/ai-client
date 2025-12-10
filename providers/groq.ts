@@ -59,7 +59,7 @@ export async function init(
         return !!modelList?.data.some((model) => model.id === modelId);
       },
       ...modelSpec,
-    } as ChatModelSpec;
+    } satisfies ChatModelSpec;
   }
 
   app.waitForService(ChatModelRegistry, chatModelRegistry => {

@@ -3,6 +3,7 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatInputMessage, ChatModelSpec, ChatRequest,} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import {FeatureOptions} from "../ModelTypeRegistry.ts";
 
 export const PerplexityModelProviderConfigSchema = z.object({
   apiKey: z.string(),
@@ -60,7 +61,7 @@ export async function init(
         },
       },
       ...modelSpec,
-    } as ChatModelSpec;
+    } satisfies ChatModelSpec;
   }
 
   app.waitForService(ChatModelRegistry, chatModelRegistry => {
@@ -120,7 +121,7 @@ export async function init(
  * Mangles OpenAI-style chat input messages to ensure they follow the required alternating pattern.
  * This function combines consecutive messages from the same role and ensures user/assistant roles alternate.
  */
-function mangleRequest(request: ChatRequest, features: Record<string,string|number|boolean> ): void {
+function mangleRequest(request: ChatRequest, features: FeatureOptions ): void {
   const perplexityOptions = (request.providerOptions ??= {}).perplexity ??= {};
   const webSearchOptions = perplexityOptions.web_search_options ??= {};
 

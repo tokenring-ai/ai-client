@@ -9,6 +9,8 @@ export type FeatureSpec = {
 } | {
   type: "number";
   defaultValue?: number | undefined;
+  min?: number;
+  max?: number;
 } | {
   type: "string";
   defaultValue?: string | undefined;
@@ -181,6 +183,12 @@ export class ModelTypeRegistry<
           parsed = rawValue === "1" || rawValue.toLowerCase() === "true";
         } else if (featureSpec.type === "number") {
           const num = Number(rawValue);
+          if (featureSpec.min !== undefined && num < featureSpec.min) {
+            throw new Error(`Invalid value for feature "${k}" for model ${lookupName}: ${rawValue} is lower than the minimum allowed value of ${featureSpec.min}`,)
+          }
+          if (featureSpec.max !== undefined && num > featureSpec.max) {
+            throw new Error(`Invalid value for feature "${k}" for model ${lookupName}: ${rawValue} is higher than the maximum allowed value of ${featureSpec.max}`,)
+          }
           parsed = Number.isNaN(num) ? featureSpec.defaultValue : num;
         } else if (featureSpec.type === "enum") {
           parsed = featureSpec.values.includes(rawValue)

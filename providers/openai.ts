@@ -119,7 +119,7 @@ export async function init(
       },
       features: { ...baseFeatures, ...modelSpec.features },
       ...modelSpec,
-    } as ChatModelSpec;
+    } satisfies ChatModelSpec;
   }
 
   function generateImageModelSpec(
