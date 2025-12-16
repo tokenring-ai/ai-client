@@ -51,18 +51,27 @@ export async function init(
       ...modelSpec,
       modelId,
       providerDisplayName: providerDisplayName,
-      impl: xai(modelId),
+      impl: xai.responses(modelId),
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some((model) => model.id === modelId);
       },
       mangleRequest(req, features) {
+        return;
         if (features.websearch) {
-          ((req.providerOptions ??= {}).xai ??= {}).searchParameters = {
-            mode: 'auto',
-            maxSearchResults: features.maxSearchResults as number,
-            returnCitations: features.returnCitations as boolean
-          }
+          req.tools.web_search = xai.tools.webSearch({
+            enableImageUnderstanding: features.webImageUnderstanding as boolean,
+          });
+        }
+
+        if (features.XSearch) {
+          req.tools.x_search = xai.tools.xSearch({
+            allowedXHandles: (features.XAllowedHandles as string | undefined)?.split(','),
+            fromDate: features.XFromDate as string | undefined,
+            toDate: features.XToDate as string | undefined,
+            enableImageUnderstanding: features.XImageUnderstanding as boolean,
+            enableVideoUnderstanding: features.XVideoUnderstanding as boolean,
+          });
         }
       },
       features: {
@@ -71,13 +80,38 @@ export async function init(
           defaultValue: false,
           type: "boolean",
         },
-        maxSearchResults: {
-          description: "Maximum number of search results to return",
-          defaultValue: 20,
-          type: "number",
+        webImageUnderstanding: {
+          description: "Enables image understanding in web search",
+          defaultValue: false,
+          type: "boolean",
         },
-        returnCitations: {
-          description: "Whether to return citations for search results",
+        XSearch: {
+          description: "Enables X search",
+          defaultValue: false,
+          type: "boolean",
+        },
+        XFromDate: {
+          description: "From date for X search",
+          defaultValue: undefined,
+          type: "string",
+        },
+        XToDate: {
+          description: "To date for X search",
+          defaultValue: undefined,
+          type: "string",
+        },
+        XAllowedHandles: {
+          description: "Allowed handles for X search",
+          defaultValue: undefined,
+          type: "string",
+        },
+        XImageUnderstanding: {
+          description: "Enables image understanding in X search",
+          defaultValue: false,
+          type: "boolean",
+        },
+        XVideoUnderstanding: {
+          description: "Enables video understanding in X search",
           defaultValue: false,
           type: "boolean",
         },

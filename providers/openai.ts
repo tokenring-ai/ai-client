@@ -200,7 +200,19 @@ export async function init(
       speed: 3,
       contextLength: 400000,
     }),
-    generateModelSpec("gpt-5-codex", {
+
+      generateModelSpec("gpt-5.2", {
+        costPerMillionInputTokens: 1.75,
+        costPerMillionCachedInputTokens: 0.175,
+        costPerMillionOutputTokens: 14,
+        reasoningText: 4,
+        intelligence: 6,
+        tools: 6,
+        speed: 3,
+        contextLength: 400000,
+      }),
+
+      generateModelSpec("gpt-5-codex", {
       costPerMillionInputTokens: 1.25,
       costPerMillionCachedInputTokens: 0.125,
       costPerMillionOutputTokens: 10,
