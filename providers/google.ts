@@ -167,6 +167,7 @@ export async function init(
       },
       contextLength: 1000000,
     }),
+
     generateModelSpec("gemini-2.5-pro", {
       costPerMillionInputTokens: 2.5,
       costPerMillionOutputTokens: 15.0,
@@ -199,6 +200,22 @@ export async function init(
       },
       contextLength: 1000000,
     }),
+      generateModelSpec("gemini-3-flash", {
+        costPerMillionInputTokens: 0.50,
+        costPerMillionOutputTokens: 3,
+        reasoningText: 6,
+        intelligence: 5,
+        tools: 4,
+        speed: 4,
+        features: {
+          websearch: {
+            description: "Enables web search",
+            defaultValue: false,
+            type: "boolean",
+          }
+        },
+        contextLength: 1000000,
+      }),
     generateModelSpec("gemini-2.5-flash-lite", {
       costPerMillionInputTokens: 0.1,
       costPerMillionOutputTokens: 0.4,

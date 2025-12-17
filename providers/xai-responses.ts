@@ -57,7 +57,6 @@ export async function init(
         return !!modelList?.data.some((model) => model.id === modelId);
       },
       mangleRequest(req, features) {
-        return;
         if (features.websearch) {
           req.tools.web_search = xai.tools.webSearch({
             enableImageUnderstanding: features.webImageUnderstanding as boolean,
