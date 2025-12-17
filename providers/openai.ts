@@ -710,6 +710,21 @@ export async function init(
       //costPerMillionInputTokens: 10,
       //costPerMegapixel: 0.011,
     }, 0.011),
+    generateImageModelSpec("gpt-image-1.5", "gpt-image-1.5-high", {
+      providerOptions: {
+        openai: {quality: "high"},
+      },
+    }, 0.133),
+    generateImageModelSpec("gpt-image-1.5", "gpt-image-1.5-medium", {
+      providerOptions: {
+        openai: {quality: "medium"},
+      },
+    }, 0.034),
+    generateImageModelSpec("gpt-image-1.5", "gpt-image-1.5-low", {
+      providerOptions: {
+        openai: {quality: "low"},
+      },
+    }, 0.009),
     ]);
   });
 

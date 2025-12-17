@@ -213,9 +213,10 @@ export async function init(
 
   app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
     imageGenerationModelRegistry.registerAllModelSpecs([
-    generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
-    generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
-    generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
+      generateImageModelSpec("gemini-3-pro-image-preview", 0.135),
+      generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
+      generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
+      generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
     ]);
   });
 }
