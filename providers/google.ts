@@ -200,7 +200,7 @@ export async function init(
       },
       contextLength: 1000000,
     }),
-      generateModelSpec("gemini-3-flash", {
+      generateModelSpec("gemini-3-flash-preview", {
         costPerMillionInputTokens: 0.50,
         costPerMillionOutputTokens: 3,
         reasoningText: 6,
