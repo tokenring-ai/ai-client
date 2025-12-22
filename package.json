@@ -27,7 +27,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.15",
     "typescript": "catalog:",
-    "vitest": "^4.0.15"
+    "vitest": "catalog:"
   },
   "exports": {
     ".": "./index.ts",
@@ -36,7 +36,7 @@
   "types": "./index.ts",
   "license": "MIT",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
