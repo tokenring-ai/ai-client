@@ -1,20 +1,18 @@
-# AI Client Package
+# @tokenring-ai/ai-client Package
 
 ## Overview
 
-The `@tokenring-ai/ai-client` package provides a unified interface for interacting with multiple AI providers through
-the Vercel AI SDK. It integrates with the Token Ring Agent framework to manage AI configurations, model selection, chat
-history, and request building.
+The `@tokenring-ai/ai-client` package provides a unified interface for interacting with multiple AI providers through the Vercel AI SDK. It integrates with the Token Ring Agent framework to manage AI configurations, model selection, chat history, and request building.
 
 **Key Features:**
 
-- **Multi-Provider Support**: OpenAI, Anthropic, Google, Groq, DeepSeek, Cerebras, xAI, Perplexity, Azure, Ollama,
-  OpenRouter, Fal, and OpenAI-compatible endpoints
-- **Model Registry**: Automatic model selection based on cost, capabilities (reasoning, intelligence, speed, tools), and
-  availability
+- **Multi-Provider Support**: OpenAI, Anthropic, Google, Groq, DeepSeek, Cerebras, xAI, Perplexity, Azure, Ollama, OpenRouter, Fal, and OpenAI-compatible endpoints
+- **Model Registry**: Automatic model selection based on cost, capabilities (reasoning, intelligence, speed, tools), and availability
 - **Chat Management**: Conversation history, streaming responses, cost/timing analytics
 - **Context Compaction**: Automatic summarization when conversations grow long
-- **Multiple Modalities**: Chat completions, embeddings, and image generation
+- **Multiple Modalities**: Chat completions, embeddings, image generation, speech synthesis, and audio transcription
+- **Reranking**: Document ranking and relevance scoring using AI models
+- **Feature Management**: Dynamic feature selection and configuration per model
 
 ## Installation
 
@@ -66,79 +64,82 @@ export default {
 };
 ```
 
+## Package Structure
+
+```
+pkg/ai-client/
+├── client/
+│   ├── AIChatClient.ts        # Chat completion client with streaming support
+│   ├── AIEmbeddingClient.ts   # Text embedding client
+│   ├── AIImageGenerationClient.ts # Image generation client
+│   ├── AISpeechClient.ts      # Text-to-speech client
+│   └── AITranscriptionClient.ts # Audio transcription client
+├── providers/
+│   ├── anthropic.ts          # Anthropic provider
+│   ├── azure.ts              # Azure provider
+│   ├── cerebras.ts           # Cerebras provider
+│   ├── deepseek.ts           # DeepSeek provider
+│   ├── fal.ts                # Fal provider
+│   ├── google.ts             # Google provider
+│   ├── groq.ts               # Groq provider
+│   ├── llama.ts              # Llama provider
+│   ├── ollama.ts             # Ollama provider
+│   ├── openai.ts             # OpenAI provider
+│   ├── openaiCompatible.ts   # OpenAI-compatible provider
+│   ├── openrouter.ts         # OpenRouter provider
+│   ├── perplexity.ts         # Perplexity provider
+│   └── xai.ts                # xAI provider
+├── util/
+│   ├── cachedDataRetriever.ts # Data caching utilities
+│   ├── findBestChatModel.ts  # Model selection utilities
+│   └── resequenceMessages.ts # Message resequencing utilities
+├── ModelRegistry.ts          # Model registry for chat models
+├── ModelTypeRegistry.ts      # Generic model registry
+├── providers.ts              # Provider registration
+└── index.ts                  # Package exports
+```
+
 ## Core Components
 
-### ModelRegistry
+### ModelTypeRegistry
 
-Manages AI models across providers. Automatically installed as a service in AgentTeam.
-
-**Key Methods:**
-
-- `chat.getFirstOnlineClient(modelName)` - Get chat client by name
-- `chat.getFirstOnlineClientByRequirements(requirements)` - Select model by capabilities
-- `chat.getAllModelsWithOnlineStatus()` - List all models with status
-- `chat.getModelsByProvider()` - Group models by provider
-- `embedding.getFirstOnlineClient(modelName)` - Get embedding client
-- `imageGeneration.getFirstOnlineClient(modelName)` - Get image generation client
-- `speech.getFirstOnlineClient(modelName)` - Get speech generation client
-- `transcription.getFirstOnlineClient(modelName)` - Get transcription client
-
-**Model Requirements:**
+Generic registry for managing different types of AI models with features and capabilities.
 
 ```typescript
-{
-  provider?: string,           // Provider name or 'auto'
-  contextLength?: number,      // Minimum context length
-  reasoningText?: number,      // Reasoning capability (0-6)
-  intelligence?: number,       // Intelligence level (0-6)
-  speed?: number,              // Speed rating (0-6)
-  tools?: number,              // Tool use capability (0-6)
-  webSearch?: number           // Web search capability (0-1)
-}
+export type ModelSpec = {
+  modelId: string;
+  providerDisplayName: string;
+  isAvailable?: () => Promise<boolean>;
+  isHot?: () => Promise<boolean>;
+  features?: Record<string, FeatureSpec>;
+};
+
+export type FeatureOptions = Record<string, PrimitiveType | PrimitiveType[]>;
 ```
 
-### AIService
+### Model Registries
 
-Manages AI configuration and chat history for an Agent.
+Specialized registries for different AI modalities:
 
-**Key Methods:**
-
-- `getModel()` / `setModel(model)` - Get/set current model
-- `getAIConfig(agent)` - Get AI configuration
-- `updateAIConfig(config, agent)` - Update configuration
-- `getChatMessages(agent)` - Get message history
-- `pushChatMessage(message, agent)` - Add message to history
-- `clearChatMessages(agent)` - Clear history
-- `getCurrentMessage(agent)` - Get latest message
-- `popMessage(agent)` - Remove latest message
-
-**AIConfig:**
-
-```typescript
-{
-  systemPrompt: string | ((agent: Agent) => string),
-  temperature?: number,        // 0-2, default varies by model
-  maxTokens?: number,
-  topP?: number,              // 0-1
-  topK?: number,
-  frequencyPenalty?: number,  // -2 to 2
-  presencePenalty?: number,   // -2 to 2
-  stopSequences?: string[],
-  autoCompact?: boolean       // Auto-compact long contexts
-}
-```
+- **ChatModelRegistry**: Chat models with conversation capabilities
+- **EmbeddingModelRegistry**: Text embedding models
+- **ImageGenerationModelRegistry**: Image generation models
+- **SpeechModelRegistry**: Text-to-speech models
+- **TranscriptionModelRegistry**: Audio transcription models
 
 ### AIChatClient
 
-Handles chat completions with streaming support.
+Handles chat completions with streaming support and model features.
 
 **Key Methods:**
 
 - `streamChat(request, agent)` - Stream chat response
 - `textChat(request, agent)` - Non-streaming chat
 - `generateObject(request, agent)` - Structured output with Zod schema
+- `rerank(request, agent)` - Document ranking and relevance scoring
 - `calculateCost(usage)` - Calculate USD cost
 - `calculateTiming(elapsedMs, usage)` - Calculate throughput
+- `setFeatures(features)` - Set model features
 
 **Response:**
 
@@ -197,6 +198,15 @@ Generate images from prompts.
 }
 ```
 
+**Response:**
+
+```typescript
+{
+  mediaType: string,
+  uint8Array: Uint8Array
+}
+```
+
 ### AISpeechClient
 
 Generate speech from text.
@@ -215,6 +225,14 @@ Generate speech from text.
 }
 ```
 
+**Response:**
+
+```typescript
+{
+  audio: Uint8Array
+}
+```
+
 ### AITranscriptionClient
 
 Transcribe audio to text.
@@ -227,9 +245,17 @@ Transcribe audio to text.
 
 ```typescript
 {
-  audio: Uint8Array | ArrayBuffer,
+  audio: DataContent | URL,
   language?: string,
   prompt?: string
+}
+```
+
+**Response:**
+
+```typescript
+{
+  text: string
 }
 ```
 
@@ -344,6 +370,26 @@ const [text, result] = await transcriptionClient.transcribe(
 );
 ```
 
+### Reranking Documents
+
+```typescript
+const client = await modelRegistry.chat.getFirstOnlineClient('gpt-4.1');
+const rankings = await client.rerank(
+  {
+    query: 'What is artificial intelligence?',
+    documents: [
+      'Artificial intelligence is the simulation of human intelligence in machines.',
+      'Machine learning is a subset of artificial intelligence.',
+      'Deep learning is a type of machine learning.'
+    ],
+    topK: 2
+  },
+  agent
+);
+
+console.log('Ranked documents:', rankings.rankings);
+```
+
 ## Commands
 
 The package provides chat commands for interactive use:
@@ -391,33 +437,56 @@ Manually compact the conversation context by summarizing prior messages.
 /compact
 ```
 
+### `/rerank query="..." documents="..."`
+
+Rank documents by relevance to a query.
+
+```
+/rerank query="best programming languages" documents="JavaScript,Python,Rust"
+```
+
 ## Supported Providers
 
-| Provider          | Chat | Embeddings | Images | Speech | Transcription | Notes                                     |
-|-------------------|------|------------|--------|--------|---------------|-------------------------------------------|
-| OpenAI            | ✅    | ✅          | ✅      | ✅      | ✅             | GPT-4.1, GPT-5, O3, O4-mini, TTS, Whisper |
-| Anthropic         | ✅    | ❌          | ❌      | ❌      | ❌             | Claude 3.5, 4, 4.1                        |
-| Google            | ✅    | ❌          | ✅      | ❌      | ❌             | Gemini 2.5 Pro/Flash, web search          |
-| xAI               | ✅    | ❌          | ✅      | ❌      | ❌             | Grok 3, 4, code models                    |
-| DeepSeek          | ✅    | ❌          | ❌      | ❌      | ❌             | DeepSeek Chat, Reasoner                   |
-| Groq              | ✅    | ❌          | ❌      | ❌      | ❌             | Fast inference, Llama models              |
-| Cerebras          | ✅    | ❌          | ❌      | ❌      | ❌             | Ultra-fast inference                      |
-| Perplexity        | ✅    | ❌          | ❌      | ❌      | ❌             | Sonar models with web search              |
-| Azure             | ✅    | ❌          | ❌      | ❌      | ❌             | Azure OpenAI Service                      |
-| Ollama            | ✅    | ✅          | ❌      | ❌      | ❌             | Local models                              |
-| OpenRouter        | ✅    | ❌          | ❌      | ❌      | ❌             | Access to many providers                  |
-| Fal               | ❌    | ❌          | ✅      | ❌      | ❌             | Image generation                          |
-| OpenAI-Compatible | ✅    | ✅          | ❌      | ❌      | ❌             | Custom endpoints                          |
+| Provider          | Chat | Embeddings | Images | Speech | Transcription | Reranking | Notes                                     |
+|-------------------|------|------------|--------|--------|---------------|-----------|-------------------------------------------|
+| OpenAI            | ✅    | ✅          | ✅      | ✅      | ✅             | ✅        | GPT-4.1, GPT-5, O3, O4-mini, TTS, Whisper   |
+| Anthropic         | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Claude 3.5, 4, 4.1                        |
+| Google            | ✅    | ❌          | ✅      | ❌      | ❌             | ❌        | Gemini 2.5 Pro/Flash, web search          |
+| xAI               | ✅    | ❌          | ✅      | ❌      | ❌             | ❌        | Grok 3, 4, code models                    |
+| DeepSeek          | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | DeepSeek Chat, Reasoner                   |
+| Groq              | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Fast inference, Llama models              |
+| Cerebras          | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Ultra-fast inference                      |
+| Perplexity        | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Sonar models with web search              |
+| Azure             | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Azure OpenAI Service                      |
+| Ollama            | ✅    | ✅          | ❌      | ❌      | ❌             | ❌        | Local models                              |
+| OpenRouter        | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Access to many providers                  |
+| Fal               | ❌    | ❌          | ✅      | ❌      | ❌             | ❌        | Image generation                          |
+| OpenAI-Compatible | ✅    | ✅          | ❌      | ❌      | ❌             | ❌        | Custom endpoints                          |
 
-## Model Capabilities
+## Model Features
 
-Models are rated 0-6 for various capabilities:
+Models can have various features that can be enabled/disabled:
 
-- **reasoningText**: Logical reasoning and problem-solving
-- **intelligence**: General knowledge and understanding
-- **tools**: Ability to use function calling/tools
-- **speed**: Inference speed (higher = faster)
-- **webSearch**: Built-in web search capability (0 or 1)
+- **websearch**: Enables web search capability
+- **reasoningEffort**: Reasoning effort level (none, minimal, low, medium, high)
+- **reasoningSummary**: Reasoning summary mode (auto, detailed)
+- **serviceTier**: Service tier (auto, flex, priority, default)
+- **textVerbosity**: Text verbosity (low, medium, high)
+- **strictJsonSchema**: Use strict JSON schema validation
+
+**Example:**
+
+```typescript
+// Select model with web search enabled
+const client = await modelRegistry.chat.getFirstOnlineClient('openai/gpt-5?websearch=1');
+
+// Set features on a client
+client.setFeatures({
+  websearch: true,
+  reasoningEffort: 'high',
+  serviceTier: 'priority'
+});
+```
 
 ## Context Compaction
 
@@ -451,7 +520,7 @@ console.log(`Total: $${response.cost.total.toFixed(4)}`);
 ## Testing
 
 ```bash
-bun test                  # Run tests
+vitest run                  # Run tests
 bun run test:watch        # Watch mode
 bun run test:coverage     # Coverage report
 ```
