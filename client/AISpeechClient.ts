@@ -36,10 +36,6 @@ export default class AISpeechClient {
     return {...this.features};
   }
 
-  getModelId(): string {
-    return this.modelSpec.impl.modelId;
-  }
-
   async generateSpeech(
     request: SpeechRequest,
     agent: Agent,

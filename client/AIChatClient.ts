@@ -1,4 +1,9 @@
-import type {LanguageModelV2CallWarning, LanguageModelV2Source, LanguageModelV2Usage,} from "@ai-sdk/provider";
+import type {
+  LanguageModelV2CallWarning,
+  LanguageModelV2Source,
+  LanguageModelV2Usage,
+  LanguageModelV3Source, SharedV3Warning,
+} from "@ai-sdk/provider";
 import Agent from "@tokenring-ai/agent/Agent";
 
 import {
@@ -85,8 +90,8 @@ export type AIResponse = {
   usage: LanguageModelV2Usage;
   cost: AIResponseCost;
   timing: AIResponseTiming;
-  sources?: LanguageModelV2Source[];
-  warnings?: LanguageModelV2CallWarning[];
+  sources?: LanguageModelV3Source[];
+  warnings?: SharedV3Warning[];
   //[key: string]: any;
 };
 

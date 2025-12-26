@@ -60,7 +60,7 @@ export default class AIEmbeddingClient {
                         input,
                       }: {
     input: string[];
-  }): Promise<Array<EmbedResult<string>>> {
+  }): Promise<Array<EmbedResult>> {
     if (!Array.isArray(input)) {
       throw new Error("Input must be an array of strings.");
     }

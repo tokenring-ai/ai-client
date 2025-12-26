@@ -41,10 +41,6 @@ export default class AITranscriptionClient {
     return {...this.features};
   }
 
-  getModelId(): string {
-    return this.modelSpec.impl.modelId;
-  }
-
   async transcribe(
     request: TranscriptionRequest,
     agent: Agent,
