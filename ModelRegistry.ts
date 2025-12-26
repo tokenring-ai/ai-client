@@ -16,7 +16,7 @@ export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatCl
   constructor() {
     super(AIChatClient);
   }
-}``
+}
 
 export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec, AIEmbeddingClient> implements TokenRingService {
   name = "EmbeddingModelRegistry";
