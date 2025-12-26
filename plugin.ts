@@ -1,4 +1,5 @@
-import TokenRingApp, {TokenRingPlugin} from "@tokenring-ai/app";
+import {TokenRingPlugin} from "@tokenring-ai/app";
+import {z} from "zod";
 import {AIClientConfigSchema} from "./index.ts";
 import {
   ChatModelRegistry,
@@ -10,23 +11,28 @@ import {
 import packageJSON from "./package.json" with {type: "json"};
 import {registerProviders} from "./providers.js";
 
+const pluginConfigSchema = z.object({
+  ai: AIClientConfigSchema.optional(),
+});
 
 export default {
   name: packageJSON.name,
   version: packageJSON.version,
   description: packageJSON.description,
-  async install(app: TokenRingApp) {
+  async install(app, config) {
     app.addServices(new ChatModelRegistry());
     app.addServices(new ImageGenerationModelRegistry());
     app.addServices(new EmbeddingModelRegistry());
     app.addServices(new SpeechModelRegistry());
     app.addServices(new TranscriptionModelRegistry());
 
-    const config = app.getConfigSlice("ai", AIClientConfigSchema);
-    if (!config) return;
-    await registerProviders(
-      config.providers,
-      app
-    );
+    if (config.ai) {
+      await registerProviders(
+        config.ai.providers,
+        app
+      );
+    }
   },
-} satisfies TokenRingPlugin;
+
+  config: pluginConfigSchema
+} satisfies TokenRingPlugin<typeof pluginConfigSchema>;
