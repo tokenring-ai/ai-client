@@ -4,7 +4,7 @@ import {AIClientConfigSchema} from "./index.ts";
 import {
   ChatModelRegistry,
   EmbeddingModelRegistry,
-  ImageGenerationModelRegistry,
+  ImageGenerationModelRegistry, RerankingModelRegistry,
   SpeechModelRegistry,
   TranscriptionModelRegistry
 } from "./ModelRegistry.ts";
@@ -25,6 +25,7 @@ export default {
     app.addServices(new EmbeddingModelRegistry());
     app.addServices(new SpeechModelRegistry());
     app.addServices(new TranscriptionModelRegistry());
+    app.addServices(new RerankingModelRegistry());
 
     if (config.ai) {
       await registerProviders(

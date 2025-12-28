@@ -6,17 +6,43 @@ import AIRerankingClient, {RerankingModelSpec} from "./client/AIRerankingClient.
 import AISpeechClient, {SpeechModelSpec} from "./client/AISpeechClient.js";
 import AITranscriptionClient, {TranscriptionModelSpec} from "./client/AITranscriptionClient.js";
 import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
+import {
+  ChatModelRequirements,
+  EmbeddingModelRequirements,
+  ImageModelRequirements, RerankingModelRequirements,
+  SpeechModelRequirements, TranscriptionModelRequirements
+} from "./schema.ts";
 
-export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatClient> implements TokenRingService {
+
+export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatClient, ChatModelRequirements> implements TokenRingService {
   name = "ChatModelRegistry";
   description = "Model registry for chat models";
 
   constructor() {
     super(AIChatClient);
   }
+
+  getCheapestModelByRequirements(requirements: ChatModelRequirements): string | null {
+    const eligibleModels = this.getModelSpecsByRequirements(requirements);
+
+    const estimatedContextLength = requirements.contextLength ?? 10000;
+
+    // Sort the matched chatModels by price, using the current context length + 1000 tokens to calculate the price
+    return Object.entries(eligibleModels)
+      .sort(([,a], [,b]) => {
+        const aPrice =
+          estimatedContextLength * (a.costPerMillionInputTokens ?? 600) +
+          1000 * (a.costPerMillionOutputTokens ?? 600);
+        const bPrice =
+          estimatedContextLength * (b.costPerMillionInputTokens ?? 600) +
+          1000 * (b.costPerMillionOutputTokens ?? 600);
+
+        return aPrice - bPrice;
+      })[0]?.[0] ?? null;
+  }
 }
 
-export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec, AIEmbeddingClient> implements TokenRingService {
+export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec, AIEmbeddingClient, EmbeddingModelRequirements> implements TokenRingService {
   name = "EmbeddingModelRegistry";
   description = "Model registry for embedding models";
 
@@ -25,7 +51,7 @@ export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec
   }
 }
 
-export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSpec, AIImageGenerationClient> implements TokenRingService {
+export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSpec, AIImageGenerationClient, ImageModelRequirements> implements TokenRingService {
   name = "ImageGenerationModelRegistry";
   description = "Model registry for image generation models";
 
@@ -34,7 +60,7 @@ export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSp
   }
 }
 
-export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISpeechClient> implements TokenRingService {
+export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISpeechClient, SpeechModelRequirements> implements TokenRingService {
   name = "SpeechModelRegistry";
   description = "Model registry for speech models";
 
@@ -43,7 +69,7 @@ export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISp
   }
 }
 
-export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionModelSpec, AITranscriptionClient> implements TokenRingService {
+export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionModelSpec, AITranscriptionClient, TranscriptionModelRequirements> implements TokenRingService {
   name = "TranscriptionModelRegistry";
   description = "Model registry for transcription models";
 
@@ -52,7 +78,7 @@ export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionM
   }
 }
 
-export class RerankingModelRegistry extends ModelTypeRegistry<RerankingModelSpec, AIRerankingClient> implements TokenRingService {
+export class RerankingModelRegistry extends ModelTypeRegistry<RerankingModelSpec, AIRerankingClient, RerankingModelRequirements> implements TokenRingService {
   name = "RerankingModelRegistry";
   description = "Model registry for reranking models";
 

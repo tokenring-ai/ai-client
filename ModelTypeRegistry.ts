@@ -1,5 +1,7 @@
+import parametricObjectFilter from "@tokenring-ai/utility/object/parametricObjectFilter";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import {PrimitiveType} from "@tokenring-ai/utility/types";
+import {ModelRequirements} from "./schema.ts";
 
 export type FeatureSpec = {
   description: string;
@@ -51,13 +53,10 @@ export interface GenericAIClient {
  */
 export class ModelTypeRegistry<
   T extends ModelSpec,
-  C extends GenericAIClient
+  C extends GenericAIClient,
+  R extends ModelRequirements
 > {
 
-  AIClient: new (
-    modelSpec: T,
-    features: FeatureOptions
-  ) => C;
   modelSpecs = new KeyedRegistry<T>();
   /**
    * Registers a model with its metadata
@@ -67,9 +66,10 @@ export class ModelTypeRegistry<
   /**
    * Creates a new ModelTypeRegistry instance
    */
-  constructor(AIClient: typeof this.AIClient) {
-    this.AIClient = AIClient;
-  }
+  constructor(private AIClient: new (
+    modelSpec: T,
+    features: FeatureOptions
+  ) => C ) {}
 
   /**
    * Registers a key: value object of model specs
@@ -150,12 +150,23 @@ export class ModelTypeRegistry<
   /**
    * Gets the first chat client that matches the name and is online
    */
-  async getFirstOnlineClient(name: string): Promise<C> {
+  async getClient(name: string): Promise<C> {
     // Support feature query parameters in the model string (e.g. "openai/gpt-5?websearch=1")
     let lookupName = name;
     const qIndex = name.indexOf("?");
     if (qIndex >= 0) {
       lookupName = name.substring(0, qIndex);
+    }
+
+    if (lookupName.includes("*")) {
+      const matchedNames = this.modelSpecs.getItemNamesLike(lookupName);
+      if (matchedNames.length > 1) {
+        throw new Error(`Model ${lookupName} matched more than one model`);
+      } else if (matchedNames.length === 1) {
+        lookupName = matchedNames[0];
+      } else {
+        throw new Error(`Model matching ${lookupName} not found`);
+      }
     }
 
     const modelSpec = this.modelSpecs.getItemByName(lookupName);
@@ -205,5 +216,16 @@ export class ModelTypeRegistry<
     }
 
     return new this.AIClient(modelSpec, features);
+  }
+
+  getModelSpecsByRequirements(
+    { nameLike, ...requirements}: R
+  ): Record<string,T> {
+    const modelSpecFilter = parametricObjectFilter(requirements as R)
+    const modelSpecs = nameLike
+      ? this.modelSpecs.getItemEntriesLike(nameLike)
+      : this.modelSpecs.entries()
+
+    return Object.fromEntries(modelSpecs.filter(([,modelSpec]) => modelSpecFilter(modelSpec)));
   }
 }
