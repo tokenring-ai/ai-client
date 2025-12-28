@@ -1,6 +1,4 @@
-/* This class depends on the experimental_rerank function, which is only in AI SDK 6.
-
-import {experimental_rerank as rerank, type RerankingModel, type RerankResult} from "ai";
+import {rerank, type RerankingModel, type RerankResult} from "ai";
 import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type RerankingModelSpec = ModelSpec & {
@@ -36,12 +34,12 @@ export default class AIRerankingClient {
   async rerank({
     query,
     documents,
-    topK,
+    topN,
   }: {
     query: string;
     documents: string[];
-    topK?: number;
-  }): Promise<RerankResult> {
+    topN?: number;
+  }): Promise<RerankResult<string>> {
     if (this.modelSpec.mangleRequest) {
       const req = {query, documents};
       this.modelSpec.mangleRequest(req, this.features);
@@ -53,8 +51,7 @@ export default class AIRerankingClient {
       model: this.modelSpec.impl,
       query,
       documents,
-      topK,
+      topN,
     });
   }
 }
-*/

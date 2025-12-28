@@ -2,9 +2,7 @@ import {TokenRingService} from "@tokenring-ai/app/types";
 import AIChatClient, {ChatModelSpec} from "./client/AIChatClient.js";
 import AIEmbeddingClient, {EmbeddingModelSpec} from "./client/AIEmbeddingClient.js";
 import AIImageGenerationClient, {ImageModelSpec} from "./client/AIImageGenerationClient.js";
-/* TODO This feature depends on the experimental_rerank function, which is only in AI SDK 6.
 import AIRerankingClient, {RerankingModelSpec} from "./client/AIRerankingClient.js";
-*/
 import AISpeechClient, {SpeechModelSpec} from "./client/AISpeechClient.js";
 import AITranscriptionClient, {TranscriptionModelSpec} from "./client/AITranscriptionClient.js";
 import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
@@ -54,13 +52,11 @@ export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionM
   }
 }
 
-/* TODO This feature depends on the experimental_rerank function, which is only in AI SDK 6.
-export class RerankingModelRegistry extends ModelTypeRegistry<RerankingModelSpec, AIIterationClient> implements TokenRingService {
+export class RerankingModelRegistry extends ModelTypeRegistry<RerankingModelSpec, AIRerankingClient> implements TokenRingService {
   name = "RerankingModelRegistry";
   description = "Model registry for reranking models";
 
   constructor() {
-    super(AIIterationClient);
+    super(AIRerankingClient);
   }
 }
-*/

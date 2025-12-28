@@ -30,15 +30,10 @@ export type ChatInputMessage =
   | ToolModelMessage;
 
 export type ChatRequest = {
+  prepareStep?: Parameters<typeof streamText>[0]["prepareStep"];
+  stopWhen?: Parameters<typeof streamText>[0]["stopWhen"];
   tools: Record<string, Tool>;
-  stopWhen?: StopCondition<any> | undefined;
   messages: ChatInputMessage[];
-  temperature?: number;
-  topP?: number;
-  topK?: number;
-  stopSequences?: string[];
-  presencePenalty?: number;
-  frequencyPenalty?: number;
   parallelTools?: boolean;
   _toolQueue?: any;
   providerOptions?: any;
@@ -47,7 +42,7 @@ export type ChatRequest = {
 export type RerankRequest = {
   query: string;
   documents: string[];
-  topK?: number;
+  topN?: number;
 }
 
 export type GenerateRequest<T extends ZodObject> = {
@@ -367,7 +362,7 @@ export default class AIChatClient {
   async rerank({
                  query,
                  documents,
-                 topK,
+                 topN,
                }: RerankRequest,
     agent: Agent
   ): Promise<z.infer<typeof rerankSchema>> {
@@ -412,7 +407,7 @@ Be objective and precise in your scoring.`.trim()
     const sortedRankings = result.rankings.sort((a: any, b: any) => b.score - a.score);
 
     // Apply topK if specified
-    const finalRankings = topK ? sortedRankings.slice(0, topK) : sortedRankings;
+    const finalRankings = topN ? sortedRankings.slice(0, topN) : sortedRankings;
 
     // Convert to RerankResult format
     return {
