@@ -82,7 +82,8 @@ export type AIResponse = {
   modelId: string;
   messages?: ChatInputMessage[];
   text?: string;
-  usage: LanguageModelV2Usage;
+  lastStepUsage: LanguageModelV2Usage;
+  totalUsage: LanguageModelV2Usage;
   cost: AIResponseCost;
   timing: AIResponseTiming;
   sources?: LanguageModelV3Source[];
@@ -233,6 +234,7 @@ export default class AIChatClient {
     const start = Date.now();
     const result = streamText({
       ...request,
+
       maxRetries: 15,
       model: this.modelSpec.impl,
       abortSignal: signal,
@@ -337,16 +339,18 @@ export default class AIChatClient {
   ): Promise<AIResponse> {
     const responseData = await result.response;
 
-    const usage = await result.usage;
+    const totalUsage = "totalUsage" in result ? await result.totalUsage : result.usage;
+    const lastStepUsage =  await result.usage;
 
     return {
       timestamp: responseData.timestamp.getTime(),
       modelId: responseData.modelId,
       messages: "messages" in responseData ? responseData.messages : [],
       finishReason: await result.finishReason,
-      usage,
-      cost: this.calculateCost(usage),
-      timing: this.calculateTiming(elapsedMs, usage),
+      lastStepUsage,
+      totalUsage,
+      cost: this.calculateCost(totalUsage),
+      timing: this.calculateTiming(elapsedMs, totalUsage),
       sources: "sources" in result ? await result.sources : undefined,
       text: "text" in result ? await result.text : undefined,
       warnings: await result.warnings,
