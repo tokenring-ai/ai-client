@@ -1,33 +1,40 @@
 import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
-import {AnthropicModelProviderConfigSchema} from "./providers/anthropic.js";
 
-import * as anthropic from "./providers/anthropic.ts";
-import {AzureModelProviderConfigSchema} from "./providers/azure.js";
-import * as azure from "./providers/azure.ts";
-import {CerebrasModelProviderConfigSchema} from "./providers/cerebras.js";
-import * as cerebras from "./providers/cerebras.ts";
-import {DeepSeekModelProviderConfigSchema} from "./providers/deepseek.js";
-import * as deepseek from "./providers/deepseek.ts";
-import {FalModelProviderConfigSchema} from "./providers/fal.js";
-import * as fal from "./providers/fal.ts";
-import {GoogleModelProviderConfigSchema} from "./providers/google.js";
-import * as google from "./providers/google.ts";
-import {GroqModelProviderConfigSchema} from "./providers/groq.js";
-import * as groq from "./providers/groq.ts";
-import {LlamaModelProviderConfigSchema} from "./providers/llama.js";
-import {OllamaModelProviderConfigSchema} from "./providers/ollama.js";
-import * as ollama from "./providers/ollama.ts";
-import {OpenAIModelProviderConfigSchema} from "./providers/openai.js";
-import * as openai from "./providers/openai.ts";
-import {OAICompatibleModelConfigSchema} from "./providers/openaiCompatible.js";
-import * as openaiCompatible from "./providers/openaiCompatible.ts";
-import {OpenRouterModelProviderConfigSchema} from "./providers/openrouter.js";
-import * as openrouter from "./providers/openrouter.ts";
-import {PerplexityModelProviderConfigSchema} from "./providers/perplexity.js";
-import * as perplexity from "./providers/perplexity.ts";
-import {XAIModelProviderConfigSchema} from "./providers/xai.js";
-import * as xai from "./providers/xai.ts";
+import anthropic from "./providers/anthropic.ts";
+import azure from "./providers/azure.ts";
+import cerebras from "./providers/cerebras.ts";
+import deepseek from "./providers/deepseek.ts";
+import elevenlabs from "./providers/elevenlabs.ts";
+import fal from "./providers/fal.ts";
+import google from "./providers/google.ts";
+import groq from "./providers/groq.ts";
+import llama from "./providers/llama.ts";
+import ollama from "./providers/ollama.ts";
+import openai from "./providers/openai.ts";
+import openaiCompatible from "./providers/openaiCompatible.ts";
+import openrouter from "./providers/openrouter.ts";
+import perplexity from "./providers/perplexity.ts";
+import xai from "./providers/xai.ts";
+
+
+const providers = {
+  anthropic,
+  azure,
+  cerebras,
+  deepseek,
+  elevenlabs,
+  fal,
+  google,
+  groq,
+  llama,
+  ollama,
+  openai,
+  openaiCompatible,
+  openrouter,
+  perplexity,
+  xai
+}
 
 /**
  * Registers a key: value object of model specs
@@ -39,102 +46,27 @@ export async function registerProviders(
   for (const providerDisplayName in config) {
     const providerConfig = config[providerDisplayName];
 
-    switch (providerConfig.provider) {
-      case "anthropic":
-        await anthropic.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "cerebras":
-        await cerebras.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "deepseek":
-        await deepseek.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "fal":
-        await fal.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "google":
-        await google.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "groq":
-        await groq.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "ollama":
-        await ollama.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "openai":
-        await openai.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "openrouter":
-        await openrouter.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "perplexity":
-        await perplexity.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "azure":
-        await azure.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "openaiCompatible":
-        await openaiCompatible.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      case "xai":
-        await xai.init(providerDisplayName, {
-          ...providerConfig,
-        }, app);
-        break;
-      default:
-        throw new Error(
-          `Unknown AI provider type: ${(providerConfig as any).provider}`,
-        );
+    if (providerConfig.provider in providers) {
+      await providers[providerConfig.provider].init(providerDisplayName, { ...providerConfig } as any, app);
     }
   }
 }
 
 export const AIProviderConfigSchema = z.discriminatedUnion("provider", [
-  AnthropicModelProviderConfigSchema.extend({
-    provider: z.literal("anthropic"),
-  }),
-  CerebrasModelProviderConfigSchema.extend({provider: z.literal("cerebras")}),
-  DeepSeekModelProviderConfigSchema.extend({provider: z.literal("deepseek")}),
-  FalModelProviderConfigSchema.extend({provider: z.literal("fal")}),
-  GoogleModelProviderConfigSchema.extend({provider: z.literal("google")}),
-  GroqModelProviderConfigSchema.extend({provider: z.literal("groq")}),
-  LlamaModelProviderConfigSchema.extend({provider: z.literal("llama")}),
-  OllamaModelProviderConfigSchema.extend({provider: z.literal("ollama")}),
-  OpenAIModelProviderConfigSchema.extend({provider: z.literal("openai")}),
-  OpenRouterModelProviderConfigSchema.extend({
-    provider: z.literal("openrouter"),
-  }),
-  PerplexityModelProviderConfigSchema.extend({
-    provider: z.literal("perplexity"),
-  }),
-  AzureModelProviderConfigSchema.extend({provider: z.literal("azure")}),
-  OAICompatibleModelConfigSchema.extend({
-    provider: z.literal("openaiCompatible"),
-  }),
-  XAIModelProviderConfigSchema.extend({provider: z.literal("xai")}),
+  anthropic.configSchema,
+  azure.configSchema,
+  cerebras.configSchema,
+  deepseek.configSchema,
+  elevenlabs.configSchema,
+  fal.configSchema,
+  google.configSchema,
+  groq.configSchema,
+  llama.configSchema,
+  ollama.configSchema,
+  openai.configSchema,
+  openaiCompatible.configSchema,
+  openrouter.configSchema,
+  perplexity.configSchema,
+  xai.configSchema
 ]);
 export type AIProviderConfig = z.infer<typeof AIProviderConfigSchema>;

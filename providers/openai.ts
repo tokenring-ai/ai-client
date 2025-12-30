@@ -3,16 +3,19 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
+import {
+  ChatModelRegistry,
+  ImageGenerationModelRegistry,
+  SpeechModelRegistry,
+  TranscriptionModelRegistry
+} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const OpenAIModelProviderConfigSchema = z.object({
+const OpenAIModelProviderConfigSchema = z.object({
+  provider: z.literal('openai'),
   apiKey: z.string(),
 });
-
-export type OpenAIModelProviderConfig = z.infer<
-  typeof OpenAIModelProviderConfigSchema
->;
 
 type ModelListData = {
   id: string;
@@ -26,9 +29,9 @@ type ModelList = {
   data: ModelListData[];
 };
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: OpenAIModelProviderConfig,
+  config: z.output<typeof OpenAIModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   let {apiKey} = config;
@@ -147,7 +150,7 @@ export async function init(
     };
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+  const chatModelRegistry = app.requireService(ChatModelRegistry);
     chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("gpt-4.1", {
       costPerMillionInputTokens: 2.0,
@@ -663,11 +666,10 @@ export async function init(
       speed: 3,
       contextLength: 128000,
     }),
-    ]);
-  });
+  ]);
 
-  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
-    imageGenerationModelRegistry.registerAllModelSpecs([
+  const imageGenerationModelRegistry = app.requireService(ImageGenerationModelRegistry);
+  imageGenerationModelRegistry.registerAllModelSpecs([
     generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-high", {
       providerOptions: {
         openai: {quality: "high"},
@@ -726,10 +728,9 @@ export async function init(
       },
     }, 0.009),
     ]);
-  });
 
-  app.waitForService(SpeechModelRegistry, speechModelRegistry => {
-    speechModelRegistry.registerAllModelSpecs([
+  const speechModelRegistry = app.requireService(SpeechModelRegistry);
+  speechModelRegistry.registerAllModelSpecs([
     {
       modelId: "tts-1",
       providerDisplayName: providerDisplayName,
@@ -748,11 +749,10 @@ export async function init(
       },
       costPerMillionCharacters: 30,
     },
-    ]);
-  });
+  ]);
 
-  app.waitForService(TranscriptionModelRegistry, transcriptionModelRegistry => {
-    transcriptionModelRegistry.registerAllModelSpecs([
+  const transcriptionModelRegistry = app.requireService(TranscriptionModelRegistry);
+  transcriptionModelRegistry.registerAllModelSpecs([
     {
       modelId: "whisper-1",
       providerDisplayName: providerDisplayName,
@@ -762,6 +762,11 @@ export async function init(
       },
       costPerMinute: 0.006,
     },
-    ]);
-  });
+  ]);
 }
+
+export default {
+  providerCode: 'openai',
+  configSchema: OpenAIModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof OpenAIModelProviderConfigSchema>;

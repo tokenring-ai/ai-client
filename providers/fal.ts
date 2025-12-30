@@ -3,18 +3,16 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import {ImageGenerationModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 
-export const FalModelProviderConfigSchema = z.object({
+const FalModelProviderConfigSchema = z.object({
+  provider: z.literal('fal'),
   apiKey: z.string(),
 });
 
-export type FalModelProviderConfig = z.infer<
-  typeof FalModelProviderConfigSchema
->;
-
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: FalModelProviderConfig,
+  config: z.output<typeof FalModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   let {apiKey} = config;
@@ -55,3 +53,9 @@ export async function init(
     ])
   });
 }
+
+export default {
+  providerCode: 'fal',
+  configSchema: FalModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof FalModelProviderConfigSchema>;

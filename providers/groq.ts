@@ -3,15 +3,13 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const GroqModelProviderConfigSchema = z.object({
+const GroqModelProviderConfigSchema = z.object({
+  provider: z.literal('groq'),
   apiKey: z.string(),
 });
-
-export type GroqModelProviderConfig = z.infer<
-  typeof GroqModelProviderConfigSchema
->;
 
 interface Model {
   id: string;
@@ -25,9 +23,9 @@ interface ModelList {
   data: Model[];
 }
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: GroqModelProviderConfig,
+  config: z.output<typeof GroqModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {
@@ -184,3 +182,9 @@ export async function init(
     ]);
   });
 }
+
+export default {
+  providerCode: 'groq',
+  configSchema: GroqModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof GroqModelProviderConfigSchema>;

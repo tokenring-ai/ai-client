@@ -8,11 +8,6 @@ import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 export const XAIModelProviderConfigSchema = z.object({
   apiKey: z.string(),
 });
-
-export type XAIModelProviderConfig = z.infer<
-  typeof XAIModelProviderConfigSchema
->;
-
 interface Model {
   id: string;
   object: "model";
@@ -27,7 +22,7 @@ interface ModelList {
 
 export async function init(
   providerDisplayName: string,
-  config: XAIModelProviderConfig,
+  config: z.output<typeof XAIModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {

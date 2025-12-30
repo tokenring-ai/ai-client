@@ -3,9 +3,11 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const OpenRouterModelProviderConfigSchema = z.object({
+const OpenRouterModelProviderConfigSchema = z.object({
+  provider: z.literal('openrouter'),
   apiKey: z.string(),
   modelFilter: z
     .function({
@@ -14,10 +16,6 @@ export const OpenRouterModelProviderConfigSchema = z.object({
     })
     .optional(),
 });
-
-export type OpenRouterModelProviderConfig = z.infer<
-  typeof OpenRouterModelProviderConfigSchema
->;
 
 interface ModelData {
   id: string;
@@ -71,7 +69,7 @@ function parsePricing(priceString: string | null | undefined): number {
 
 async function fetchAndRegisterOpenRouterModels(
   providerDisplayName: string,
-  config: OpenRouterModelProviderConfig,
+  config: z.output<typeof OpenRouterModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   const getModels = cachedDataRetriever("https://openrouter.ai/api/v1/models", {
@@ -186,9 +184,9 @@ async function fetchAndRegisterOpenRouterModels(
   }
 }
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: OpenRouterModelProviderConfig,
+  config: z.output<typeof OpenRouterModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {
@@ -201,3 +199,9 @@ export async function init(
     app,
   );
 }
+
+export default {
+  providerCode: 'openrouter',
+  configSchema: OpenRouterModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof OpenRouterModelProviderConfigSchema>;

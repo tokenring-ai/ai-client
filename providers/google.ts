@@ -5,15 +5,13 @@ import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
 import {FeatureOptions, FeatureSpec} from "../ModelTypeRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const GoogleModelProviderConfigSchema = z.object({
+const GoogleModelProviderConfigSchema = z.object({
+  provider: z.literal('google'),
   apiKey: z.string(),
 });
-
-export type GoogleModelProviderConfig = z.infer<
-  typeof GoogleModelProviderConfigSchema
->;
 
 interface Model {
   name: string;
@@ -25,9 +23,9 @@ interface ModelList {
   models: Model[];
 }
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: GoogleModelProviderConfig,
+  config: z.output<typeof GoogleModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {
@@ -237,3 +235,9 @@ export async function init(
     ]);
   });
 }
+
+export default {
+  providerCode: 'google',
+  configSchema: GoogleModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof GoogleModelProviderConfigSchema>;

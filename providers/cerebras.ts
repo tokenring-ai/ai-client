@@ -3,16 +3,13 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const CerebrasModelProviderConfigSchema = z.object({
+const CerebrasModelProviderConfigSchema = z.object({
+  provider: z.literal('cerebras'),
   apiKey: z.string(),
 });
-
-export type CerebrasModelProviderConfig = z.infer<
-  typeof CerebrasModelProviderConfigSchema
->;
-
 interface Model {
   id: string;
   object: "model";
@@ -25,9 +22,9 @@ interface ModelList {
   data: Model[];
 }
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: CerebrasModelProviderConfig,
+  config: z.output<typeof CerebrasModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {
@@ -124,3 +121,9 @@ export async function init(
     ]);
   });
 }
+
+export default {
+  providerCode: 'cerebras',
+  configSchema: CerebrasModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof CerebrasModelProviderConfigSchema>;

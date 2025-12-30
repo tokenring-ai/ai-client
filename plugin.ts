@@ -1,6 +1,6 @@
 import {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
-import {AIClientConfigSchema} from "./index.ts";
+import autoConfig from "./autoConfig.ts";
 import {
   ChatModelRegistry,
   EmbeddingModelRegistry,
@@ -10,6 +10,7 @@ import {
 } from "./ModelRegistry.ts";
 import packageJSON from "./package.json" with {type: "json"};
 import {registerProviders} from "./providers.js";
+import {AIClientConfigSchema} from "./schema.ts";
 
 const pluginConfigSchema = z.object({
   ai: AIClientConfigSchema.optional(),
@@ -28,8 +29,13 @@ export default {
     app.addServices(new RerankingModelRegistry());
 
     if (config.ai) {
+      let providerConfig = config.ai.providers;
+      if (config.ai.autoConfigure || !providerConfig) {
+        providerConfig = autoConfig()
+      }
+
       await registerProviders(
-        config.ai.providers,
+        providerConfig,
         app
       );
     }

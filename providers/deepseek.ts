@@ -3,15 +3,13 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const DeepSeekModelProviderConfigSchema = z.object({
+const DeepSeekModelProviderConfigSchema = z.object({
+  provider: z.literal('deepseek'),
   apiKey: z.string(),
 });
-
-export type DeepSeekModelProviderConfig = z.infer<
-  typeof DeepSeekModelProviderConfigSchema
->;
 
 interface Model {
   id: string;
@@ -24,9 +22,9 @@ interface ModelsListResponse {
   data: Model[];
 }
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: DeepSeekModelProviderConfig,
+  config: z.output<typeof DeepSeekModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {
@@ -85,3 +83,9 @@ export async function init(
     ]);
   });
 }
+
+export default {
+  providerCode: 'deepseek',
+  configSchema: DeepSeekModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof DeepSeekModelProviderConfigSchema>;

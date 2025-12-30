@@ -77,7 +77,7 @@ export class ModelTypeRegistry<
   registerAllModelSpecs(modelSpecs: T[]): void {
     for (const modelSpec of modelSpecs) {
       this.modelSpecs.register(
-        `${modelSpec.providerDisplayName}:${modelSpec.modelId}`,
+        `${modelSpec.providerDisplayName}:${modelSpec.modelId}`.toLowerCase(),
         modelSpec,
       );
     }
@@ -151,8 +151,8 @@ export class ModelTypeRegistry<
    * Gets the first chat client that matches the name and is online
    */
   async getClient(name: string): Promise<C> {
-    // Support feature query parameters in the model string (e.g. "openai/gpt-5?websearch=1")
-    let lookupName = name;
+    // Support feature query parameters in the model string (e.g. "openai:gpt-5?websearch=1")
+    let lookupName = name.toLowerCase();
     const qIndex = name.indexOf("?");
     if (qIndex >= 0) {
       lookupName = name.substring(0, qIndex);
@@ -222,6 +222,7 @@ export class ModelTypeRegistry<
     { nameLike, ...requirements}: R
   ): Record<string,T> {
     const modelSpecFilter = parametricObjectFilter(requirements as R)
+
     const modelSpecs = nameLike
       ? this.modelSpecs.getItemEntriesLike(nameLike)
       : this.modelSpecs.entries()

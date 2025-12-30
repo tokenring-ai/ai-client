@@ -4,23 +4,21 @@ import {z} from "zod";
 import type {ChatModelSpec, ChatRequest,} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
 import {FeatureOptions} from "../ModelTypeRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import {resequenceMessages} from "../util/resequenceMessages.ts";
 
-export const PerplexityModelProviderConfigSchema = z.object({
+const PerplexityModelProviderConfigSchema = z.object({
+  provider: z.literal('perplexity'),
   apiKey: z.string(),
 });
-
-export type PerplexityModelProviderConfig = z.infer<
-  typeof PerplexityModelProviderConfigSchema
->;
 
 /**
  * Initializes the Perplexity AI provider and registers its chat models with the model agent.
  *
  */
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: PerplexityModelProviderConfig,
+  config: z.output<typeof PerplexityModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {
@@ -139,3 +137,8 @@ function mangleRequest(request: ChatRequest, features: FeatureOptions ): void {
   resequenceMessages(request);
 }
 
+export default {
+  providerCode: 'perplexity',
+  configSchema: PerplexityModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof PerplexityModelProviderConfigSchema>;

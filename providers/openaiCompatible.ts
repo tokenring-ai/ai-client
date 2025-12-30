@@ -4,9 +4,11 @@ import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {EmbeddingModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
 import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const OAICompatibleModelConfigSchema = z.object({
+const OAICompatibleModelConfigSchema = z.object({
+  provider: z.literal('openaiCompatible'),
   apiKey: z.string().optional(),
   baseURL: z.string(),
   headers: z.record(z.string(), z.string()).optional(),
@@ -21,9 +23,6 @@ export const OAICompatibleModelConfigSchema = z.object({
     })
   }).optional(),
 });
-
-export type OAICompatibleModelConfig = z.infer<typeof OAICompatibleModelConfigSchema>;
-
 
 function defaultModelSpecGenerator(modelInfo: ModelListData): ModelConfigResults {
   let {id} = modelInfo;
@@ -61,9 +60,9 @@ type PropsResponse = {
   [key: string]: any;
 };
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: OAICompatibleModelConfig,
+  config: z.output<typeof OAICompatibleModelConfigSchema>,
   app: TokenRingApp,
 ) {
   let {
@@ -105,7 +104,7 @@ export async function init(
     timeout: 5000,
   }) as () => Promise<ModelListResponse>;
 
-  const getProps = cachedDataRetriever(`${baseURL.replace("/v1","")}/props`, {
+  const getProps = cachedDataRetriever(`${baseURL.replace("/v1", "")}/props`, {
     headers: {
       ...(apiKey && {Authorization: `Bearer ${apiKey}`}),
       ...headers,
@@ -115,62 +114,64 @@ export async function init(
     timeout: 5000,
   }) as () => Promise<PropsResponse>;
 
-  getModelList()
-    .then(async (modelList) => {
-      if (!modelList?.data) return;
+  const modelList = await getModelList();
+  if (!modelList?.data) return;
 
-      // Fetch props to get n_ctx value
-      let propsNCtx: number | undefined;
-      try {
-        const props = await getProps();
-        propsNCtx = props?.default_generation_settings?.n_ctx;
-      } catch (e) {
-        // Props endpoint not available, continue without it
-      }
+  // Fetch props to get n_ctx value
+  let propsNCtx: number | undefined;
+  try {
+    const props = await getProps();
+    propsNCtx = props?.default_generation_settings?.n_ctx;
+  } catch (e) {
+    // Props endpoint not available, continue without it
+  }
 
-      for (const modelInfo of modelList.data) {
-        const {type, capabilities = {}} = generateModelSpec(modelInfo);
+  for (const modelInfo of modelList.data) {
+    const {type, capabilities = {}} = generateModelSpec(modelInfo);
 
-        if (type === "chat") {
-          // Context length priority: max_model_len > n_ctx from props > 32000 fallback
-          const contextLength =
-            modelInfo.max_model_len ??
-            propsNCtx ??
-            32000;
+    if (type === "chat") {
+      // Context length priority: max_model_len > n_ctx from props > 32000 fallback
+      const contextLength =
+        modelInfo.max_model_len ??
+        propsNCtx ??
+        32000;
 
-          chatModelSpecs.push({
-            modelId: modelInfo.id,
-            providerDisplayName: providerDisplayName,
-            impl: openai.chatModel(modelInfo.id),
-            isAvailable: () => getModelList().then((data) => !!data),
-            isHot: () => Promise.resolve(true),
-            costPerMillionInputTokens: 0,
-            costPerMillionOutputTokens: 0,
-            contextLength,
-            ...capabilities,
-          });
-        } else if (type === "embedding") {
-          embeddingModelSpecs.push({
-            modelId: modelInfo.id,
-            providerDisplayName: providerDisplayName,
-            contextLength: capabilities.contextLength || 8192,
-            costPerMillionInputTokens:
-              capabilities.costPerMillionInputTokens || 0,
-            impl: openai.textEmbeddingModel(modelInfo.id),
-            isAvailable: () => getModelList().then((data) => !!data),
-            isHot: () => Promise.resolve(true),
-          });
-        }
-      }
-
-      app.waitForService(ChatModelRegistry, chatModelRegistry => {
-        chatModelRegistry.registerAllModelSpecs(chatModelSpecs);
+      chatModelSpecs.push({
+        modelId: modelInfo.id,
+        providerDisplayName: providerDisplayName,
+        impl: openai.chatModel(modelInfo.id),
+        isAvailable: () => getModelList().then((data) => !!data),
+        isHot: () => Promise.resolve(true),
+        costPerMillionInputTokens: 0,
+        costPerMillionOutputTokens: 0,
+        contextLength,
+        ...capabilities,
       });
-      
-      app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
-        embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
+    } else if (type === "embedding") {
+      embeddingModelSpecs.push({
+        modelId: modelInfo.id,
+        providerDisplayName: providerDisplayName,
+        contextLength: capabilities.contextLength || 8192,
+        costPerMillionInputTokens:
+          capabilities.costPerMillionInputTokens || 0,
+        impl: openai.textEmbeddingModel(modelInfo.id),
+        isAvailable: () => getModelList().then((data) => !!data),
+        isHot: () => Promise.resolve(true),
       });
-    })
-    .catch(() => {
-    });
+    }
+  }
+
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs(chatModelSpecs);
+  });
+
+  app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
+    embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
+  });
 }
+
+export default {
+  providerCode: 'openaiCompatible',
+  configSchema: OAICompatibleModelConfigSchema,
+  init
+} satisfies AIModelProvider<typeof OAICompatibleModelConfigSchema>;

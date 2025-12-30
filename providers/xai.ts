@@ -3,15 +3,13 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const XAIModelProviderConfigSchema = z.object({
+const XAIModelProviderConfigSchema = z.object({
+  provider: z.literal('xai'),
   apiKey: z.string(),
 });
-
-export type XAIModelProviderConfig = z.infer<
-  typeof XAIModelProviderConfigSchema
->;
 
 interface Model {
   id: string;
@@ -25,9 +23,9 @@ interface ModelList {
   data: Model[];
 }
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: XAIModelProviderConfig,
+  config: z.output<typeof XAIModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {
@@ -205,3 +203,9 @@ export async function init(
     ]);
   });
 }
+
+export default {
+  providerCode: 'xai',
+  configSchema: XAIModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof XAIModelProviderConfigSchema>;

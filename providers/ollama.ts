@@ -5,9 +5,11 @@ import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.js";
 import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
 import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const OllamaModelProviderConfigSchema = z.object({
+const OllamaModelProviderConfigSchema = z.object({
+  provider: z.literal('ollama'),
   baseURL: z.string(),
   generateModelSpec: z.function({
     input: z.tuple([z.any()]),
@@ -17,11 +19,6 @@ export const OllamaModelProviderConfigSchema = z.object({
     }),
   }),
 });
-
-export type OllamaModelProviderConfig = z.infer<
-  typeof OllamaModelProviderConfigSchema
->;
-
 function defaultModelSpecGenerator(modelInfo: OllamaModelTagItem): ModelConfigResults {
   let {model} = modelInfo;
   let type = "chat";
@@ -73,9 +70,9 @@ type ModelPsResponse = {
   models: ModelPsItem[];
 };
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: OllamaModelProviderConfig,
+  config: z.output<typeof OllamaModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   let {baseURL, generateModelSpec} = config;
@@ -146,3 +143,9 @@ export async function init(
     embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
   });
 }
+
+export default {
+  providerCode: 'ollama',
+  configSchema: OllamaModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof OllamaModelProviderConfigSchema>;

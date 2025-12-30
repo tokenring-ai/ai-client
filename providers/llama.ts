@@ -3,16 +3,13 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const LlamaModelProviderConfigSchema = z.object({
+const LlamaModelProviderConfigSchema = z.object({
+  provider: z.literal('llama'),
   apiKey: z.string(),
 });
-
-export type LlamaModelProviderConfig = z.infer<
-  typeof LlamaModelProviderConfigSchema
->;
-
 interface Model {
   id: string;
   object: "model";
@@ -25,9 +22,9 @@ interface ModelList {
   data: Model[];
 }
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: LlamaModelProviderConfig,
+  config: z.output<typeof LlamaModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {
@@ -112,3 +109,9 @@ export async function init(
     ]);
   });
 }
+
+export default {
+  providerCode: 'llama',
+  configSchema: LlamaModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof LlamaModelProviderConfigSchema>;

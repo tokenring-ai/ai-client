@@ -3,16 +3,14 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
-export const AzureModelProviderConfigSchema = z.object({
+const AzureModelProviderConfigSchema = z.object({
+  provider: z.literal('azure'),
   apiKey: z.string(),
   baseURL: z.string(),
 });
-
-export type AzureModelProviderConfig = z.infer<
-  typeof AzureModelProviderConfigSchema
->;
 
 interface Deployment {
   id: string;
@@ -24,9 +22,9 @@ interface DeploymentList {
   data: Deployment[];
 }
 
-export async function init(
+async function init(
   providerDisplayName: string,
-  config: AzureModelProviderConfig,
+  config: z.output<typeof AzureModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
   if (!config.apiKey) {
@@ -88,3 +86,9 @@ export async function init(
     ]);
   });
 }
+
+export default {
+  providerCode: 'azure',
+  configSchema: AzureModelProviderConfigSchema,
+  init
+} satisfies AIModelProvider<typeof AzureModelProviderConfigSchema>;
