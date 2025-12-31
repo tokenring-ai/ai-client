@@ -225,7 +225,7 @@ export class ModelTypeRegistry<
 
     const modelSpecs = nameLike
       ? this.modelSpecs.getItemEntriesLike(nameLike)
-      : this.modelSpecs.entries()
+      : this.modelSpecs.entries();
 
     return Object.fromEntries(modelSpecs.filter(([,modelSpec]) => modelSpecFilter(modelSpec)));
   }

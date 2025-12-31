@@ -43,13 +43,11 @@ export async function registerProviders(
   config: Record<string, AIProviderConfig>,
   app: TokenRingApp,
 ): Promise<void> {
-  for (const providerDisplayName in config) {
-    const providerConfig = config[providerDisplayName];
-
-    if (providerConfig.provider in providers) {
-      await providers[providerConfig.provider].init(providerDisplayName, { ...providerConfig } as any, app);
-    }
-  }
+  await Promise.all(
+    Object.entries(config)
+      .filter(([providerDisplayName, providerConfig]) => providerConfig.provider in providers)
+      .map(([providerDisplayName, providerConfig]) => providers[providerConfig.provider].init(providerDisplayName, { ...providerConfig } as any, app))
+  );
 }
 
 export const AIProviderConfigSchema = z.discriminatedUnion("provider", [

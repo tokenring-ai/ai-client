@@ -95,5 +95,13 @@ export default function autoConfig() {
       apiKey: process.env.XAI_API_KEY,
     };
   }
+
+  if (process.env.ZAI_API_KEY) {
+    config.zAi = {
+      provider: "openaiCompatible",
+      apiKey: process.env.ZAI_API_KEY,
+      baseURL: "https://api.z.ai/api/coding/paas/v4",
+    };
+  }
   return config;
 }
