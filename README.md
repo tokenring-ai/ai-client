@@ -9,7 +9,6 @@ The `@tokenring-ai/ai-client` package provides a unified interface for interacti
 - **Multi-Provider Support**: OpenAI, Anthropic, Google, Groq, DeepSeek, Cerebras, xAI, Perplexity, Azure, Ollama, OpenRouter, Fal, and OpenAI-compatible endpoints
 - **Model Registry**: Automatic model selection based on cost, capabilities (reasoning, intelligence, speed, tools), and availability
 - **Chat Management**: Conversation history, streaming responses, cost/timing analytics
-- **Context Compaction**: Automatic summarization when conversations grow long
 - **Multiple Modalities**: Chat completions, embeddings, image generation, speech synthesis, and audio transcription
 - **Reranking**: Document ranking and relevance scoring using AI models
 - **Feature Management**: Dynamic feature selection and configuration per model
@@ -88,10 +87,10 @@ pkg/ai-client/
 │   ├── openaiCompatible.ts   # OpenAI-compatible provider
 │   ├── openrouter.ts         # OpenRouter provider
 │   ├── perplexity.ts         # Perplexity provider
-│   └── xai.ts                # xAI provider
+│   ├── xai.ts                # xAI provider
+│   └── elevenlabs.ts         # ElevenLabs provider
 ├── util/
 │   ├── cachedDataRetriever.ts # Data caching utilities
-│   ├── findBestChatModel.ts  # Model selection utilities
 │   └── resequenceMessages.ts # Message resequencing utilities
 ├── ModelRegistry.ts          # Model registry for chat models
 ├── ModelTypeRegistry.ts      # Generic model registry
@@ -126,6 +125,7 @@ Specialized registries for different AI modalities:
 - **ImageGenerationModelRegistry**: Image generation models
 - **SpeechModelRegistry**: Text-to-speech models
 - **TranscriptionModelRegistry**: Audio transcription models
+- **RerankingModelRegistry**: Document reranking models
 
 ### AIChatClient
 
@@ -462,6 +462,7 @@ Rank documents by relevance to a query.
 | OpenRouter        | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Access to many providers                  |
 | Fal               | ❌    | ❌          | ✅      | ❌      | ❌             | ❌        | Image generation                          |
 | OpenAI-Compatible | ✅    | ✅          | ❌      | ❌      | ❌             | ❌        | Custom endpoints                          |
+| ElevenLabs        | ❌    | ❌          | ❌      | ✅      | ✅             | ❌        | Text-to-speech and audio transcription services |
 
 ## Model Features
 
@@ -487,21 +488,6 @@ client.setFeatures({
   serviceTier: 'priority'
 });
 ```
-
-## Context Compaction
-
-When conversations grow long, the package can automatically compact context:
-
-```typescript
-// Enable auto-compact
-aiService.updateAIConfig({ autoCompact: true }, agent);
-
-// Manual compact
-import { compactContext } from '@tokenring-ai/ai-client/util/compactContext';
-await compactContext(agent);
-```
-
-Compaction creates a summary of the conversation, reducing token usage while preserving important context.
 
 ## Cost Tracking
 
