@@ -6,7 +6,7 @@ The `@tokenring-ai/ai-client` package provides a unified interface for interacti
 
 **Key Features:**
 
-- **Multi-Provider Support**: OpenAI, Anthropic, Google, Groq, DeepSeek, Cerebras, xAI, Perplexity, Azure, Ollama, OpenRouter, Fal, and OpenAI-compatible endpoints
+- **Multi-Provider Support**: OpenAI, Anthropic, Google, Groq, DeepSeek, Cerebras, xAI, Perplexity, Azure, Ollama, OpenRouter, Fal, ElevenLabs, Llama, and OpenAI-compatible endpoints
 - **Model Registry**: Automatic model selection based on cost, capabilities (reasoning, intelligence, speed, tools), and availability
 - **Chat Management**: Conversation history, streaming responses, cost/timing analytics
 - **Multiple Modalities**: Chat completions, embeddings, image generation, speech synthesis, and audio transcription
@@ -29,8 +29,8 @@ Configure providers in your `.tokenring/coder-config.mjs`:
 ```javascript
 export default {
   ai: {
-    defaultModel: "gpt-4.1",
-    models: {
+    autoConfigure: true, // Set to true to auto-configure from environment variables
+    providers: {
       "OpenAI": {
         provider: "openai",
         apiKey: process.env.OPENAI_API_KEY
@@ -41,61 +41,121 @@ export default {
       },
       "Google": {
         provider: "google",
-        apiKey: process.env.GOOGLE_API_KEY
+        apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
+      },
+      "xAI": {
+        provider: "xai",
+        apiKey: process.env.XAI_API_KEY
+      },
+      "Perplexity": {
+        provider: "perplexity",
+        apiKey: process.env.PERPLEXITY_API_KEY
+      },
+      "Groq": {
+        provider: "groq",
+        apiKey: process.env.GROQ_API_KEY
+      },
+      "DeepSeek": {
+        provider: "deepseek",
+        apiKey: process.env.DEEPSEEK_API_KEY
+      },
+      "Cerebras": {
+        provider: "cerebras",
+        apiKey: process.env.CEREBRAS_API_KEY
+      },
+      "Azure": {
+        provider: "azure",
+        apiKey: process.env.AZURE_API_KEY,
+        baseURL: process.env.AZURE_API_ENDPOINT
       },
       "Ollama": {
         provider: "ollama",
-        baseURL: "http://localhost:11434",
-        generateModelSpec: (modelInfo) => ({
-          type: modelInfo.model.match(/embed/i) ? "embedding" : "chat",
-          capabilities: {
-            contextLength: 128000,
-            costPerMillionInputTokens: 0,
-            costPerMillionOutputTokens: 0,
-            reasoningText: 3,
-            intelligence: 3,
-            speed: 4
-          }
-        })
+        baseURL: process.env.LLAMA_BASE_URL ?? "http://127.0.0.1:11434"
+      },
+      "OpenRouter": {
+        provider: "openrouter",
+        apiKey: process.env.OPENROUTER_API_KEY
+      },
+      "Llama": {
+        provider: "llama",
+        apiKey: process.env.META_LLAMA_API_KEY
+      },
+      "OpenAI-Compatible": {
+        provider: "openaiCompatible",
+        baseURL: "https://api.example.com/v1",
+        apiKey: process.env.API_KEY
+      },
+      "Fal": {
+        provider: "fal",
+        apiKey: process.env.FAL_API_KEY
+      },
+      "ElevenLabs": {
+        provider: "elevenlabs",
+        apiKey: process.env.ELEVENLABS_API_KEY
       }
     }
   }
 };
 ```
 
+### Auto-Configuration
+
+Set `autoConfigure: true` to automatically detect providers from environment variables:
+
+| Environment Variable | Provider |
+|----------------------|----------|
+| `ANTHROPIC_API_KEY` | Anthropic |
+| `AZURE_API_KEY` + `AZURE_API_ENDPOINT` | Azure |
+| `CEREBRAS_API_KEY` | Cerebras |
+| `DEEPSEEK_API_KEY` | DeepSeek |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google |
+| `GROQ_API_KEY` | Groq |
+| `META_LLAMA_API_KEY` | Llama |
+| `OPENAI_API_KEY` | OpenAI |
+| `LLAMA_BASE_URL` / `LLAMA_API_KEY` | Ollama |
+| `OPENROUTER_API_KEY` | OpenRouter |
+| `PERPLEXITY_API_KEY` | Perplexity |
+| `XAI_API_KEY` | xAI |
+| `DASHSCOPE_API_KEY` | Qwen (OpenAI-compatible) |
+| `ZAI_API_KEY` | zAI (OpenAI-compatible) |
+
 ## Package Structure
 
 ```
 pkg/ai-client/
 ├── client/
-│   ├── AIChatClient.ts        # Chat completion client with streaming support
-│   ├── AIEmbeddingClient.ts   # Text embedding client
+│   ├── AIChatClient.ts           # Chat completion client with streaming support
+│   ├── AIEmbeddingClient.ts      # Text embedding client
 │   ├── AIImageGenerationClient.ts # Image generation client
-│   ├── AISpeechClient.ts      # Text-to-speech client
-│   └── AITranscriptionClient.ts # Audio transcription client
+│   ├── AISpeechClient.ts         # Text-to-speech client
+│   ├── AITranscriptionClient.ts  # Audio transcription client
+│   └── AIRerankingClient.ts      # Document reranking client
 ├── providers/
-│   ├── anthropic.ts          # Anthropic provider
-│   ├── azure.ts              # Azure provider
-│   ├── cerebras.ts           # Cerebras provider
-│   ├── deepseek.ts           # DeepSeek provider
-│   ├── fal.ts                # Fal provider
-│   ├── google.ts             # Google provider
-│   ├── groq.ts               # Groq provider
-│   ├── llama.ts              # Llama provider
-│   ├── ollama.ts             # Ollama provider
-│   ├── openai.ts             # OpenAI provider
-│   ├── openaiCompatible.ts   # OpenAI-compatible provider
-│   ├── openrouter.ts         # OpenRouter provider
-│   ├── perplexity.ts         # Perplexity provider
-│   ├── xai.ts                # xAI provider
-│   └── elevenlabs.ts         # ElevenLabs provider
+│   ├── anthropic.ts              # Anthropic provider
+│   ├── azure.ts                  # Azure provider
+│   ├── cerebras.ts               # Cerebras provider
+│   ├── deepseek.ts               # DeepSeek provider
+│   ├── elevenlabs.ts             # ElevenLabs provider (speech & transcription)
+│   ├── fal.ts                    # Fal provider (image generation)
+│   ├── google.ts                 # Google provider
+│   ├── groq.ts                   # Groq provider
+│   ├── llama.ts                  # Llama provider
+│   ├── ollama.ts                 # Ollama provider (local models)
+│   ├── openai.ts                 # OpenAI provider
+│   ├── openaiCompatible.ts       # OpenAI-compatible provider
+│   ├── openrouter.ts             # OpenRouter provider
+│   ├── perplexity.ts             # Perplexity provider
+│   ├── xai.ts                    # xAI provider
 ├── util/
-│   ├── cachedDataRetriever.ts # Data caching utilities
-│   └── resequenceMessages.ts # Message resequencing utilities
-├── ModelRegistry.ts          # Model registry for chat models
-├── ModelTypeRegistry.ts      # Generic model registry
-├── providers.ts              # Provider registration
-└── index.ts                  # Package exports
+│   ├── cachedDataRetriever.ts    # Data caching utilities
+│   └── resequenceMessages.ts     # Message resequencing utilities
+├── ModelRegistry.ts              # Model registries for each modality
+├── ModelTypeRegistry.ts          # Generic model registry with features
+├── providers.ts                  # Provider registration and config schema
+├── schema.ts                     # AI model provider interface and schemas
+├── autoConfig.ts                 # Auto-configuration from environment
+├── plugin.ts                     # Plugin entry point
+└── index.ts                      # Package exports
 ```
 
 ## Core Components
@@ -105,6 +165,30 @@ pkg/ai-client/
 Generic registry for managing different types of AI models with features and capabilities.
 
 ```typescript
+export type FeatureSpec = {
+  description: string;
+} & ({
+  type: "boolean";
+  defaultValue?: boolean;
+} | {
+  type: "number";
+  defaultValue?: number;
+  min?: number;
+  max?: number;
+} | {
+  type: "string";
+  defaultValue?: string;
+} | {
+  type: "enum";
+  defaultValue?: PrimitiveType;
+  values: PrimitiveType[];
+} | {
+  type: "array";
+  defaultValue?: PrimitiveType[];
+});
+
+export type FeatureOptions = Record<string, PrimitiveType | PrimitiveType[]>;
+
 export type ModelSpec = {
   modelId: string;
   providerDisplayName: string;
@@ -112,20 +196,20 @@ export type ModelSpec = {
   isHot?: () => Promise<boolean>;
   features?: Record<string, FeatureSpec>;
 };
-
-export type FeatureOptions = Record<string, PrimitiveType | PrimitiveType[]>;
 ```
 
 ### Model Registries
 
 Specialized registries for different AI modalities:
 
-- **ChatModelRegistry**: Chat models with conversation capabilities
-- **EmbeddingModelRegistry**: Text embedding models
-- **ImageGenerationModelRegistry**: Image generation models
-- **SpeechModelRegistry**: Text-to-speech models
-- **TranscriptionModelRegistry**: Audio transcription models
-- **RerankingModelRegistry**: Document reranking models
+| Registry | Description |
+|----------|-------------|
+| `ChatModelRegistry` | Chat models with conversation capabilities |
+| `EmbeddingModelRegistry` | Text embedding models |
+| `ImageGenerationModelRegistry` | Image generation models |
+| `SpeechModelRegistry` | Text-to-speech models |
+| `TranscriptionModelRegistry` | Audio transcription models |
+| `RerankingModelRegistry` | Document reranking models |
 
 ### AIChatClient
 
@@ -140,35 +224,40 @@ Handles chat completions with streaming support and model features.
 - `calculateCost(usage)` - Calculate USD cost
 - `calculateTiming(elapsedMs, usage)` - Calculate throughput
 - `setFeatures(features)` - Set model features
+- `getFeatures()` - Get current features
+- `getModelId()` - Get model ID
 
 **Response:**
 
 ```typescript
-{
-  text?: string,
-  messages?: ChatInputMessage[],
-  usage: {
-    inputTokens: number,
-    outputTokens: number,
-    cachedInputTokens?: number,
-    reasoningTokens?: number,
-    totalTokens: number
-  },
-  cost: {
-    input?: number,
-    cachedInput?: number,
-    output?: number,
-    reasoning?: number,
-    total?: number
-  },
-  timing: {
-    elapsedMs: number,
-    tokensPerSec?: number,
-    totalTokens?: number
-  },
-  finishReason: string,
-  warnings?: LanguageModelV2CallWarning[]
-}
+type AIResponse = {
+  providerMetadata: any;
+  finishReason: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other" | "unknown";
+  timestamp: number;
+  modelId: string;
+  messages?: ChatInputMessage[];
+  text?: string;
+  lastStepUsage: LanguageModelV2Usage;
+  totalUsage: LanguageModelV2Usage;
+  cost: AIResponseCost;
+  timing: AIResponseTiming;
+  sources?: LanguageModelV3Source[];
+  warnings?: SharedV3Warning[];
+};
+
+type AIResponseCost = {
+  input?: number;
+  cachedInput?: number;
+  output?: number;
+  reasoning?: number;
+  total?: number;
+};
+
+type AIResponseTiming = {
+  elapsedMs: number;
+  tokensPerSec?: number;
+  totalTokens?: number;
+};
 ```
 
 ### AIEmbeddingClient
@@ -177,7 +266,7 @@ Generate embeddings for text.
 
 **Methods:**
 
-- `getEmbeddings({ input: string[] })` - Generate embeddings
+- `getEmbeddings({ input: string[] })` - Generate embeddings for multiple inputs
 
 ### AIImageGenerationClient
 
@@ -190,21 +279,12 @@ Generate images from prompts.
 **Request:**
 
 ```typescript
-{
-  prompt: string,
-  quality?: 'low' | 'medium' | 'high',
-  size: `${number}x${number}`,
-  n: number
-}
-```
-
-**Response:**
-
-```typescript
-{
-  mediaType: string,
-  uint8Array: Uint8Array
-}
+type ImageRequest = {
+  prompt: string;
+  quality?: string;
+  size: `${number}x${number}`;
+  n: number;
+};
 ```
 
 ### AISpeechClient
@@ -218,19 +298,11 @@ Generate speech from text.
 **Request:**
 
 ```typescript
-{
-  text: string,
-  voice?: string,
-  speed?: number
-}
-```
-
-**Response:**
-
-```typescript
-{
-  audio: Uint8Array
-}
+type SpeechRequest = {
+  text: string;
+  voice?: string;
+  speed?: number;
+};
 ```
 
 ### AITranscriptionClient
@@ -244,20 +316,20 @@ Transcribe audio to text.
 **Request:**
 
 ```typescript
-{
-  audio: DataContent | URL,
-  language?: string,
-  prompt?: string
-}
+type TranscriptionRequest = {
+  audio: DataContent | URL;
+  language?: string;
+  prompt?: string;
+};
 ```
 
-**Response:**
+### AIRerankingClient
 
-```typescript
-{
-  text: string
-}
-```
+Rank documents by relevance to a query.
+
+**Methods:**
+
+- `rerank({ query, documents, topN })` - Rank documents by relevance
 
 ## Usage
 
@@ -299,7 +371,7 @@ const request = await createChatRequest(
   agent
 );
 
-const client = await modelRegistry.chat.getFirstOnlineClient('gpt-4.1');
+const client = await modelRegistry.chat.getClient('openai:gpt-5');
 const [text, response] = await client.streamChat(request, agent);
 ```
 
@@ -307,21 +379,27 @@ const [text, response] = await client.streamChat(request, agent);
 
 ```typescript
 // Get cheapest model with high reasoning
-const client = await modelRegistry.chat.getFirstOnlineClientByRequirements({
+const client = await modelRegistry.chat.getClientByRequirements({
   reasoningText: '>4',
   contextLength: '>100000'
 });
 
 // Get fastest model
-const fastClient = await modelRegistry.chat.getFirstOnlineClientByRequirements({
+const fastClient = await modelRegistry.chat.getClientByRequirements({
   speed: '>5'
+});
+
+// Get cheapest model
+const cheapest = await modelRegistry.chat.getCheapestModelByRequirements({
+  reasoningText: '>3',
+  contextLength: '>100000'
 });
 ```
 
 ### Generating Embeddings
 
 ```typescript
-const embeddingClient = await modelRegistry.embedding.getFirstOnlineClient('text-embedding-3-small');
+const embeddingClient = await modelRegistry.embedding.getClient('openai:text-embedding-3-small');
 const results = await embeddingClient.getEmbeddings({
   input: ['Hello', 'World']
 });
@@ -331,7 +409,7 @@ console.log(results[0].embedding); // Vector array
 ### Generating Images
 
 ```typescript
-const imageClient = await modelRegistry.imageGeneration.getFirstOnlineClient('gpt-image-1-high');
+const imageClient = await modelRegistry.imageGeneration.getClient('openai:gpt-image-1-high');
 const [image, result] = await imageClient.generateImage(
   {
     prompt: 'A serene mountain landscape',
@@ -345,7 +423,7 @@ const [image, result] = await imageClient.generateImage(
 ### Generating Speech
 
 ```typescript
-const speechClient = await modelRegistry.speech.getFirstOnlineClient('tts-1-hd');
+const speechClient = await modelRegistry.speech.getClient('openai:tts-1-hd');
 const [audioData, result] = await speechClient.generateSpeech(
   {
     text: 'Hello, world!',
@@ -359,7 +437,7 @@ const [audioData, result] = await speechClient.generateSpeech(
 ### Transcribing Audio
 
 ```typescript
-const transcriptionClient = await modelRegistry.transcription.getFirstOnlineClient('whisper-1');
+const transcriptionClient = await modelRegistry.transcription.getClient('openai:whisper-1');
 const audioBuffer = fs.readFileSync('audio.mp3');
 const [text, result] = await transcriptionClient.transcribe(
   {
@@ -373,7 +451,7 @@ const [text, result] = await transcriptionClient.transcribe(
 ### Reranking Documents
 
 ```typescript
-const client = await modelRegistry.chat.getFirstOnlineClient('gpt-4.1');
+const client = await modelRegistry.chat.getClient('openai:gpt-5');
 const rankings = await client.rerank(
   {
     query: 'What is artificial intelligence?',
@@ -390,96 +468,107 @@ const rankings = await client.rerank(
 console.log('Ranked documents:', rankings.rankings);
 ```
 
-## Commands
-
-The package provides chat commands for interactive use:
-
-### `/chat [message]`
-
-Send a message to the AI using the current model and configuration.
-
-```
-/chat Explain how async/await works in JavaScript
-```
-
-### `/model [model_name]`
-
-Set or show the current model. Without arguments, shows an interactive tree selection.
-
-```
-/model gpt-4.1
-/model                    # Interactive selection
-```
-
-### `/ai settings key=value [...]`
-
-Update AI configuration settings.
-
-```
-/ai settings temperature=0.7 maxTokens=4000
-/ai settings autoCompact=true
-/ai                       # Show current settings
-```
-
-### `/ai context`
-
-Show all context items that would be included in the next chat request.
-
-```
-/ai context
-```
-
-### `/compact`
-
-Manually compact the conversation context by summarizing prior messages.
-
-```
-/compact
-```
-
-### `/rerank query="..." documents="..."`
-
-Rank documents by relevance to a query.
-
-```
-/rerank query="best programming languages" documents="JavaScript,Python,Rust"
-```
-
 ## Supported Providers
 
-| Provider          | Chat | Embeddings | Images | Speech | Transcription | Reranking | Notes                                     |
-|-------------------|------|------------|--------|--------|---------------|-----------|-------------------------------------------|
-| OpenAI            | ✅    | ✅          | ✅      | ✅      | ✅             | ✅        | GPT-4.1, GPT-5, O3, O4-mini, TTS, Whisper   |
-| Anthropic         | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Claude 3.5, 4, 4.1                        |
-| Google            | ✅    | ❌          | ✅      | ❌      | ❌             | ❌        | Gemini 2.5 Pro/Flash, web search          |
-| xAI               | ✅    | ❌          | ✅      | ❌      | ❌             | ❌        | Grok 3, 4, code models                    |
-| DeepSeek          | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | DeepSeek Chat, Reasoner                   |
-| Groq              | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Fast inference, Llama models              |
-| Cerebras          | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Ultra-fast inference                      |
-| Perplexity        | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Sonar models with web search              |
-| Azure             | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Azure OpenAI Service                      |
-| Ollama            | ✅    | ✅          | ❌      | ❌      | ❌             | ❌        | Local models                              |
-| OpenRouter        | ✅    | ❌          | ❌      | ❌      | ❌             | ❌        | Access to many providers                  |
-| Fal               | ❌    | ❌          | ✅      | ❌      | ❌             | ❌        | Image generation                          |
-| OpenAI-Compatible | ✅    | ✅          | ❌      | ❌      | ❌             | ❌        | Custom endpoints                          |
-| ElevenLabs        | ❌    | ❌          | ❌      | ✅      | ✅             | ❌        | Text-to-speech and audio transcription services |
+| Provider | Chat | Embeddings | Images | Speech | Transcription | Reranking | Notes |
+|----------|------|------------|--------|--------|---------------|-----------|-------|
+| OpenAI | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | GPT-4.1, GPT-5, O3, O4-mini, TTS, Whisper |
+| Anthropic | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | Claude 4.5, 4.1 |
+| Google | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | Gemini 2.5 Pro/Flash, Imagen |
+| xAI | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | Grok 3, 4, 4.1 |
+| DeepSeek | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | DeepSeek Chat, Reasoner |
+| Groq | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | Fast inference, Llama models |
+| Cerebras | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | Ultra-fast inference |
+| Perplexity | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | Sonar models with web search |
+| Azure | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | Azure OpenAI Service |
+| Ollama | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | Local models |
+| OpenRouter | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | Access to many providers |
+| Fal | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | Image generation |
+| OpenAI-Compatible | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | Custom endpoints |
+| Llama | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | Meta Llama models |
+| ElevenLabs | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | TTS and transcription |
 
 ## Model Features
 
 Models can have various features that can be enabled/disabled:
 
-- **websearch**: Enables web search capability
-- **reasoningEffort**: Reasoning effort level (none, minimal, low, medium, high)
-- **reasoningSummary**: Reasoning summary mode (auto, detailed)
-- **serviceTier**: Service tier (auto, flex, priority, default)
-- **textVerbosity**: Text verbosity (low, medium, high)
-- **strictJsonSchema**: Use strict JSON schema validation
+### OpenAI Models
+
+| Feature | Description | Default |
+|---------|-------------|---------|
+| `websearch` | Enables web search capability | false |
+| `reasoningEffort` | Reasoning effort level | "medium" |
+| `reasoningSummary` | Reasoning summary mode | undefined |
+| `serviceTier` | Service tier (auto, flex, priority, default) | "auto" |
+| `textVerbosity` | Text verbosity (low, medium, high) | "medium" |
+| `strictJsonSchema` | Use strict JSON schema validation | false |
+| `promptCacheRetention` | Prompt cache retention policy | "in_memory" |
+
+### Anthropic Models
+
+| Feature | Description | Default |
+|---------|-------------|---------|
+| `maxSearchUses` | Maximum web searches (0-20) | 0 |
+
+### Google Models
+
+| Feature | Description | Default |
+|---------|-------------|---------|
+| `websearch` | Enables web search | false |
+| `responseModalities` | Response modalities | ["TEXT"] |
+| `thinkingBudget` | Thinking token budget | undefined |
+| `thinkingLevel` | Thinking depth (Gemini 3) | undefined |
+| `includeThoughts` | Include thought summaries | false |
+
+### xAI Models
+
+| Feature | Description | Default |
+|---------|-------------|---------|
+| `websearch` | Enables web search | false |
+| `maxSearchResults` | Max search results | 20 |
+| `returnCitations` | Return citations | false |
+
+### Perplexity Models
+
+| Feature | Description | Default |
+|---------|-------------|---------|
+| `websearch` | Enables web search | true |
+| `searchContextSize` | Search context size (low, medium, high) | "low" |
+
+### OpenRouter Models
+
+| Feature | Description | Default |
+|---------|-------------|---------|
+| `websearch` | Enables web search plugin | false |
+| `searchEngine` | Search engine (native, exa) | undefined |
+| `maxResults` | Max search results | 5 |
+| `searchContextSize` | Search context size | "low" |
+| `temperature` | Temperature (0-2.0) | undefined |
+| `topP` | Top P sampling (0-1.0) | undefined |
+| `topK` | Top K sampling | undefined |
+| `maxTokens` | Max tokens | undefined |
+| `frequencyPenalty` | Frequency penalty (-2.0 to 2.0) | undefined |
+| `presencePenalty` | Presence penalty (-2.0 to 2.0) | undefined |
+| `repetitionPenalty` | Repetition penalty (0-2.0) | undefined |
+| `minP` | Min P sampling (0-1.0) | undefined |
+| `includeReasoning` | Include reasoning | undefined |
+
+### ElevenLabs Speech Models
+
+| Feature | Description | Default |
+|---------|-------------|---------|
+| `voice` | Voice ID | undefined |
+| `language_code` | Language code (ISO 639-1) | undefined |
+| `stability` | Voice stability (0-1) | 0.5 |
+| `similarity_boost` | Similarity boost (0-1) | 0.75 |
+| `style` | Style amplification (0-1) | 0 |
+| `use_speaker_boost` | Boost similarity to speaker | false |
 
 **Example:**
 
 ```typescript
 // Select model with web search enabled
-const client = await modelRegistry.chat.getFirstOnlineClient('openai/gpt-5?websearch=1');
+const client = await modelRegistry.chat.getClient('openai:gpt-5?websearch=1');
 
 // Set features on a client
 client.setFeatures({
@@ -506,11 +595,11 @@ console.log(`Total: $${response.cost.total.toFixed(4)}`);
 ## Testing
 
 ```bash
-vitest run                  # Run tests
+vitest run                # Run tests
 bun run test:watch        # Watch mode
 bun run test:coverage     # Coverage report
 ```
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License - see [LICENSE](./LICENSE) file for details.
