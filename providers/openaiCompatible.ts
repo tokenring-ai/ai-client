@@ -15,6 +15,7 @@ const OAICompatibleModelConfigSchema = z.object({
   queryParams: z.record(z.string(), z.string()).optional(),
   includeUsage: z.boolean().optional(),
   supportsStructuredOutputs: z.boolean().optional(),
+  defaultContextLength: z.number().default(32000),
   generateModelSpec: z.function({
     input: z.tuple([z.any()]),
     output: z.object({
@@ -134,7 +135,7 @@ async function init(
       const contextLength =
         modelInfo.max_model_len ??
         propsNCtx ??
-        32000;
+        config.defaultContextLength;
 
       chatModelSpecs.push({
         modelId: modelInfo.id,
@@ -154,7 +155,7 @@ async function init(
         contextLength: capabilities.contextLength || 8192,
         costPerMillionInputTokens:
           capabilities.costPerMillionInputTokens || 0,
-        impl: openai.textEmbeddingModel(modelInfo.id),
+        impl: openai.embeddingModel(modelInfo.id),
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () => Promise.resolve(true),
       });

@@ -1,18 +1,13 @@
-import type {
-  LanguageModelV2CallWarning,
-  LanguageModelV2Source,
-  LanguageModelV2Usage,
-  LanguageModelV3Source, SharedV3Warning,
-} from "@ai-sdk/provider";
+import type {LanguageModelV2Usage, LanguageModelV3Source, SharedV3Warning,} from "@ai-sdk/provider";
 import Agent from "@tokenring-ai/agent/Agent";
 
 import {
   type AssistantModelMessage,
-  generateObject, GenerateObjectResult,
+  GenerateObjectResult,
   generateText,
   type GenerateTextResult,
   type LanguageModel,
-  type StopCondition,
+  Output,
   streamText,
   type StreamTextResult,
   type SystemModelMessage,
@@ -30,8 +25,6 @@ export type ChatInputMessage =
   | ToolModelMessage;
 
 export type ChatRequest = {
-  prepareStep?: Parameters<typeof streamText>[0]["prepareStep"];
-  stopWhen?: Parameters<typeof streamText>[0]["stopWhen"];
   tools: Record<string, Tool>;
   messages: ChatInputMessage[];
   parallelTools?: boolean;
@@ -44,10 +37,6 @@ export type RerankRequest = {
   documents: string[];
   topN?: number;
 }
-
-export type GenerateRequest<T extends ZodObject> = {
-  schema: T;
-} & ChatRequest;
 
 export type ChatModelSpec = ModelSpec & {
   impl: Exclude<LanguageModel, string>;
@@ -213,9 +202,9 @@ export default class AIChatClient {
    * back to the `ChatService`.
    */
   async streamChat(
-    request: ChatRequest,
+    request: ChatRequest & Pick<Parameters<typeof streamText>[0],"prepareStep" | "stopWhen" | "onStepFinish">,
     agent: Agent,
-  ): Promise<[string, AIResponse]> {
+  ): Promise<AIResponse> {
     const signal = agent.getAbortSignal();
 
     if (this.modelSpec.mangleRequest) {
@@ -244,6 +233,14 @@ export default class AIChatClient {
     const stream = result.fullStream;
     for await (const part of stream) {
       switch (part.type) {
+        case "file":
+          agent.artifactOutput({
+            name: "Generated File",
+            encoding: "base64",
+            mimeType: part.file.mediaType,
+            body: part.file.base64
+          });
+          break;
         case "text-delta": {
           agent.chatOutput(part.text);
           break;
@@ -257,7 +254,11 @@ export default class AIChatClient {
           break;
         }
         case "error": {
-          throw new Error((part.error as any) ?? "Unknown error");
+          if (part.error) {
+            agent.errorLine("Error while handling request:\n", part.error as Error);
+          } else {
+            agent.errorLine("Unknown error while handling request");
+          }
         }
       }
     }
@@ -267,14 +268,14 @@ export default class AIChatClient {
     const response = await this.generateResponseObject(result, elapsedMs);
     agent.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0);
 
-    return [response.text ?? '', response];
+    return response;
   }
 
   /**
    * Sends a chat completion request and returns the full text response.
    */
   async textChat(
-    request: ChatRequest,
+    request: ChatRequest & Pick<Parameters<typeof generateText>[0],"prepareStep" | "stopWhen" | "onStepFinish">,
     agent: Agent,
   ): Promise<[string, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
@@ -302,7 +303,7 @@ export default class AIChatClient {
    * Sends a chat completion request and returns the generated object response.
    */
   async generateObject<T extends ZodObject>(
-    request: GenerateRequest<T>,
+    request: ChatRequest & { schema: T},
     agent: Agent,
   ): Promise<[z.infer<typeof request.schema>, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
@@ -310,13 +311,18 @@ export default class AIChatClient {
       this.modelSpec.mangleRequest(request, this.features);
     }
 
+    const { schema, ...generateRequest } = request;
+
     const signal = agent.getAbortSignal();
 
     const start = Date.now();
-    const result = await generateObject({
+    const result = await generateText({
       model: this.modelSpec.impl,
       abortSignal: signal,
-      ...request,
+      ...generateRequest,
+      output: Output.object({
+        schema: request.schema
+      })
     });
 
     const elapsedMs = Date.now() - start;
@@ -324,7 +330,7 @@ export default class AIChatClient {
     const response = await this.generateResponseObject(result, elapsedMs);
     agent.addCost(`GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0);
 
-    return [result.object as z.infer<typeof request.schema>, response];
+    return [result.output as z.infer<typeof request.schema>, response];
   }
 
   /**
@@ -382,7 +388,7 @@ ${documentsText}
 
 Please rank these documents by their relevance to the query.`;
 
-    const req: GenerateRequest<typeof rerankSchema> = {
+    const req = {
       tools: {},
       messages: [{
         role: 'system',
@@ -403,7 +409,8 @@ Be objective and precise in your scoring.`.trim()
       ],
       // Create a schema for the reranking output
       schema: rerankSchema
-    };
+    } satisfies ChatRequest & { schema: typeof rerankSchema };
+
     // Use generateObject to get structured reranking results
     const [result] = await this.generateObject(req, agent);
 

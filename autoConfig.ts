@@ -49,6 +49,7 @@ export default function autoConfig() {
       provider: "openaiCompatible",
       apiKey: process.env.META_LLAMA_API_KEY,
       baseURL: 'https://api.llama.com/compat/v1',
+      defaultContextLength: 128000
     };
   }
 
@@ -64,6 +65,7 @@ export default function autoConfig() {
       provider: "openaiCompatible",
       baseURL: process.env.LLAMA_BASE_URL ?? "http://127.0.0.1:11434/v1",
       ...(process.env.LLAMA_API_KEY && {apiKey: process.env.LLAMA_API_KEY}),
+      defaultContextLength: 32000
     };
   }
 
@@ -85,7 +87,8 @@ export default function autoConfig() {
     config.Qwen = {
       provider: "openaiCompatible",
       apiKey: process.env.DASHSCOPE_API_KEY,
-      baseURL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
+      baseURL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+      defaultContextLength: 262144
     };
   }
 
@@ -101,6 +104,7 @@ export default function autoConfig() {
       provider: "openaiCompatible",
       apiKey: process.env.ZAI_API_KEY,
       baseURL: "https://api.z.ai/api/coding/paas/v4",
+      defaultContextLength: 200000
     };
   }
   return config;
