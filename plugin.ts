@@ -1,4 +1,6 @@
 import {TokenRingPlugin} from "@tokenring-ai/app";
+import {WebHostService} from "@tokenring-ai/web-host";
+import JsonRpcResource from "@tokenring-ai/web-host/JsonRpcResource";
 import {z} from "zod";
 import autoConfig from "./autoConfig.ts";
 import {
@@ -11,6 +13,7 @@ import {
 import packageJSON from "./package.json" with {type: "json"};
 import {registerProviders} from "./providers.js";
 import {AIClientConfigSchema} from "./schema.ts";
+import aiClientRPC from "./rpc/ai-client.ts";
 
 const pluginConfigSchema = z.object({
   ai: AIClientConfigSchema.optional(),
@@ -39,6 +42,10 @@ export default {
         app
       );
     }
+
+    app.waitForService(WebHostService, webHostService => {
+      webHostService.registerResource("AI Client RPC endpoint", new JsonRpcResource(app, aiClientRPC));
+    });
   },
 
   config: pluginConfigSchema
