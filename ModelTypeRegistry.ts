@@ -218,15 +218,32 @@ export class ModelTypeRegistry<
     return new this.AIClient(modelSpec, features);
   }
 
-  getModelSpecsByRequirements(
-    { nameLike, ...requirements}: R
-  ): Record<string,T> {
-    const modelSpecFilter = parametricObjectFilter(requirements as R)
 
-    const modelSpecs = nameLike
-      ? this.modelSpecs.getItemEntriesLike(nameLike)
-      : this.modelSpecs.entries();
+  getModelSpecsByRequirements(nameLike: string) : Record<string,T> {
+    const [modelSpec, featureString] = nameLike.split("?");
+    const features = new Set<string>();
+    if (featureString) {
+      for (const part of featureString.split("&")) {
+        if (!part) continue;
+        const [rawK] = part.split("=");
+        const k = decodeURIComponent(rawK);
+        features.add(k);
+      }
+    }
 
-    return Object.fromEntries(modelSpecs.filter(([,modelSpec]) => modelSpecFilter(modelSpec)));
+    const modelSpecs = this.modelSpecs.getItemNamesLike(modelSpec);
+
+    return Object.fromEntries(
+      modelSpecs.filter(modelName => {
+        const spec = this.modelSpecs.getItemByName(modelName)
+        for (const feature of features) {
+          if (!spec?.features?.[feature]) {
+            return false;
+          }
+        }
+        return true;
+      })
+      .map(modelName => [modelName + (featureString ? `?${featureString}` : "")], modelSpec)
+    );
   }
 }

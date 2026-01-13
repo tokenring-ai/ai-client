@@ -22,10 +22,8 @@ export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatCl
     super(AIChatClient);
   }
 
-  getCheapestModelByRequirements(requirements: ChatModelRequirements): string | null {
+  getCheapestModelByRequirements(requirements: string, estimatedContextLength = 10000): string | null {
     const eligibleModels = this.getModelSpecsByRequirements(requirements);
-
-    const estimatedContextLength = requirements.contextLength ?? 10000;
 
     // Sort the matched chatModels by price, using the current context length + 1000 tokens to calculate the price
     return Object.entries(eligibleModels)
