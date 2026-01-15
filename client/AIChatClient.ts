@@ -215,7 +215,7 @@ export default class AIChatClient {
     const isHot = this.modelSpec.isHot ? await this.modelSpec.isHot() : true;
 
     if (!isHot) {
-      agent.infoLine(
+      agent.infoMessage(
         "Model is not hot and will need to be cold started. Setting retries to 15...",
       );
     }
@@ -255,9 +255,9 @@ export default class AIChatClient {
         }
         case "error": {
           if (part.error) {
-            agent.errorLine("Error while handling request:\n", part.error as Error);
+            agent.errorMessage("Error while handling request:\n", part.error as Error);
           } else {
-            agent.errorLine("Unknown error while handling request");
+            agent.errorMessage("Unknown error while handling request");
           }
         }
       }
