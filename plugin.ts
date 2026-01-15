@@ -16,7 +16,7 @@ import {AIClientConfigSchema} from "./schema.ts";
 import aiClientRPC from "./rpc/ai-client.ts";
 
 const pluginConfigSchema = z.object({
-  ai: AIClientConfigSchema.optional(),
+  ai: AIClientConfigSchema.prefault({})
 });
 
 export default {
@@ -31,17 +31,15 @@ export default {
     app.addServices(new TranscriptionModelRegistry());
     app.addServices(new RerankingModelRegistry());
 
-    if (config.ai) {
-      let providerConfig = config.ai.providers;
-      if (config.ai.autoConfigure || !providerConfig) {
-        providerConfig = autoConfig()
-      }
-
-      await registerProviders(
-        providerConfig,
-        app
-      );
+    let providerConfig = config.ai.providers;
+    if (config.ai.autoConfigure || !providerConfig) {
+      providerConfig = autoConfig()
     }
+
+    await registerProviders(
+      providerConfig,
+      app
+    );
 
     app.waitForService(WebHostService, webHostService => {
       webHostService.registerResource("AI Client RPC endpoint", new JsonRpcResource(app, aiClientRPC));
