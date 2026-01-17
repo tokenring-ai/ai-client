@@ -2,7 +2,6 @@ import Agent from "@tokenring-ai/agent/Agent";
 import {type DataContent, experimental_transcribe as transcribe, type TranscriptionModel,} from "ai";
 import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 
-
 export interface TranscriptionResult {
   text: string;
 }

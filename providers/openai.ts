@@ -3,12 +3,7 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import {
-  ChatModelRegistry,
-  ImageGenerationModelRegistry,
-  SpeechModelRegistry,
-  TranscriptionModelRegistry
-} from "../ModelRegistry.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 

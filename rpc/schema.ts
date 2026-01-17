@@ -6,9 +6,7 @@ export default {
   methods: {
     listChatModels: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         models: z.record(z.string(),z.object({
           status: z.string(),
@@ -20,23 +18,18 @@ export default {
     },
     listChatModelsByProvider: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
           status: z.string(),
           available: z.boolean(),
           hot: z.boolean(),
-          modelSpec: z.any()
         })))
       })
     },
     listEmbeddingModels: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         models: z.record(z.string(),z.object({
           status: z.string(),
@@ -48,9 +41,7 @@ export default {
     },
     listEmbeddingModelsByProvider: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
           status: z.string(),
@@ -62,9 +53,7 @@ export default {
     },
     listImageGenerationModels: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         models: z.record(z.string(),z.object({
           status: z.string(),
@@ -76,9 +65,7 @@ export default {
     },
     listImageGenerationModelsByProvider: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
           status: z.string(),
@@ -90,9 +77,7 @@ export default {
     },
     listSpeechModels: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         models: z.record(z.string(),z.object({
           status: z.string(),
@@ -104,9 +89,7 @@ export default {
     },
     listSpeechModelsByProvider: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
           status: z.string(),
@@ -118,9 +101,7 @@ export default {
     },
     listTranscriptionModels: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         models: z.record(z.string(),z.object({
           status: z.string(),
@@ -132,9 +113,7 @@ export default {
     },
     listTranscriptionModelsByProvider: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
           status: z.string(),
@@ -146,9 +125,7 @@ export default {
     },
     listRerankingModels: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         models: z.record(z.string(),z.object({
           status: z.string(),
@@ -160,9 +137,7 @@ export default {
     },
     listRerankingModelsByProvider: {
       type: "query",
-      input: z.object({
-        agentId: z.string().optional()
-      }),
+      input: z.object({}),
       result: z.object({
         modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
           status: z.string(),

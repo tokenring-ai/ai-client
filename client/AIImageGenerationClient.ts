@@ -1,10 +1,5 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {
-  experimental_generateImage as generateImage,
-  type Experimental_GenerateImageResult,
-  type GeneratedFile,
-  type ImageModel,
-} from "ai";
+import {type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel,} from "ai";
 import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type ImageRequest = {
@@ -50,7 +45,7 @@ export type ImageModelSpec = ModelSpec & {
   /**
    * - A callback to calculate the image cost
    */
-  calculateImageCost: (req: ImageRequest, res: Experimental_GenerateImageResult) => number;
+  calculateImageCost: (req: ImageRequest, res: GenerateImageResult) => number;
 
   /**
    * - Optional hook to adjust the request prior to sending.
@@ -104,7 +99,7 @@ export default class AIImageGenerationClient {
   async generateImage(
     request: ImageRequest,
     agent: Agent,
-  ): Promise<[GeneratedFile, Experimental_GenerateImageResult]> {
+  ): Promise<[GeneratedFile, GenerateImageResult]> {
     const signal = agent.getAbortSignal();
 
     try {

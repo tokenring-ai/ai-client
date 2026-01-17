@@ -1,4 +1,3 @@
-import parametricObjectFilter from "@tokenring-ai/utility/object/parametricObjectFilter";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import {PrimitiveType} from "@tokenring-ai/utility/types";
 import {ModelRequirements} from "./schema.ts";

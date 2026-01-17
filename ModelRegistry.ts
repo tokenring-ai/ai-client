@@ -9,10 +9,11 @@ import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
 import {
   ChatModelRequirements,
   EmbeddingModelRequirements,
-  ImageModelRequirements, RerankingModelRequirements,
-  SpeechModelRequirements, TranscriptionModelRequirements
+  ImageModelRequirements,
+  RerankingModelRequirements,
+  SpeechModelRequirements,
+  TranscriptionModelRequirements
 } from "./schema.ts";
-
 
 export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatClient, ChatModelRequirements> implements TokenRingService {
   name = "ChatModelRegistry";

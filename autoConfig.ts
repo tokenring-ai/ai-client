@@ -1,4 +1,5 @@
 import {AIProviderConfig} from "./providers.ts";
+
 export default function autoConfig() {
   const config: Record<string, AIProviderConfig> = {};
 
