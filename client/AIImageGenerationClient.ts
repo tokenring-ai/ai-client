@@ -115,9 +115,6 @@ export default class AIImageGenerationClient {
         abortSignal: signal,
       });
 
-      const size = request.size.split("x").map(Number);
-
-
       const cost = this.modelSpec.calculateImageCost(request, result);
 
       agent.addCost(`Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost);

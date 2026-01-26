@@ -1,5 +1,5 @@
 import TokenRingApp from "@tokenring-ai/app";
-import {createJsonRPCEndpoint} from "@tokenring-ai/web-host/jsonrpc/createJsonRPCEndpoint";
+import {createRPCEndpoint} from "@tokenring-ai/rpc/createRPCEndpoint";
 import {
   ChatModelRegistry,
   EmbeddingModelRegistry,
@@ -10,7 +10,7 @@ import {
 } from "../ModelRegistry.ts";
 import AIClientRpcSchema from "./schema.ts";
 
-export default createJsonRPCEndpoint(AIClientRpcSchema, {
+export default createRPCEndpoint(AIClientRpcSchema, {
   async listChatModels(args, app: TokenRingApp) {
     const registry = app.requireService(ChatModelRegistry);
     const models = await registry.getAllModelsWithOnlineStatus();

@@ -1,4 +1,5 @@
-import TokenRingApp, {TokenRingPlugin} from "@tokenring-ai/app";
+import {TokenRingPlugin} from "@tokenring-ai/app";
+import {RpcService} from "@tokenring-ai/rpc";
 import {WebHostService} from "@tokenring-ai/web-host";
 import JsonRpcResource from "@tokenring-ai/web-host/JsonRpcResource";
 import {z} from "zod";
@@ -37,8 +38,8 @@ export default {
       providerConfig = autoConfig()
     }
 
-    app.waitForService(WebHostService, webHostService => {
-      webHostService.registerResource("AI Client RPC endpoint", new JsonRpcResource(app, aiClientRPC));
+    app.waitForService(RpcService, rpcService => {
+      rpcService.registerEndpoint(aiClientRPC);
     });
   },
 
