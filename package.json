@@ -23,12 +23,12 @@
     "ai": "^6.0.62",
     "axios": "^1.13.4",
     "ollama-ai-provider-v2": "^3.0.3",
-    "zod": "catalog:"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   },
   "exports": {
     ".": "./index.ts",
