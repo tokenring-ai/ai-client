@@ -20,12 +20,7 @@ export type SpeechModelSpec = ModelSpec & {
 };
 
 export default class AISpeechClient {
-  modelSpec: SpeechModelSpec;
-  private features: FeatureOptions = {};
-
-  constructor(modelSpec: SpeechModelSpec, features: typeof this.features = {}) {
-    this.modelSpec = modelSpec;
-    this.features = features;
+  constructor(private modelSpec: SpeechModelSpec, private features: FeatureOptions = {}) {
   }
 
   setFeatures(features: FeatureOptions | undefined): void {

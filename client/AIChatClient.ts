@@ -111,12 +111,7 @@ const rerankSchema = z.object({
  * replacement for `OpenAIChatCompletionClient`.
  */
 export default class AIChatClient {
-  private readonly modelSpec: ChatModelSpec;
-  private features: FeatureOptions = {};
-
-  constructor(modelSpec: ChatModelSpec, features: typeof this.features = {}) {
-    this.modelSpec = modelSpec;
-    this.features = features;
+  constructor(private readonly modelSpec: ChatModelSpec, private features: FeatureOptions = {}) {
   }
 
   /**

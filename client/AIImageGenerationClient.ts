@@ -61,15 +61,7 @@ export type ImageModelSpec = ModelSpec & {
  * Client for generating images using the Vercel AI SDK's experimental image generation features.
  */
 export default class AIImageGenerationClient {
-  modelSpec: ImageModelSpec;
-  private features: FeatureOptions = {};
-
-  /**
-   * Creates an instance of AIImageGenerationClient.
-   */
-  constructor(modelSpec: ImageModelSpec, features: typeof this.features = {}) {
-    this.modelSpec = modelSpec;
-    this.features = features;
+  constructor(private modelSpec: ImageModelSpec, private features: FeatureOptions = {}) {
   }
 
   /**

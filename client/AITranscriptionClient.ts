@@ -24,12 +24,7 @@ export type TranscriptionModelSpec = ModelSpec & {
 };
 
 export default class AITranscriptionClient {
-  modelSpec: TranscriptionModelSpec;
-  private features: FeatureOptions = {};
-
-  constructor(modelSpec: TranscriptionModelSpec, features: typeof this.features = {}) {
-    this.modelSpec = modelSpec;
-    this.features = features;
+  constructor(private readonly modelSpec: TranscriptionModelSpec, private features: FeatureOptions = {}) {
   }
 
   setFeatures(features: FeatureOptions | undefined): void {

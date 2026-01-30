@@ -20,15 +20,7 @@ export type EmbeddingModelSpec = ModelSpec & {
  * Client for generating embeddings using the Vercel AI SDK.
  */
 export default class AIEmbeddingClient {
-  public readonly modelSpec: EmbeddingModelSpec;
-  private features: FeatureOptions = {};
-
-  /**
-   * Creates an instance of AIEmbeddingClient.
-   */
-  constructor(modelSpec: EmbeddingModelSpec, features: typeof this.features = {}) {
-    this.modelSpec = modelSpec;
-    this.features = features;
+  constructor(private readonly modelSpec: EmbeddingModelSpec, private features: FeatureOptions = {}) {
   }
 
   /**

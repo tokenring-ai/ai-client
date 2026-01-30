@@ -11,12 +11,7 @@ export type RerankingModelSpec = ModelSpec & {
 };
 
 export default class AIRerankingClient {
-  public readonly modelSpec: RerankingModelSpec;
-  private features: FeatureOptions = {};
-
-  constructor(modelSpec: RerankingModelSpec, features: typeof this.features = {}) {
-    this.modelSpec = modelSpec;
-    this.features = features;
+  constructor(private readonly modelSpec: RerankingModelSpec, private features: FeatureOptions = {}) {
   }
 
   setFeatures(features: FeatureOptions | undefined): void {
