@@ -1,6 +1,6 @@
 # @tokenring-ai/ai-client
 
-Multi-provider AI integration client for the Token Ring ecosystem. Provides unified access to various AI models through a consistent interface, supporting chat, embeddings, image generation, speech synthesis, transcription, and document reranking capabilities.
+Multi-provider AI integration client for the Token Ring ecosystem. Provides unified access to various AI models through a consistent interface, supporting chat, embeddings, image generation, reranking, speech synthesis, and transcription capabilities.
 
 ## Overview
 
@@ -8,7 +8,7 @@ The AI Client package acts as a unified interface to multiple AI providers, abst
 
 ### Key Features
 
-- **Multi-Provider Support**: 15 AI providers including Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, and Qwen
+- **Multi-Provider Support**: 16 AI providers including Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, Qwen, and xAI Responses
 - **Six AI Capabilities**: Chat, Embeddings, Image Generation, Reranking, Speech, and Transcription
 - **Model Registries**: Six dedicated service registries for managing model specifications and capabilities
 - **Dynamic Model Registration**: Register custom models with availability checks
@@ -18,6 +18,7 @@ The AI Client package acts as a unified interface to multiple AI providers, abst
 - **Streaming Support**: Real-time streaming responses with delta handling
 - **Agent Integration**: Seamless integration with Token Ring agent system through services
 - **Feature Queries**: Support for query parameters in model names (e.g., `provider:model?websearch=1`)
+- **Feature System**: Rich feature specification system supporting boolean, number, string, enum, and array types with validation
 
 ## Installation
 
@@ -38,12 +39,13 @@ The package supports the following AI providers:
 | Cerebras | LLaMA-based models | High performance |
 | DeepSeek | DeepSeek models | Reasoning capabilities |
 | ElevenLabs | Speech synthesis | Multilingual voice generation |
+| Fal | Image generation | Fast image generation |
 | xAI | xAI models | Reasoning and analysis |
+| xAI Responses | xAI responses API | Advanced reasoning and search |
 | OpenRouter | Aggregated access | Multiple provider access |
 | Perplexity | Perplexity models | Web search integration |
-| Fal | Image generation | Fast image generation |
-| Ollama | Self-hosted models | Local inference |
 | Azure | Azure OpenAI | Enterprise deployment |
+| Ollama | Self-hosted models | Local inference |
 | llama.cpp | Self-hosted models | Local inference |
 | Qwen | Qwen models | Chinese language support |
 
@@ -89,6 +91,9 @@ ELEVENLABS_API_KEY=...
 # xAI
 XAI_API_KEY=...
 
+# xAI Responses
+XAI_RESPONSES_API_KEY=...
+
 # OpenRouter
 OPENROUTER_API_KEY=...
 
@@ -104,7 +109,7 @@ CEREBRAS_API_KEY=...
 # qwen (DashScope)
 DASHSCOPE_API_KEY=sk-...
 
-# Meta API Service
+# Meta API Service (llama.com)
 META_LLAMA_API_KEY=sk-...
 
 # LLama.cpp API
@@ -192,9 +197,19 @@ Each model specification includes:
 - `impl`: Model implementation interface
 - `costPerMillionInputTokens`: Cost per million input tokens (default: 600)
 - `costPerMillionOutputTokens`: Cost per million output tokens (default: 600)
+- `costPerMillionCachedInputTokens`: Cost per million cached input tokens (optional)
+- `costPerMillionReasoningTokens`: Cost per million reasoning tokens (optional)
 - `contextLength`: Maximum context length in tokens
 - `isAvailable()`: Async function to check model availability
 - `isHot()`: Async function to check if model is warmed up
+- `mangleRequest()`: Optional function to modify the request before sending
+- `features`: Optional feature specifications for query parameters
+- `speed`: Speed capability score (0-infinity)
+- `research`: Research ability (0-infinity)
+- `reasoningText`: Reasoning capability score (0-infinity)
+- `tools`: Tools capability score (0-infinity)
+- `intelligence`: Intelligence capability score (0-infinity)
+- `maxCompletionTokens`: Maximum output tokens (optional)
 
 **Example:**
 
@@ -206,7 +221,10 @@ chatRegistry.registerAllModelSpecs([
     impl: customProvider("custom-model"),
     costPerMillionInputTokens: 5,
     costPerMillionOutputTokens: 15,
-    contextLength: 100000
+    contextLength: 100000,
+    async isAvailable() {
+      return true;
+    }
   }
 ]);
 ```
@@ -345,7 +363,7 @@ await app.waitForService('ChatModelRegistry', chatRegistry => {
 // Embedding models
 await app.waitForService('EmbeddingModelRegistry', embeddingRegistry => {
   const client = embeddingRegistry.getClient("OpenAI:text-embedding-3-small");
-  const embedding = await client.getEmbedding("your text here");
+  const embedding = await client.getEmbeddings(["your text here"]);
 });
 
 // Image generation
@@ -353,15 +371,23 @@ await app.waitForService('ImageGenerationModelRegistry', imageRegistry => {
   const client = imageRegistry.getClient("OpenAI:dall-e-3");
   const image = await client.generateImage({
     prompt: "A beautiful sunset over the ocean"
-  });
+  }, agent);
 });
 
 // Speech synthesis
 await app.waitForService('SpeechModelRegistry', speechRegistry => {
   const client = speechRegistry.getClient("ElevenLabs:text");
-  const audio = await client.speech({
+  const audio = await client.generateSpeech({
     text: "Hello, world!"
-  });
+  }, agent);
+});
+
+// Transcription
+await app.waitForService('TranscriptionModelRegistry', transcriptionRegistry => {
+  const client = transcriptionRegistry.getClient("OpenAI:whisper-1");
+  const [text, result] = await client.transcribe({
+    audio: audioFile
+  }, agent);
 });
 ```
 
@@ -401,6 +427,160 @@ const [result, response] = await client.textChat(
   },
   agent
 );
+```
+
+### Using Feature System
+
+```typescript
+// Get model with multiple features
+const client = await chatRegistry.getClient("OpenAI:gpt-5?websearch=1&reasoningEffort=high&serviceTier=priority");
+
+// Set features on client instance
+client.setFeatures({
+  websearch: true,
+  reasoningEffort: "high",
+  serviceTier: "priority"
+});
+
+// Get current features
+const features = client.getFeatures();
+```
+
+## Client Methods
+
+### AIChatClient
+
+The chat client provides methods for generating text and structured outputs.
+
+**Methods:**
+
+- `textChat(request, agent)`: Send a chat completion request and return the full text response
+- `streamChat(request, agent)`: Stream a chat completion with real-time delta handling
+- `generateObject(request, agent)`: Send a chat completion request and return a structured object response
+- `rerank(request, agent)`: Rank documents by relevance to a query
+- `calculateCost(usage)`: Calculate the cost for a given usage object
+- `calculateTiming(elapsedMs, usage)`: Calculate timing information
+- `setFeatures(features)`: Set enabled features on this client instance
+- `getFeatures()`: Get a copy of the enabled features
+- `getModelId()`: Get the model ID
+
+**Example:**
+
+```typescript
+const [text, response] = await client.textChat(
+  {
+    messages: [
+      { role: "user", content: "Hello" }
+    ]
+  },
+  agent
+);
+
+// Calculate cost
+const cost = client.calculateCost({
+  inputTokens: 100,
+  outputTokens: 50
+});
+
+// Calculate timing
+const timing = client.calculateTiming(1500, {
+  inputTokens: 100,
+  outputTokens: 50
+});
+
+// Rerank documents
+const rankings = await client.rerank({
+  query: "What is machine learning?",
+  documents: [
+    "Machine learning is a subset of AI...",
+    "AI is a broad field...",
+    "Deep learning is a type of ML..."
+  ],
+  topN: 3
+}, agent);
+```
+
+### AIEmbeddingClient
+
+The embedding client generates vector embeddings for text.
+
+**Methods:**
+
+- `getEmbeddings({ input })`: Generate embeddings for an array of input strings
+- `setFeatures(features)`: Set enabled features on this client instance
+- `getFeatures()`: Get a copy of the enabled features
+- `getModelId()`: Get the model ID
+
+**Example:**
+
+```typescript
+const embeddings = await client.getEmbeddings([
+  "Hello world",
+  "Machine learning is great"
+]);
+```
+
+### AIImageGenerationClient
+
+The image generation client creates images from text prompts.
+
+**Methods:**
+
+- `generateImage(request, agent)`: Generate an image based on a prompt
+- `setFeatures(features)`: Set enabled features on this client instance
+- `getFeatures()`: Get a copy of the enabled features
+- `getModelId()`: Get the model ID
+
+**Example:**
+
+```typescript
+const [image, result] = await client.generateImage({
+  prompt: "A beautiful sunset over the ocean",
+  size: "1024x1024",
+  quality: "high"
+}, agent);
+```
+
+### AISpeechClient
+
+The speech client synthesizes speech from text.
+
+**Methods:**
+
+- `generateSpeech(request, agent)`: Generate speech from text
+- `setFeatures(features)`: Set enabled features on this client instance
+- `getFeatures()`: Get a copy of the enabled features
+- `getModelSpec()`: Get the model specification
+
+**Example:**
+
+```typescript
+const [audio, result] = await client.generateSpeech({
+  text: "Hello, world!",
+  voice: "alloy",
+  speed: 1.0
+}, agent);
+```
+
+### AITranscriptionClient
+
+The transcription client transcribes audio to text.
+
+**Methods:**
+
+- `transcribe(request, agent)`: Transcribe audio to text
+- `setFeatures(features)`: Set enabled features on this client instance
+- `getFeatures()`: Get a copy of the enabled features
+- `getModelSpec()`: Get the model specification
+
+**Example:**
+
+```typescript
+const [text, result] = await client.transcribe({
+  audio: audioFile,
+  language: "en",
+  prompt: "Transcribe this audio"
+}, agent);
 ```
 
 ## RPC Endpoints
@@ -497,7 +677,7 @@ Models track their online status:
 Models check their availability in the background:
 
 ```typescript
-// Allan models are checked for availability shortly after startup
+// All models are checked for availability shortly after startup
 // This automatically fills the online status cache
 getAllModelsWithOnlineStatus(): Promise<Record<string, ModelStatus<ChatModelSpec>>>
 
@@ -506,6 +686,82 @@ isHot(): Promise<boolean>  // Implement in ModelSpec
 ```
 
 **Note**: The actual client classes (`AIChatClient`, `AIEmbeddingClient`, etc.) are not included in this package. They are part of the provider implementations and imported at runtime from the provider-specific SDKs.
+
+## Feature System
+
+The package supports a rich feature specification system that allows you to configure models dynamically without creating multiple client instances.
+
+### Feature Types
+
+Features can be of the following types:
+
+- **boolean**: Boolean values with optional default
+- **number**: Numeric values with optional min/max constraints
+- **string**: String values with optional default
+- **enum**: Enumerated values with optional default
+- **array**: Array values with optional default
+
+### Feature Specification
+
+Each feature has the following properties:
+
+- `description`: Human-readable description of the feature
+- `type`: The type of the feature
+- `defaultValue`: Default value (optional)
+- `min`: Minimum value (for number types)
+- `max`: Maximum value (for number types)
+- `values`: Allowed values (for enum types)
+
+### Example Features
+
+```typescript
+// Boolean feature
+{
+  description: "Enables web search",
+  defaultValue: false,
+  type: "boolean"
+}
+
+// Number feature with constraints
+{
+  description: "Maximum number of web searches",
+  defaultValue: 5,
+  type: "number",
+  min: 0,
+  max: 20
+}
+
+// Enum feature
+{
+  description: "Reasoning effort level",
+  defaultValue: "medium",
+  type: "enum",
+  values: ["minimal", "low", "medium", "high"]
+}
+
+// Array feature
+{
+  description: "Response modalities",
+  defaultValue: ["TEXT"],
+  type: "array"
+}
+```
+
+### Using Features
+
+```typescript
+// Via query parameters
+const client = await chatRegistry.getClient("OpenAI:gpt-5?websearch=1&reasoningEffort=high");
+
+// Via setFeatures method
+client.setFeatures({
+  websearch: true,
+  reasoningEffort: "high"
+});
+
+// Get current features
+const features = client.getFeatures();
+```
 
 ## Best Practices
 
@@ -517,6 +773,10 @@ isHot(): Promise<boolean>  // Implement in ModelSpec
 6. **Select Appropriate Models**: Choose models based on context length and cost requirements
 7. **Custom Registrations**: Add custom models when needed using `registerAllModelSpecs()`
 8. **Use RPC for Remote Access**: For programmatic access across processes, use the JSON-RPC endpoint
+9. **Set Features**: Use `setFeatures()` on client instances to enable specific features without creating multiple clients
+10. **Calculate Costs**: Use `calculateCost()` to estimate expenses before making requests
+11. **Use Cheapest Model**: Use `getCheapestModelByRequirements()` to find the most cost-effective model for your needs
+12. **Check Model Hot Status**: Use `isHot()` to determine if a model needs to be warmed up
 
 ## Testing
 
