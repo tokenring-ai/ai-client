@@ -1,7 +1,5 @@
 import {TokenRingPlugin} from "@tokenring-ai/app";
 import {RpcService} from "@tokenring-ai/rpc";
-import {WebHostService} from "@tokenring-ai/web-host";
-import JsonRpcResource from "@tokenring-ai/web-host/JsonRpcResource";
 import {z} from "zod";
 import autoConfig from "./autoConfig.ts";
 import {

@@ -19,6 +19,7 @@
     "@ai-sdk/xai": "^3.0.44",
     "@openrouter/ai-sdk-provider": "^2.1.1",
     "@tokenring-ai/agent": "0.2.0",
+    "@tokenring-ai/rpc": "0.2.0",
     "@tokenring-ai/utility": "0.2.0",
     "ai": "^6.0.62",
     "axios": "^1.13.4",
