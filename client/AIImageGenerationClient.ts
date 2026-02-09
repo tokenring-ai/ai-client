@@ -9,12 +9,6 @@ export type ImageRequest = {
   n: number;
 };
 
-export type ImageResponse = {
-  mediaType: string;
-
-  uint8Array: Uint8Array;
-};
-
 export type ImageModelSpec = ModelSpec & {
   /**
    * - Maximum context length in tokens

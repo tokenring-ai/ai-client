@@ -16,7 +16,7 @@ import {
 } from "./schema.ts";
 
 export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatClient, ChatModelRequirements> implements TokenRingService {
-  name = "ChatModelRegistry";
+  readonly name = "ChatModelRegistry";
   description = "Model registry for chat models";
 
   constructor() {
@@ -42,7 +42,7 @@ export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatCl
 }
 
 export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec, AIEmbeddingClient, EmbeddingModelRequirements> implements TokenRingService {
-  name = "EmbeddingModelRegistry";
+  readonly name = "EmbeddingModelRegistry";
   description = "Model registry for embedding models";
 
   constructor() {
@@ -51,7 +51,7 @@ export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec
 }
 
 export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSpec, AIImageGenerationClient, ImageModelRequirements> implements TokenRingService {
-  name = "ImageGenerationModelRegistry";
+  readonly name = "ImageGenerationModelRegistry";
   description = "Model registry for image generation models";
 
   constructor() {
@@ -60,7 +60,7 @@ export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSp
 }
 
 export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISpeechClient, SpeechModelRequirements> implements TokenRingService {
-  name = "SpeechModelRegistry";
+  readonly name = "SpeechModelRegistry";
   description = "Model registry for speech models";
 
   constructor() {
@@ -69,7 +69,7 @@ export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISp
 }
 
 export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionModelSpec, AITranscriptionClient, TranscriptionModelRequirements> implements TokenRingService {
-  name = "TranscriptionModelRegistry";
+  readonly name = "TranscriptionModelRegistry";
   description = "Model registry for transcription models";
 
   constructor() {
@@ -78,7 +78,7 @@ export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionM
 }
 
 export class RerankingModelRegistry extends ModelTypeRegistry<RerankingModelSpec, AIRerankingClient, RerankingModelRequirements> implements TokenRingService {
-  name = "RerankingModelRegistry";
+  readonly name = "RerankingModelRegistry";
   description = "Model registry for reranking models";
 
   constructor() {

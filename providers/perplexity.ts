@@ -132,8 +132,6 @@ function mangleRequest(request: ChatRequest, features: FeatureOptions ): void {
     perplexityOptions.disable_search = true;
   }
 
-  console.log("Mangling request for Perplexity:", perplexityOptions, webSearchOptions);
-
   resequenceMessages(request);
 }
 
