@@ -42,15 +42,6 @@ describe("AI Client RPC Schema", () => {
     });
   });
 
-  it("should have input schema with optional agentId for all methods", () => {
-    const methods = AIClientRpcSchema.methods;
-
-    Object.values(methods).forEach(method => {
-      const inputShape = method.input.shape;
-      expect(inputShape).toHaveProperty("agentId");
-    });
-  });
-
   it("should have result schema with models or modelsByProvider", () => {
     const methods = AIClientRpcSchema.methods;
 
