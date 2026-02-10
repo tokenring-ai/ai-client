@@ -85,6 +85,15 @@ async function init(
 
   const chatModelRegistry = app.requireService(ChatModelRegistry);
   chatModelRegistry.registerAllModelSpecs([
+    generateModelSpec("claude-4.6-opus", "claude-opus-4-6", {
+      costPerMillionInputTokens: 5, // $5 / MTok
+      costPerMillionOutputTokens: 25, // $25 / MTok
+      reasoningText: 7,
+      intelligence: 7,
+      tools: 7,
+      speed: 2,
+      contextLength: 1000000,
+    }),
     generateModelSpec("claude-4.5-opus", "claude-opus-4-5-20251101", {
       costPerMillionInputTokens: 5, // $5 / MTok
       costPerMillionOutputTokens: 25, // $25 / MTok
