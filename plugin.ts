@@ -31,11 +31,6 @@ export default {
     app.addServices(new TranscriptionModelRegistry());
     app.addServices(new RerankingModelRegistry());
 
-    let providerConfig = config.ai.providers;
-    if (config.ai.autoConfigure || !providerConfig) {
-      providerConfig = autoConfig()
-    }
-
     app.waitForService(RpcService, rpcService => {
       rpcService.registerEndpoint(aiClientRPC);
     });
