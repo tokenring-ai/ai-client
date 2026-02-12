@@ -106,9 +106,7 @@ export class ModelTypeRegistry<
     Record<string, ModelStatus<T>>
   > {
     const ret: Record<string, ModelStatus<T>> = {};
-    for (const [name, modelSpec] of Object.entries(
-      this.modelSpecs.getAllItems(),
-    )) {
+    for (const [name, modelSpec] of this.modelSpecs.entries()) {
       let status = "offline";
       const available = modelSpec.isAvailable
         ? await modelSpec.isAvailable()
