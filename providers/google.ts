@@ -3,8 +3,8 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
-import {FeatureOptions, FeatureSpec} from "../ModelTypeRegistry.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry} from "../ModelRegistry.ts";
+import {ChatModelSettings, FeatureSpec} from "../ModelTypeRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
@@ -55,7 +55,7 @@ async function init(
     const isGemini3 = modelId.startsWith("gemini-3");
     const isGemini25 = modelId.startsWith("gemini-2.5");
     
-    const baseFeatures: Record<string, FeatureSpec> = {
+    const baseSettings: Record<string, FeatureSpec> = {
       responseModalities: {
         description: "Response modalities (TEXT, IMAGE)",
         defaultValue: ["TEXT"],
@@ -64,26 +64,26 @@ async function init(
     };
     
     if (isGemini3) {
-      baseFeatures.thinkingLevel = {
+      baseSettings.thinkingLevel = {
         description: "Thinking depth (low, high)",
         defaultValue: undefined,
         type: "enum",
         values: ["low", "high"]
       };
-      baseFeatures.includeThoughts = {
+      baseSettings.includeThoughts = {
         description: "Include thought summaries",
         defaultValue: false,
         type: "boolean"
       };
     } else if (isGemini25) {
-      baseFeatures.thinkingBudget = {
+      baseSettings.thinkingBudget = {
         description: "Thinking token budget (0 to disable)",
         defaultValue: undefined,
         type: "number",
         min: 0,
         max: 32768
       };
-      baseFeatures.includeThoughts = {
+      baseSettings.includeThoughts = {
         description: "Include thought summaries",
         defaultValue: false,
         type: "boolean"
@@ -100,8 +100,8 @@ async function init(
           model.name.includes(modelId),
         );
       },
-      mangleRequest(req: ChatRequest, features: FeatureOptions) {
-        if (features?.websearch) {
+      mangleRequest(req: ChatRequest, settings: ChatModelSettings) {
+        if (settings?.websearch) {
           (req.tools ??= {}).google_search = googleProvider.tools.googleSearch(
             {},
           );
@@ -109,19 +109,19 @@ async function init(
         
         const googleOptions: GoogleGenerativeAIProviderOptions = (req.providerOptions ??= {}).google ??= {};
         
-        if (features?.responseModalities !== undefined) {
-          googleOptions.responseModalities = (features.responseModalities as any)?.map((s: string) => s.toUpperCase());
+        if (settings?.responseModalities !== undefined) {
+          googleOptions.responseModalities = (settings.responseModalities as any)?.map((s: string) => s.toUpperCase());
         }
         
-        if (features?.thinkingLevel !== undefined || features?.thinkingBudget !== undefined || features?.includeThoughts !== undefined) {
+        if (settings?.thinkingLevel !== undefined || settings?.thinkingBudget !== undefined || settings?.includeThoughts !== undefined) {
           const thinkingConfig: any = {};
-          if (features?.thinkingLevel !== undefined) thinkingConfig.thinkingLevel = features.thinkingLevel;
-          if (features?.thinkingBudget !== undefined) thinkingConfig.thinkingBudget = features.thinkingBudget;
-          if (features?.includeThoughts !== undefined) thinkingConfig.includeThoughts = features.includeThoughts;
+          if (settings?.thinkingLevel !== undefined) thinkingConfig.thinkingLevel = settings.thinkingLevel;
+          if (settings?.thinkingBudget !== undefined) thinkingConfig.thinkingBudget = settings.thinkingBudget;
+          if (settings?.includeThoughts !== undefined) thinkingConfig.includeThoughts = settings.includeThoughts;
           googleOptions.thinkingConfig = thinkingConfig;
         }
       },
-      features: { ...baseFeatures, ...modelSpec.features },
+      settings: { ...baseSettings, ...modelSpec.settings },
       ...modelSpec,
     } satisfies ChatModelSpec;
   }
@@ -156,7 +156,7 @@ async function init(
       intelligence: 7,
       tools: 7,
       speed: 3,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -173,7 +173,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 2,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -189,7 +189,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 4,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -205,7 +205,7 @@ async function init(
         intelligence: 5,
         tools: 4,
         speed: 4,
-        features: {
+        settings: {
           websearch: {
             description: "Enables web search",
             defaultValue: false,

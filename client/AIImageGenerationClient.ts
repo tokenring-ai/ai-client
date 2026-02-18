@@ -1,6 +1,6 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel,} from "ai";
-import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type ImageRequest = {
   prompt: string;
@@ -47,29 +47,29 @@ export type ImageModelSpec = ModelSpec & {
    */
   mangleRequest?: (
     req: ImageRequest,
-    features?: Record<string, any>,
+    settings?: Record<string, any>,
   ) => void;
 };
 
 /**
- * Client for generating images using the Vercel AI SDK's experimental image generation features.
+ * Client for generating images using the Vercel AI SDK's experimental image generation settings.
  */
 export default class AIImageGenerationClient {
-  constructor(private modelSpec: ImageModelSpec, private features: FeatureOptions = {}) {
+  constructor(private modelSpec: ImageModelSpec, private settings: ChatModelSettings = {}) {
   }
 
   /**
    * Set feature flags for this client instance.
    */
-  setFeatures(features: FeatureOptions | undefined): void {
-    this.features = {...(features ?? {})};
+  setSettings(settings: ChatModelSettings | undefined): void {
+    this.settings = {...(settings ?? {})};
   }
 
   /**
    * Get a copy of the feature flags.
    */
-  getFeatures(): Record<string, any> {
-    return {...this.features};
+  getSettings(): Record<string, any> {
+    return {...this.settings};
   }
 
   /**
@@ -91,7 +91,7 @@ export default class AIImageGenerationClient {
     try {
       if (this.modelSpec.mangleRequest) {
         request = {...request};
-        this.modelSpec.mangleRequest(request, this.features);
+        this.modelSpec.mangleRequest(request, this.settings);
       }
       const result = await generateImage({
         ...request,

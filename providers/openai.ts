@@ -52,7 +52,7 @@ async function init(
     const isReasoningModel = modelId.startsWith("gpt-5") || modelId.startsWith("o");
     const isGpt51 = modelId === "gpt-5.1" || modelId.startsWith("gpt-5.1-");
     
-    const baseFeatures: any = {
+    const baseSettings: any = {
       websearch: { description: "Enables web search", defaultValue: false, type: "boolean" },
       serviceTier: { description: "Service tier (auto, flex, priority, default)", defaultValue: "auto", type: "enum", values: ["auto", "flex", "priority", "default"] },
       textVerbosity: { description: "Text verbosity (low, medium, high)", defaultValue: "medium", type: "enum", values: ["low", "medium", "high"] },
@@ -62,7 +62,7 @@ async function init(
     
     if (isReasoningModel) {
       if (isGpt51) {
-        baseFeatures.promptCacheRetention = {
+        baseSettings.promptCacheRetention = {
           description: "The retention policy for the prompt cache",
             defaultValue: "in_memory",
             type: "enum",
@@ -70,13 +70,13 @@ async function init(
         };
       }
 
-      baseFeatures.reasoningEffort = { 
+      baseSettings.reasoningEffort = { 
         description: `Reasoning effort (${isGpt51 ? "none, " : ""}minimal, low, medium, high)`, 
         defaultValue: "medium", 
         type: "enum", 
         values: isGpt51 ? ["none", "minimal", "low", "medium", "high"] : ["minimal", "low", "medium", "high"] 
       };
-      baseFeatures.reasoningSummary = { description: "Reasoning summary mode (auto, detailed)", defaultValue: undefined, type: "enum", values: ["auto", "detailed"] };
+      baseSettings.reasoningSummary = { description: "Reasoning summary mode (auto, detailed)", defaultValue: undefined, type: "enum", values: ["auto", "detailed"] };
     }
 
     return {
@@ -87,35 +87,35 @@ async function init(
         const modelList = await getModels();
         return !!modelList?.data.some((model) => model.id === modelId);
       },
-      mangleRequest(req, features) {
-        if (features?.websearch) {
+      mangleRequest(req, settings) {
+        if (settings?.websearch) {
           (req.tools ??= {}).web_search = openai.tools.webSearch({});
         }
         
         const openaiOptions: OpenAIResponsesProviderOptions = (req.providerOptions ??= {}).openai ??= {};
         
-        if (features?.reasoningEffort !== undefined) {
-          openaiOptions.reasoningEffort = features.reasoningEffort as string;
+        if (settings?.reasoningEffort !== undefined) {
+          openaiOptions.reasoningEffort = settings.reasoningEffort as string;
         }
-        if (features?.reasoningSummary !== undefined) {
-          openaiOptions.reasoningSummary = features.reasoningSummary as string;
+        if (settings?.reasoningSummary !== undefined) {
+          openaiOptions.reasoningSummary = settings.reasoningSummary as string;
         }
-        if (features?.strictJsonSchema !== undefined) {
-          openaiOptions.strictJsonSchema = features.strictJsonSchema as boolean;
+        if (settings?.strictJsonSchema !== undefined) {
+          openaiOptions.strictJsonSchema = settings.strictJsonSchema as boolean;
         }
-        if (features?.serviceTier !== undefined) {
-          openaiOptions.serviceTier = features.serviceTier as any;
+        if (settings?.serviceTier !== undefined) {
+          openaiOptions.serviceTier = settings.serviceTier as any;
         }
-        if (features?.textVerbosity !== undefined) {
-          openaiOptions.textVerbosity = features.textVerbosity as any;
+        if (settings?.textVerbosity !== undefined) {
+          openaiOptions.textVerbosity = settings.textVerbosity as any;
         }
-        if (features?.promptCacheRetention !== undefined) {
-          openaiOptions.promptCacheRetention = features.promptCacheRetention as any;
+        if (settings?.promptCacheRetention !== undefined) {
+          openaiOptions.promptCacheRetention = settings.promptCacheRetention as any;
         }
 
         return undefined;
       },
-      features: { ...baseFeatures, ...modelSpec.features },
+      settings: { ...baseSettings, ...modelSpec.settings },
       ...modelSpec,
     } satisfies ChatModelSpec;
   }
@@ -218,7 +218,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -236,7 +236,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -254,7 +254,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 4,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -271,7 +271,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 5,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -288,7 +288,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 3,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -305,7 +305,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 2,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -322,7 +322,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 3,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -338,7 +338,7 @@ async function init(
       intelligence: 7,
       tools: 6,
       speed: 1,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -355,7 +355,7 @@ async function init(
       intelligence: 7,
       tools: 6,
       speed: 1,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -372,7 +372,7 @@ async function init(
       intelligence: 6,
       tools: 5,
       speed: 2,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -389,7 +389,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 2,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -405,7 +405,7 @@ async function init(
       intelligence: 8,
       tools: 6,
       speed: 1,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -421,7 +421,7 @@ async function init(
       intelligence: 7,
       tools: 6,
       speed: 2,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -438,7 +438,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -455,7 +455,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -472,7 +472,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 4,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -489,7 +489,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 3,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: false,
@@ -506,7 +506,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: true,
@@ -551,7 +551,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 5,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: true,
@@ -567,7 +567,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 4,
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: true,

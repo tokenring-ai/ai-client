@@ -31,7 +31,7 @@ async function init(
           return true;
         },
         costPerMillionCharacters: 100,
-        features: {
+        settings: {
           voice: {
             description: "Voice ID to use for speech synthesis",
             defaultValue: undefined,
@@ -72,7 +72,7 @@ async function init(
           return true;
         },
         costPerMillionCharacters: 60,
-        features: {
+        settings: {
           voice: {
             description: "Voice ID to use for speech synthesis",
             defaultValue: undefined,
@@ -113,7 +113,7 @@ async function init(
           return true;
         },
         costPerMillionCharacters: 30,
-        features: {
+        settings: {
           voice: {
             description: "Voice ID to use for speech synthesis",
             defaultValue: undefined,
@@ -154,7 +154,7 @@ async function init(
           return true;
         },
         costPerMillionCharacters: 30,
-        features: {
+        settings: {
           voice: {
             description: "Voice ID to use for speech synthesis",
             defaultValue: undefined,
@@ -195,7 +195,7 @@ async function init(
           return true;
         },
         costPerMillionCharacters: 45,
-        features: {
+        settings: {
           voice: {
             description: "Voice ID to use for speech synthesis",
             defaultValue: undefined,
@@ -236,7 +236,7 @@ async function init(
           return true;
         },
         costPerMillionCharacters: 45,
-        features: {
+        settings: {
           voice: {
             description: "Voice ID to use for speech synthesis",
             defaultValue: undefined,
@@ -277,7 +277,7 @@ async function init(
           return true;
         },
         costPerMillionCharacters: 50,
-        features: {
+        settings: {
           voice: {
             description: "Voice ID to use for speech synthesis",
             defaultValue: undefined,
@@ -303,7 +303,7 @@ async function init(
           return true;
         },
         costPerMillionCharacters: 50,
-        features: {
+        settings: {
           voice: {
             description: "Voice ID to use for speech synthesis",
             defaultValue: undefined,
@@ -339,7 +339,7 @@ async function init(
           return true;
         },
         costPerMinute: 0.034,
-        features: {
+        settings: {
           languageCode: {
             description: "Language code (ISO 639-1 or ISO 639-3)",
             defaultValue: undefined,
@@ -382,7 +382,7 @@ async function init(
           return true;
         },
         costPerMinute: 0.034,
-        features: {
+        settings: {
           languageCode: {
             description: "Language code (ISO 639-1 or ISO 639-3)",
             defaultValue: undefined,

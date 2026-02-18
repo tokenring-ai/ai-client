@@ -3,7 +3,7 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec, ChatRequest,} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
-import {FeatureOptions} from "../ModelTypeRegistry.ts";
+import {ChatModelSettings} from "../ModelTypeRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
 import {resequenceMessages} from "../util/resequenceMessages.ts";
 
@@ -35,7 +35,7 @@ async function init(
       | "impl"
       | "mangleRequest"
       | "modelId"
-      | "features"
+      | "settings"
     >,
   ): ChatModelSpec {
     return {
@@ -46,7 +46,7 @@ async function init(
       async isAvailable() {
         return true;
       },
-      features: {
+      settings: {
         websearch: {
           description: "Enables web search",
           defaultValue: true,
@@ -120,15 +120,15 @@ async function init(
  * Mangles OpenAI-style chat input messages to ensure they follow the required alternating pattern.
  * This function combines consecutive messages from the same role and ensures user/assistant roles alternate.
  */
-function mangleRequest(request: ChatRequest, features: FeatureOptions ): void {
+function mangleRequest(request: ChatRequest, settings: ChatModelSettings ): void {
   const perplexityOptions = (request.providerOptions ??= {}).perplexity ??= {};
   const webSearchOptions = perplexityOptions.web_search_options ??= {};
 
-  if (features.searchContextSize) {
-    webSearchOptions.search_context_size = features.searchContextSize;
+  if (settings.searchContextSize) {
+    webSearchOptions.search_context_size = settings.searchContextSize;
   }
 
-  if (!features?.websearch) {
+  if (!settings?.websearch) {
     perplexityOptions.disable_search = true;
   }
 

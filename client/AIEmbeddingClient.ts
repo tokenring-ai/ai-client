@@ -1,5 +1,5 @@
 import {embed, type EmbeddingModel, type EmbedResult} from "ai";
-import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type EmbeddingModelSpec = ModelSpec & {
   contextLength: number;
@@ -12,7 +12,7 @@ export type EmbeddingModelSpec = ModelSpec & {
    */
   mangleRequest?: (
     req: { value: string },
-    features?: Record<string, any>,
+    settings?: Record<string, any>,
   ) => void;
 };
 
@@ -20,21 +20,21 @@ export type EmbeddingModelSpec = ModelSpec & {
  * Client for generating embeddings using the Vercel AI SDK.
  */
 export default class AIEmbeddingClient {
-  constructor(private readonly modelSpec: EmbeddingModelSpec, private features: FeatureOptions = {}) {
+  constructor(private readonly modelSpec: EmbeddingModelSpec, private settings: ChatModelSettings = {}) {
   }
 
   /**
-   * Sets enabled features on this client instance. Does not mutate the modelSpec.
+   * Sets enabled settings on this client instance. Does not mutate the modelSpec.
    */
-  setFeatures(features: FeatureOptions | undefined): void {
-    this.features = {...(features ?? {})};
+  setSettings(settings: ChatModelSettings | undefined): void {
+    this.settings = {...(settings ?? {})};
   }
 
   /**
-   * Returns a copy of the enabled features for this client instance.
+   * Returns a copy of the enabled settings for this client instance.
    */
-  getFeatures(): Record<string, any> {
-    return {...this.features};
+  getSettings(): Record<string, any> {
+    return {...this.settings};
   }
 
   /**
@@ -62,7 +62,7 @@ export default class AIEmbeddingClient {
           // Allow providers to mangle per-item request
           if (this.modelSpec.mangleRequest) {
             const req = {value};
-            this.modelSpec.mangleRequest(req, this.features);
+            this.modelSpec.mangleRequest(req, this.settings);
             value = req.value;
           }
           return {

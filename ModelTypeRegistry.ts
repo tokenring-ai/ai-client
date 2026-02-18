@@ -24,14 +24,14 @@ export type FeatureSpec = {
   defaultValue?: (PrimitiveType)[] | undefined;
 });
 
-export type FeatureOptions = Record<string, PrimitiveType | PrimitiveType[]>
+export type ChatModelSettings = Record<string, PrimitiveType | PrimitiveType[]>
 
 export type ModelSpec = {
   modelId: string;
   providerDisplayName: string;
   isAvailable?: () => Promise<boolean>;
   isHot?: () => Promise<boolean>;
-  features?: Record<string, FeatureSpec>;
+  settings?: Record<string, FeatureSpec>;
 };
 
 export interface ModelStatus<T> {
@@ -42,7 +42,7 @@ export interface ModelStatus<T> {
 }
 
 export interface GenericAIClient {
-  setFeatures?(features: FeatureOptions): void;
+  setSettings?(settings: ChatModelSettings): void;
 }
 
 /**
@@ -67,7 +67,7 @@ export class ModelTypeRegistry<
    */
   constructor(private AIClient: new (
     modelSpec: T,
-    features: FeatureOptions
+    settings: ChatModelSettings
   ) => C ) {}
 
   /**
@@ -171,14 +171,14 @@ export class ModelTypeRegistry<
       throw new Error(`Model ${lookupName} not found`);
     }
 
-    let features: FeatureOptions = {};
-    if (qIndex >= 0 && modelSpec.features) {
+    let settings: ChatModelSettings = {};
+    if (qIndex >= 0 && modelSpec.settings) {
       const query = name.substring(qIndex + 1);
       for (const part of query.split("&")) {
         if (!part) continue;
         const [rawK, rawV] = part.split("=");
         const k = decodeURIComponent(rawK);
-        const featureSpec = modelSpec.features[k];
+        const featureSpec = modelSpec.settings[k];
         if (!featureSpec) {
           throw new Error(`Unknown feature "${k}" for model ${lookupName}`);
         }
@@ -208,23 +208,23 @@ export class ModelTypeRegistry<
           parsed = rawValue;
         }
 
-        features[k] = parsed;
+        settings[k] = parsed;
       }
     }
 
-    return new this.AIClient(modelSpec, features);
+    return new this.AIClient(modelSpec, settings);
   }
 
 
   getModelSpecsByRequirements(nameLike: string) : Record<string,T> {
     const [modelSpec, featureString] = nameLike.split("?");
-    const features = new Set<string>();
+    const settings = new Set<string>();
     if (featureString) {
       for (const part of featureString.split("&")) {
         if (!part) continue;
         const [rawK] = part.split("=");
         const k = decodeURIComponent(rawK);
-        features.add(k);
+        settings.add(k);
       }
     }
 
@@ -233,8 +233,8 @@ export class ModelTypeRegistry<
     return Object.fromEntries(
       modelSpecs.filter(modelName => {
         const spec = this.modelSpecs.getItemByName(modelName)
-        for (const feature of features) {
-          if (!spec?.features?.[feature]) {
+        for (const feature of settings) {
+          if (!spec?.settings?.[feature]) {
             return false;
           }
         }

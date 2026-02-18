@@ -51,7 +51,7 @@ async function init(
     anthropicModelId: string,
     modelSpec: Omit<
       ChatModelSpec,
-      "isAvailable" | "providerDisplayName" | "impl" | "modelId" | "features" | "mangleRequest"
+      "isAvailable" | "providerDisplayName" | "impl" | "modelId" | "settings" | "mangleRequest"
     >,
   ): ChatModelSpec {
     return {
@@ -62,15 +62,15 @@ async function init(
         const modelList = await getModels();
         return !!modelList?.data.some((model) => model.id === anthropicModelId);
       },
-      mangleRequest(req, features) {
+      mangleRequest(req, settings) {
         // Add web search tool if enabled
-        if (features.maxSearchUses) {
+        if (settings.maxSearchUses) {
           (req.tools ??= {}).web_search = anthropicProvider.tools.webSearch_20250305({
-            maxUses: features.maxSearchUses as number,
+            maxUses: settings.maxSearchUses as number,
           });
         }
       },
-      features: {
+      settings: {
         maxSearchUses: {
           description: "Maximum number of web searches Claude can perform (0 to disable)",
           defaultValue: 0,
@@ -119,6 +119,28 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 2,
+      contextLength: 200000,
+    }),
+    generateModelSpec(
+      "claude-4.6-sonnet-long-context",
+      "claude-sonnet-4-6",
+      {
+        costPerMillionInputTokens: 6.0,
+        costPerMillionOutputTokens: 22.5,
+        reasoningText: 5,
+        intelligence: 5,
+        tools: 5,
+        speed: 3,
+        contextLength: 1000000,
+      },
+    ),
+    generateModelSpec("claude-4.6-sonnet", "claude-sonnet-4-6", {
+      costPerMillionInputTokens: 3.0, // $3 / MTok
+      costPerMillionOutputTokens: 15.0, // $15 / MTok
+      reasoningText: 5,
+      intelligence: 5,
+      tools: 5,
+      speed: 3,
       contextLength: 200000,
     }),
   generateModelSpec(

@@ -1,6 +1,6 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {experimental_generateSpeech as generateSpeech, Experimental_SpeechResult, type SpeechModel,} from "ai";
-import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type SpeechRequest = {
   text: string;
@@ -15,20 +15,20 @@ export type SpeechModelSpec = ModelSpec & {
   /** Optional hook to adjust the request prior to sending. */
   mangleRequest?: (
     req: SpeechRequest,
-    features?: Record<string, any>,
+    settings?: Record<string, any>,
   ) => void;
 };
 
 export default class AISpeechClient {
-  constructor(private modelSpec: SpeechModelSpec, private features: FeatureOptions = {}) {
+  constructor(private modelSpec: SpeechModelSpec, private settings: ChatModelSettings = {}) {
   }
 
-  setFeatures(features: FeatureOptions | undefined): void {
-    this.features = {...(features ?? {})};
+  setSettings(settings: ChatModelSettings | undefined): void {
+    this.settings = {...(settings ?? {})};
   }
 
-  getFeatures(): Record<string, any> {
-    return {...this.features};
+  getSettings(): Record<string, any> {
+    return {...this.settings};
   }
 
   async generateSpeech(
@@ -40,7 +40,7 @@ export default class AISpeechClient {
     try {
       if (this.modelSpec.mangleRequest) {
         request = {...request};
-        this.modelSpec.mangleRequest(request, this.features);
+        this.modelSpec.mangleRequest(request, this.settings);
       }
       const result = await generateSpeech({
         ...request,

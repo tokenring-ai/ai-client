@@ -8,7 +8,7 @@ import {
   ImageGenerationModelRegistry,
   RerankingModelRegistry,
   SpeechModelRegistry,
-  TranscriptionModelRegistry
+  TranscriptionModelRegistry, VideoGenerationModelRegistry
 } from "./ModelRegistry.ts";
 import packageJSON from "./package.json" with {type: "json"};
 import {registerProviders} from "./providers.js";
@@ -30,6 +30,7 @@ export default {
     app.addServices(new SpeechModelRegistry());
     app.addServices(new TranscriptionModelRegistry());
     app.addServices(new RerankingModelRegistry());
+    app.addServices(new VideoGenerationModelRegistry());
 
     app.waitForService(RpcService, rpcService => {
       rpcService.registerEndpoint(aiClientRPC);

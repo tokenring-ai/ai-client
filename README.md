@@ -8,7 +8,7 @@ The AI Client package acts as a unified interface to multiple AI providers, abst
 
 ### Key Features
 
-- **Multi-Provider Support**: 16 AI providers including Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, Qwen, and xAI Responses
+- **Multi-Provider Support**: 17 AI providers including Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, Qwen, xAI Responses, and z.ai
 - **Six AI Capabilities**: Chat, Embeddings, Image Generation, Reranking, Speech, and Transcription
 - **Model Registries**: Six dedicated service registries for managing model specifications and capabilities
 - **Dynamic Model Registration**: Register custom models with availability checks
@@ -48,6 +48,7 @@ The package supports the following AI providers:
 | Ollama | Self-hosted models | Local inference |
 | llama.cpp | Self-hosted models | Local inference |
 | Qwen | Qwen models | Chinese language support |
+| z.ai | z.ai API | Coding and general purpose |
 
 ## Configuration
 
@@ -106,7 +107,7 @@ DEEPSEEK_API_KEY=...
 # Cerebras
 CEREBRAS_API_KEY=...
 
-# qwen (DashScope)
+# Qwen (DashScope)
 DASHSCOPE_API_KEY=sk-...
 
 # Meta API Service (llama.com)
@@ -117,8 +118,8 @@ LLAMA_BASE_URL=http://127.0.0.1:11434/v1
 LLAMA_API_KEY=...
 
 # Azure
-AZURE_API_KEY=https://...
-AZURE_API_KEY=<key>  # If different from URL
+AZURE_API_ENDPOINT=https://...
+AZURE_API_KEY=<key>
 
 # Ollama
 OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
@@ -165,7 +166,7 @@ The plugin configuration schema is:
 }
 ```
 
-***Note**: The `provider` field in `AIProviderConfig` is a discriminator that matches provider names like "anthropic", "openai", "google", and so on (lowercase).*
+**Note**: The `provider` field in `AIProviderConfig` is a discriminator that matches provider names like "anthropic", "openai", "google", and so on (lowercase).
 
 ## Services
 
@@ -187,6 +188,13 @@ Manages chat model specifications and provides access to chat completion capabil
 **Model Requirements:**
 
 - `nameLike`: Filter models by name pattern
+- `contextLength`: Maximum context length in tokens
+- `maxCompletionTokens`: Maximum output tokens
+- `research`: Research ability (0-infinity)
+- `reasoningText`: Reasoning capability score (0-infinity)
+- `intelligence`: Intelligence capability score (0-infinity)
+- `speed`: Speed capability score (0-infinity)
+- `webSearch`: Web search capability score (0-infinity)
 
 **Model Specification:**
 
@@ -244,6 +252,7 @@ Manages image generation model specifications.
 **Model Requirements:**
 
 - `nameLike`: Filter models by name pattern
+- `contextLength`: Maximum context length in tokens
 
 ### EmbeddingModelRegistry
 
@@ -260,6 +269,7 @@ Manages embedding model specifications for text vectorization.
 **Model Requirements:**
 
 - `nameLike`: Filter models by name pattern
+- `contextLength`: Maximum context length in tokens
 
 ### SpeechModelRegistry
 
@@ -797,8 +807,11 @@ bun run test:coverage
 
 - `@tokenring-ai/app`: Base application framework with service and plugin system
 - `@tokenring-ai/agent`: Agent framework for tool execution
+- `@tokenring-ai/rpc`: RPC service for programmatic access
 - `@tokenring-ai/utility`: Shared utilities and registry functionality
+- `ai`: Vercel AI SDK for streaming and client functionality
 - `zod`: Runtime schema validation
+- `axios`: HTTP client for API requests
 
 ### AI SDK Dependencies
 
@@ -814,11 +827,8 @@ bun run test:coverage
 - `@ai-sdk/openai-compatible`: OpenAI-compatible API SDK
 - `@ai-sdk/perplexity`: Perplexity AI SDK for Perplexity models
 - `@ai-sdk/xai`: xAI SDK for Grok models
-- `@ai-sdk/provider`: Core AI SDK provider interface
 - `@openrouter/ai-sdk-provider`: OpenRouter SDK for provider aggregation
-- `ai`: Vercel AI SDK for streaming and client functionality
 - `ollama-ai-provider-v2`: Ollama SDK for local model hosting
-- `axios`: HTTP client for API requests
 
 ### Development Dependencies
 

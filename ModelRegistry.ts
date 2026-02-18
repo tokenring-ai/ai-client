@@ -5,11 +5,13 @@ import AIImageGenerationClient, {ImageModelSpec} from "./client/AIImageGeneratio
 import AIRerankingClient, {RerankingModelSpec} from "./client/AIRerankingClient.js";
 import AISpeechClient, {SpeechModelSpec} from "./client/AISpeechClient.js";
 import AITranscriptionClient, {TranscriptionModelSpec} from "./client/AITranscriptionClient.js";
+import AIVideoGenerationClient, {type VideoModelSpec} from "./client/AIVideoGenerationClient.ts";
 import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
 import {
   ChatModelRequirements,
   EmbeddingModelRequirements,
   ImageModelRequirements,
+  VideoModelRequirements,
   RerankingModelRequirements,
   SpeechModelRequirements,
   TranscriptionModelRequirements
@@ -56,6 +58,15 @@ export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSp
 
   constructor() {
     super(AIImageGenerationClient);
+  }
+}
+
+export class VideoGenerationModelRegistry extends ModelTypeRegistry<VideoModelSpec, AIVideoGenerationClient, VideoModelRequirements> implements TokenRingService {
+  readonly name = "ImageGenerationModelRegistry";
+  description = "Model registry for image generation models";
+
+  constructor() {
+    super(AIVideoGenerationClient);
   }
 }
 

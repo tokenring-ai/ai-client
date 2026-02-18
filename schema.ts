@@ -54,6 +54,13 @@ export type ImageModelRequirements = ModelRequirements & {
   contextLength?: number;
 }
 
+export type VideoModelRequirements = ModelRequirements & {
+  /**
+   * Maximum context length in tokens the model allows
+   */
+  contextLength?: number;
+}
+
 export type RerankingModelRequirements = ModelRequirements;
 
 export type SpeechModelRequirements = ModelRequirements;

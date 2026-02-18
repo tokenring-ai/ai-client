@@ -16,7 +16,7 @@ import {
   type UserModelMessage,
 } from "ai";
 import {z, ZodObject} from "zod";
-import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type ChatInputMessage =
   | SystemModelMessage
@@ -42,7 +42,7 @@ export type ChatModelSpec = ModelSpec & {
   impl: Exclude<LanguageModel, string>;
   mangleRequest?: (
     req: ChatRequest,
-    features: FeatureOptions,
+    settings: ChatModelSettings,
   ) => void;
   speed?: number;
   research?: number;
@@ -111,21 +111,21 @@ const rerankSchema = z.object({
  * replacement for `OpenAIChatCompletionClient`.
  */
 export default class AIChatClient {
-  constructor(private readonly modelSpec: ChatModelSpec, private features: FeatureOptions = {}) {
+  constructor(private readonly modelSpec: ChatModelSpec, private settings: ChatModelSettings = {}) {
   }
 
   /**
-   * Sets enabled features on this client instance. Does not mutate the modelSpec.
+   * Sets enabled settings on this client instance. Does not mutate the modelSpec.
    */
-  setFeatures(features: FeatureOptions | undefined): void {
-    this.features = {...(features ?? {})};
+  setSettings(settings: ChatModelSettings | undefined): void {
+    this.settings = {...(settings ?? {})};
   }
 
   /**
-   * Returns a copy of the enabled features for this client instance.
+   * Returns a copy of the enabled settings for this client instance.
    */
-  getFeatures(): Record<string, any> {
-    return {...this.features};
+  getSettings(): Record<string, any> {
+    return {...this.settings};
   }
 
   /**
@@ -204,7 +204,7 @@ export default class AIChatClient {
 
     if (this.modelSpec.mangleRequest) {
       request = {...request};
-      this.modelSpec.mangleRequest(request, this.features);
+      this.modelSpec.mangleRequest(request, this.settings);
     }
 
     const isHot = this.modelSpec.isHot ? await this.modelSpec.isHot() : true;
@@ -275,7 +275,7 @@ export default class AIChatClient {
   ): Promise<[string, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
       request = {...request};
-      this.modelSpec.mangleRequest(request, this.features);
+      this.modelSpec.mangleRequest(request, this.settings);
     }
 
     const signal = agent.getAbortSignal();
@@ -303,7 +303,7 @@ export default class AIChatClient {
   ): Promise<[z.infer<typeof request.schema>, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
       request = {...request};
-      this.modelSpec.mangleRequest(request, this.features);
+      this.modelSpec.mangleRequest(request, this.settings);
     }
 
     const { schema, ...generateRequest } = request;

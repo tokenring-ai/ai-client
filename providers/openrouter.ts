@@ -113,48 +113,48 @@ async function fetchAndRegisterOpenRouterModels(
           model.topProvider?.max_completion_tokens ?? undefined,
         costPerMillionInputTokens: parsePricing(model.pricing?.prompt),
         costPerMillionOutputTokens: parsePricing(model.pricing?.completion),
-        mangleRequest(req, features) {
+        mangleRequest(req, settings) {
           const supported = model.supported_parameters || [];
           
-          if (features.websearch) {
+          if (settings.websearch) {
             const plugins = ((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= [];
             const webPlugin: any = { id: "web" };
             
-            if (features.searchEngine) {
-              webPlugin.engine = features.searchEngine;
+            if (settings.searchEngine) {
+              webPlugin.engine = settings.searchEngine;
             }
-            if (features.maxResults) {
-              webPlugin.max_results = features.maxResults;
+            if (settings.maxResults) {
+              webPlugin.max_results = settings.maxResults;
             }
-            if (features.searchPrompt) {
-              webPlugin.search_prompt = features.searchPrompt;
+            if (settings.searchPrompt) {
+              webPlugin.search_prompt = settings.searchPrompt;
             }
             
             plugins.push(webPlugin);
           }
           
-          if (features.searchContextSize) {
+          if (settings.searchContextSize) {
             const webSearchOptions = (req.providerOptions ??= {}).web_search_options ??= {};
-            webSearchOptions.search_context_size = features.searchContextSize;
+            webSearchOptions.search_context_size = settings.searchContextSize;
           }
 
           const params: Record<string, any> = {};
-          if (supported.includes('frequency_penalty') && features.frequencyPenalty !== undefined) params.frequency_penalty = features.frequencyPenalty;
-          if (supported.includes('max_tokens') && features.maxTokens !== undefined) params.max_tokens = features.maxTokens;
-          if (supported.includes('min_p') && features.minP !== undefined) params.min_p = features.minP;
-          if (supported.includes('presence_penalty') && features.presencePenalty !== undefined) params.presence_penalty = features.presencePenalty;
-          if (supported.includes('repetition_penalty') && features.repetitionPenalty !== undefined) params.repetition_penalty = features.repetitionPenalty;
-          if (supported.includes('temperature') && features.temperature !== undefined) params.temperature = features.temperature;
-          if (supported.includes('top_k') && features.topK !== undefined) params.top_k = features.topK;
-          if (supported.includes('top_p') && features.topP !== undefined) params.top_p = features.topP;
-          if (supported.includes('include_reasoning') && features.includeReasoning !== undefined) params.include_reasoning = features.includeReasoning;
-          if (supported.includes('reasoning') && features.reasoning !== undefined) params.reasoning = features.reasoning;
+          if (supported.includes('frequency_penalty') && settings.frequencyPenalty !== undefined) params.frequency_penalty = settings.frequencyPenalty;
+          if (supported.includes('max_tokens') && settings.maxTokens !== undefined) params.max_tokens = settings.maxTokens;
+          if (supported.includes('min_p') && settings.minP !== undefined) params.min_p = settings.minP;
+          if (supported.includes('presence_penalty') && settings.presencePenalty !== undefined) params.presence_penalty = settings.presencePenalty;
+          if (supported.includes('repetition_penalty') && settings.repetitionPenalty !== undefined) params.repetition_penalty = settings.repetitionPenalty;
+          if (supported.includes('temperature') && settings.temperature !== undefined) params.temperature = settings.temperature;
+          if (supported.includes('top_k') && settings.topK !== undefined) params.top_k = settings.topK;
+          if (supported.includes('top_p') && settings.topP !== undefined) params.top_p = settings.topP;
+          if (supported.includes('include_reasoning') && settings.includeReasoning !== undefined) params.include_reasoning = settings.includeReasoning;
+          if (supported.includes('reasoning') && settings.reasoning !== undefined) params.reasoning = settings.reasoning;
 
           if (Object.keys(params).length > 0) {
             Object.assign((req.providerOptions ??= {}).openrouter ??= {}, params);
           }
         },
-        features: {
+        settings: {
           websearch: { description: "Enables web search plugin", defaultValue: false, type: "boolean" },
           searchEngine: { description: "Search engine (native, exa, or undefined for auto)", defaultValue: undefined, type: "enum", values: ["native", "exa"] },
           maxResults: { description: "Maximum number of search results (default 5)", defaultValue: 5, type: "number", min: 0, max: 100 }, // TODO: The upper bound is not described in the docs

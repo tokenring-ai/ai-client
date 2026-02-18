@@ -1,6 +1,6 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {type DataContent, experimental_transcribe as transcribe, type TranscriptionModel,} from "ai";
-import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 
 export interface TranscriptionResult {
   text: string;
@@ -19,20 +19,20 @@ export type TranscriptionModelSpec = ModelSpec & {
   /** Optional hook to adjust the request prior to sending. */
   mangleRequest?: (
     req: TranscriptionRequest,
-    features?: Record<string, any>,
+    settings?: Record<string, any>,
   ) => void;
 };
 
 export default class AITranscriptionClient {
-  constructor(private readonly modelSpec: TranscriptionModelSpec, private features: FeatureOptions = {}) {
+  constructor(private readonly modelSpec: TranscriptionModelSpec, private settings: ChatModelSettings = {}) {
   }
 
-  setFeatures(features: FeatureOptions | undefined): void {
-    this.features = {...(features ?? {})};
+  setSettings(settings: ChatModelSettings | undefined): void {
+    this.settings = {...(settings ?? {})};
   }
 
-  getFeatures(): Record<string, any> {
-    return {...this.features};
+  getSettings(): Record<string, any> {
+    return {...this.settings};
   }
 
   async transcribe(
@@ -44,7 +44,7 @@ export default class AITranscriptionClient {
     try {
       if (this.modelSpec.mangleRequest) {
         request = {...request};
-        this.modelSpec.mangleRequest(request, this.features);
+        this.modelSpec.mangleRequest(request, this.settings);
       }
       const result = await transcribe({
         ...request,

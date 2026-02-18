@@ -1,25 +1,25 @@
 import {rerank, type RerankingModel, type RerankResult} from "ai";
-import type {FeatureOptions, ModelSpec} from "../ModelTypeRegistry.js";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type RerankingModelSpec = ModelSpec & {
   costPerMillionInputTokens?: number;
   impl: Exclude<RerankingModel, string>;
   mangleRequest?: (
     req: { query: string; documents: string[] },
-    features?: Record<string, any>,
+    settings?: Record<string, any>,
   ) => void;
 };
 
 export default class AIRerankingClient {
-  constructor(private readonly modelSpec: RerankingModelSpec, private features: FeatureOptions = {}) {
+  constructor(private readonly modelSpec: RerankingModelSpec, private settings: ChatModelSettings = {}) {
   }
 
-  setFeatures(features: FeatureOptions | undefined): void {
-    this.features = {...(features ?? {})};
+  setSettings(settings: ChatModelSettings | undefined): void {
+    this.settings = {...(settings ?? {})};
   }
 
-  getFeatures(): Record<string, any> {
-    return {...this.features};
+  getSettings(): Record<string, any> {
+    return {...this.settings};
   }
 
   getModelId(): string {
@@ -37,7 +37,7 @@ export default class AIRerankingClient {
   }): Promise<RerankResult<string>> {
     if (this.modelSpec.mangleRequest) {
       const req = {query, documents};
-      this.modelSpec.mangleRequest(req, this.features);
+      this.modelSpec.mangleRequest(req, this.settings);
       query = req.query;
       documents = req.documents;
     }
