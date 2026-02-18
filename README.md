@@ -1,16 +1,16 @@
 # @tokenring-ai/ai-client
 
-Multi-provider AI integration client for the Token Ring ecosystem. Provides unified access to various AI models through a consistent interface, supporting chat, embeddings, image generation, reranking, speech synthesis, and transcription capabilities.
+Multi-provider AI integration client for the Token Ring ecosystem. Provides unified access to various AI models through a consistent interface, supporting chat, embeddings, image generation, video generation, reranking, speech synthesis, and transcription capabilities.
 
 ## Overview
 
-The AI Client package acts as a unified interface to multiple AI providers, abstracting away provider-specific differences while maintaining full access to provider capabilities. It integrates with the Token Ring agent system through six model registry services that manage model specifications and provide client instances. Models are automatically discovered and registered from each provider, with background processes checking availability and updating status.
+The AI Client package acts as a unified interface to multiple AI providers, abstracting away provider-specific differences while maintaining full access to provider capabilities. It integrates with the Token Ring agent system through seven model registry services that manage model specifications and provide client instances. Models are automatically discovered and registered from each provider, with background processes checking availability and updating status.
 
 ### Key Features
 
 - **Multi-Provider Support**: 17 AI providers including Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, Qwen, xAI Responses, and z.ai
-- **Six AI Capabilities**: Chat, Embeddings, Image Generation, Reranking, Speech, and Transcription
-- **Model Registries**: Six dedicated service registries for managing model specifications and capabilities
+- **Seven AI Capabilities**: Chat, Embeddings, Image Generation, Video Generation, Reranking, Speech, and Transcription
+- **Model Registries**: Seven dedicated service registries for managing model specifications and capabilities
 - **Dynamic Model Registration**: Register custom models with availability checks
 - **Model Status Tracking**: Monitor model online, cold, and offline status
 - **Auto-Configuration**: Automatic provider setup from environment variables
@@ -41,7 +41,6 @@ The package supports the following AI providers:
 | ElevenLabs | Speech synthesis | Multilingual voice generation |
 | Fal | Image generation | Fast image generation |
 | xAI | xAI models | Reasoning and analysis |
-| xAI Responses | xAI responses API | Advanced reasoning and search |
 | OpenRouter | Aggregated access | Multiple provider access |
 | Perplexity | Perplexity models | Web search integration |
 | Azure | Azure OpenAI | Enterprise deployment |
@@ -170,7 +169,7 @@ The plugin configuration schema is:
 
 ## Services
 
-The package registers six service registries for different AI capabilities. Each registry implements the `TokenRingService` interface and provides methods for managing model specifications and retrieving clients.
+The package registers seven service registries for different AI capabilities. Each registry implements the `TokenRingService` interface and provides methods for managing model specifications and retrieving clients.
 
 ### ChatModelRegistry
 
@@ -211,7 +210,7 @@ Each model specification includes:
 - `isAvailable()`: Async function to check model availability
 - `isHot()`: Async function to check if model is warmed up
 - `mangleRequest()`: Optional function to modify the request before sending
-- `features`: Optional feature specifications for query parameters
+- `settings`: Optional feature specifications for query parameters
 - `speed`: Speed capability score (0-infinity)
 - `research`: Research ability (0-infinity)
 - `reasoningText`: Reasoning capability score (0-infinity)
@@ -244,6 +243,23 @@ Manages image generation model specifications.
 **Methods:**
 
 - `registerAllModelSpecs(specs)`: Register image generation model specifications
+- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
+- `getModelsByProvider()`: Get all registered models grouped by provider
+- `getAllModelsWithOnlineStatus()`: Get all models with their online status
+- `getClient(name)`: Get a client instance matching the model name
+
+**Model Requirements:**
+
+- `nameLike`: Filter models by name pattern
+- `contextLength`: Maximum context length in tokens
+
+### VideoGenerationModelRegistry
+
+Manages video generation model specifications.
+
+**Methods:**
+
+- `registerAllModelSpecs(specs)`: Register video generation model specifications
 - `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
 - `getModelsByProvider()`: Get all registered models grouped by provider
 - `getAllModelsWithOnlineStatus()`: Get all models with their online status
@@ -384,6 +400,14 @@ await app.waitForService('ImageGenerationModelRegistry', imageRegistry => {
   }, agent);
 });
 
+// Video generation
+await app.waitForService('VideoGenerationModelRegistry', videoRegistry => {
+  const client = videoRegistry.getClient("OpenAI:video-model");
+  const video = await client.generateVideo({
+    prompt: "A beautiful sunset over the ocean"
+  }, agent);
+});
+
 // Speech synthesis
 await app.waitForService('SpeechModelRegistry', speechRegistry => {
   const client = speechRegistry.getClient("ElevenLabs:text");
@@ -446,14 +470,14 @@ const [result, response] = await client.textChat(
 const client = await chatRegistry.getClient("OpenAI:gpt-5?websearch=1&reasoningEffort=high&serviceTier=priority");
 
 // Set features on client instance
-client.setFeatures({
+client.setSettings({
   websearch: true,
   reasoningEffort: "high",
   serviceTier: "priority"
 });
 
 // Get current features
-const features = client.getFeatures();
+const features = client.getSettings();
 ```
 
 ## Client Methods
@@ -470,8 +494,8 @@ The chat client provides methods for generating text and structured outputs.
 - `rerank(request, agent)`: Rank documents by relevance to a query
 - `calculateCost(usage)`: Calculate the cost for a given usage object
 - `calculateTiming(elapsedMs, usage)`: Calculate timing information
-- `setFeatures(features)`: Set enabled features on this client instance
-- `getFeatures()`: Get a copy of the enabled features
+- `setSettings(settings)`: Set enabled settings on this client instance
+- `getSettings()`: Get a copy of the enabled settings
 - `getModelId()`: Get the model ID
 
 **Example:**
@@ -517,8 +541,8 @@ The embedding client generates vector embeddings for text.
 **Methods:**
 
 - `getEmbeddings({ input })`: Generate embeddings for an array of input strings
-- `setFeatures(features)`: Set enabled features on this client instance
-- `getFeatures()`: Get a copy of the enabled features
+- `setSettings(settings)`: Set enabled settings on this client instance
+- `getSettings()`: Get a copy of the enabled settings
 - `getModelId()`: Get the model ID
 
 **Example:**
@@ -537,8 +561,8 @@ The image generation client creates images from text prompts.
 **Methods:**
 
 - `generateImage(request, agent)`: Generate an image based on a prompt
-- `setFeatures(features)`: Set enabled features on this client instance
-- `getFeatures()`: Get a copy of the enabled features
+- `setSettings(settings)`: Set enabled settings on this client instance
+- `getSettings()`: Get a copy of the enabled settings
 - `getModelId()`: Get the model ID
 
 **Example:**
@@ -551,6 +575,27 @@ const [image, result] = await client.generateImage({
 }, agent);
 ```
 
+### AIVideoGenerationClient
+
+The video generation client creates videos from text prompts or images.
+
+**Methods:**
+
+- `generateVideo(request, agent)`: Generate a video based on a prompt
+- `setSettings(settings)`: Set enabled settings on this client instance
+- `getSettings()`: Get a copy of the enabled settings
+- `getModelId()`: Get the model ID
+
+**Example:**
+
+```typescript
+const [video, result] = await client.generateVideo({
+  prompt: "A beautiful sunset over the ocean",
+  aspectRatio: "16:9",
+  duration: 5
+}, agent);
+```
+
 ### AISpeechClient
 
 The speech client synthesizes speech from text.
@@ -558,8 +603,8 @@ The speech client synthesizes speech from text.
 **Methods:**
 
 - `generateSpeech(request, agent)`: Generate speech from text
-- `setFeatures(features)`: Set enabled features on this client instance
-- `getFeatures()`: Get a copy of the enabled features
+- `setSettings(settings)`: Set enabled settings on this client instance
+- `getSettings()`: Get a copy of the enabled settings
 - `getModelSpec()`: Get the model specification
 
 **Example:**
@@ -579,8 +624,8 @@ The transcription client transcribes audio to text.
 **Methods:**
 
 - `transcribe(request, agent)`: Transcribe audio to text
-- `setFeatures(features)`: Set enabled features on this client instance
-- `getFeatures()`: Get a copy of the enabled features
+- `setSettings(settings)`: Set enabled settings on this client instance
+- `getSettings()`: Get a copy of the enabled settings
 - `getModelSpec()`: Get the model specification
 
 **Example:**
@@ -607,6 +652,8 @@ The AI Client exposes JSON-RPC endpoints for programmatic access via the RPC ser
 | `listEmbeddingModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get embedding models grouped by provider |
 | `listImageGenerationModels` | `{}` | `{ models: {...} }` | Get all available image generation models |
 | `listImageGenerationModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get image generation models grouped by provider |
+| `listVideoGenerationModels` | `{}` | `{ models: {...} }` | Get all available video generation models |
+| `listVideoGenerationModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get video generation models grouped by provider |
 | `listSpeechModels` | `{}` | `{ models: {...} }` | Get all available speech models |
 | `listSpeechModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get speech models grouped by provider |
 | `listTranscriptionModels` | `{}` | `{ models: {...} }` | Get all available transcription models |
@@ -667,7 +714,7 @@ const modelsByProvider = await rpcService.call("listChatModelsByProvider", {
 
 The package automatically discovers and registers available models from each provider:
 
-1. **Plugin Installation**: `install()` method runs during plugin installation and registers the six service registries
+1. **Plugin Installation**: `install()` method runs during plugin installation and registers the seven service registries
 2. **Provider Configuration**: `start()` method runs after services are registered and registers providers based on configuration
 3. **Auto-Configuration**: If `autoConfigure` is true or `providers` is not set, `autoConfig()` is called to detect environment variables
 4. **Provider Registration**: Each provider's `init()` method is called with its configuration
@@ -763,14 +810,14 @@ Each feature has the following properties:
 // Via query parameters
 const client = await chatRegistry.getClient("OpenAI:gpt-5?websearch=1&reasoningEffort=high");
 
-// Via setFeatures method
-client.setFeatures({
+// Via setSettings method
+client.setSettings({
   websearch: true,
   reasoningEffort: "high"
 });
 
 // Get current features
-const features = client.getFeatures();
+const features = client.getSettings();
 ```
 
 ## Best Practices
@@ -783,7 +830,7 @@ const features = client.getFeatures();
 6. **Select Appropriate Models**: Choose models based on context length and cost requirements
 7. **Custom Registrations**: Add custom models when needed using `registerAllModelSpecs()`
 8. **Use RPC for Remote Access**: For programmatic access across processes, use the JSON-RPC endpoint
-9. **Set Features**: Use `setFeatures()` on client instances to enable specific features without creating multiple clients
+9. **Set Settings**: Use `setSettings()` on client instances to enable specific features without creating multiple clients
 10. **Calculate Costs**: Use `calculateCost()` to estimate expenses before making requests
 11. **Use Cheapest Model**: Use `getCheapestModelByRequirements()` to find the most cost-effective model for your needs
 12. **Check Model Hot Status**: Use `isHot()` to determine if a model needs to be warmed up
@@ -840,7 +887,7 @@ bun run test:coverage
 
 The package follows the Token Ring plugin pattern:
 
-1. **Install Phase**: Registers six service instances (registries) and optionally registers RPC endpoint
+1. **Install Phase**: Registers seven service instances (registries) and optionally registers RPC endpoint
 2. **Start Phase**: Initializes providers and registers models through the provider initialization chain
 
 The package does not include streaming client implementations directly. Streaming clients are provided by the individual provider SDKs and accessed through the registries.
