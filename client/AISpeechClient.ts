@@ -20,17 +20,21 @@ export type SpeechModelSpec = ModelSpec & {
 };
 
 export default class AISpeechClient {
-  constructor(private modelSpec: SpeechModelSpec, private settings: ChatModelSettings = {}) {
+  constructor(private modelSpec: SpeechModelSpec, private settings: ChatModelSettings) {
+  }
+  /**
+   * Set settings for this client instance.
+   */
+  setSettings(settings: ChatModelSettings): void {
+    this.settings = new Map(settings.entries());
   }
 
-  setSettings(settings: ChatModelSettings | undefined): void {
-    this.settings = {...(settings ?? {})};
+  /**
+   * Get a copy of the settings.
+   */
+  getSettings(): ChatModelSettings {
+    return new Map(this.settings.entries());
   }
-
-  getSettings(): Record<string, any> {
-    return {...this.settings};
-  }
-
   async generateSpeech(
     request: SpeechRequest,
     agent: Agent,

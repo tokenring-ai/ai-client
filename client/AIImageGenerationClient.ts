@@ -55,21 +55,21 @@ export type ImageModelSpec = ModelSpec & {
  * Client for generating images using the Vercel AI SDK's experimental image generation settings.
  */
 export default class AIImageGenerationClient {
-  constructor(private modelSpec: ImageModelSpec, private settings: ChatModelSettings = {}) {
+  constructor(private modelSpec: ImageModelSpec, private settings: ChatModelSettings) {
   }
 
   /**
-   * Set feature flags for this client instance.
+   * Set settings for this client instance.
    */
-  setSettings(settings: ChatModelSettings | undefined): void {
-    this.settings = {...(settings ?? {})};
+  setSettings(settings: ChatModelSettings): void {
+    this.settings = new Map(settings.entries());
   }
 
   /**
-   * Get a copy of the feature flags.
+   * Get a copy of the settings.
    */
-  getSettings(): Record<string, any> {
-    return {...this.settings};
+  getSettings(): ChatModelSettings {
+    return new Map(this.settings.entries());
   }
 
   /**

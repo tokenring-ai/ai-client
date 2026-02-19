@@ -1,8 +1,9 @@
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import {PrimitiveType} from "@tokenring-ai/utility/types";
 import {ModelRequirements} from "./schema.ts";
+import {parseModelAndSettings} from "./util/modelSettings.ts";
 
-export type FeatureSpec = {
+export type SettingDefinition = {
   description: string;
 } & ({
   type: "boolean";
@@ -24,14 +25,14 @@ export type FeatureSpec = {
   defaultValue?: (PrimitiveType)[] | undefined;
 });
 
-export type ChatModelSettings = Record<string, PrimitiveType | PrimitiveType[]>
+export type ChatModelSettings = Map<string, PrimitiveType | PrimitiveType[]>
 
 export type ModelSpec = {
   modelId: string;
   providerDisplayName: string;
   isAvailable?: () => Promise<boolean>;
   isHot?: () => Promise<boolean>;
-  settings?: Record<string, FeatureSpec>;
+  settings?: Record<string, SettingDefinition>;
 };
 
 export interface ModelStatus<T> {
@@ -148,12 +149,8 @@ export class ModelTypeRegistry<
    * Gets the first chat client that matches the name and is online
    */
   async getClient(name: string): Promise<C> {
-    // Support feature query parameters in the model string (e.g. "openai:gpt-5?websearch=1")
-    let lookupName = name.toLowerCase();
-    const qIndex = name.indexOf("?");
-    if (qIndex >= 0) {
-      lookupName = name.substring(0, qIndex);
-    }
+    const {base, settings} = parseModelAndSettings(name.toLowerCase());
+    let lookupName = base;
 
     if (lookupName.includes("*")) {
       const matchedNames = this.modelSpecs.getItemNamesLike(lookupName);
@@ -171,44 +168,22 @@ export class ModelTypeRegistry<
       throw new Error(`Model ${lookupName} not found`);
     }
 
-    let settings: ChatModelSettings = {};
-    if (qIndex >= 0 && modelSpec.settings) {
-      const query = name.substring(qIndex + 1);
-      for (const part of query.split("&")) {
-        if (!part) continue;
-        const [rawK, rawV] = part.split("=");
-        const k = decodeURIComponent(rawK);
+    if (modelSpec.settings) {
+      for (const [k, value] of settings.entries()) {
         const featureSpec = modelSpec.settings[k];
         if (!featureSpec) {
           throw new Error(`Unknown feature "${k}" for model ${lookupName}`);
         }
-
-        const rawValue = rawV === undefined ? "1" : decodeURIComponent(rawV);
-
-        // Parse based on feature spec type
-        let parsed: PrimitiveType | PrimitiveType[];
-        if (featureSpec.type === "boolean") {
-          parsed = rawValue === "1" || rawValue.toLowerCase() === "true";
-        } else if (featureSpec.type === "number") {
-          const num = Number(rawValue);
-          if (featureSpec.min !== undefined && num < featureSpec.min) {
-            throw new Error(`Invalid value for feature "${k}" for model ${lookupName}: ${rawValue} is lower than the minimum allowed value of ${featureSpec.min}`,)
+        if (featureSpec.type === "number" && typeof value === "number") {
+          if (featureSpec.min !== undefined && value < featureSpec.min) {
+            throw new Error(`Invalid value for feature "${k}" for model ${lookupName}: ${value} is lower than the minimum allowed value of ${featureSpec.min}`);
           }
-          if (featureSpec.max !== undefined && num > featureSpec.max) {
-            throw new Error(`Invalid value for feature "${k}" for model ${lookupName}: ${rawValue} is higher than the maximum allowed value of ${featureSpec.max}`,)
+          if (featureSpec.max !== undefined && value > featureSpec.max) {
+            throw new Error(`Invalid value for feature "${k}" for model ${lookupName}: ${value} is higher than the maximum allowed value of ${featureSpec.max}`);
           }
-          parsed = Number.isNaN(num) ? featureSpec.defaultValue : num;
-        } else if (featureSpec.type === "enum") {
-          parsed = featureSpec.values.includes(rawValue)
-            ? rawValue
-            : featureSpec.defaultValue;
-        } else if (featureSpec.type === "array") {
-          parsed = rawValue.split(",").map(v => v.trim());
-        } else {
-          parsed = rawValue;
+        } else if (featureSpec.type === "enum" && !featureSpec.values.includes(value as PrimitiveType)) {
+          settings.set(k, featureSpec.defaultValue);
         }
-
-        settings[k] = parsed;
       }
     }
 
@@ -217,16 +192,9 @@ export class ModelTypeRegistry<
 
 
   getModelSpecsByRequirements(nameLike: string) : Record<string,T> {
-    const [modelSpec, featureString] = nameLike.split("?");
-    const settings = new Set<string>();
-    if (featureString) {
-      for (const part of featureString.split("&")) {
-        if (!part) continue;
-        const [rawK] = part.split("=");
-        const k = decodeURIComponent(rawK);
-        settings.add(k);
-      }
-    }
+    const {base: modelSpec, settings: parsedSettings} = parseModelAndSettings(nameLike);
+    const featureString = nameLike.includes("?") ? nameLike.substring(nameLike.indexOf("?") + 1) : undefined;
+    const settings = new Set(parsedSettings.keys());
 
     const modelSpecs = this.modelSpecs.getItemNamesLike(modelSpec);
 

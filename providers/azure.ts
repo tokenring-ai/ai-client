@@ -81,7 +81,7 @@ async function init(
         intelligence: 5,
         tools: 4,
         speed: 3,
-        contextLength: 65536,
+        maxContextLength: 65536,
       }),
     ]);
   });

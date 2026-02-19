@@ -63,7 +63,7 @@ async function init(
   app.waitForService(ChatModelRegistry, chatModelRegistry => {
     chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("llama-3.1-8b-instant", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 131072,
       costPerMillionInputTokens: 0.05,
       costPerMillionOutputTokens: 0.08,
@@ -73,7 +73,7 @@ async function init(
       tools: 2,
     }),
     generateModelSpec("llama-3.3-70b-versatile", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 32768,
       costPerMillionInputTokens: 0.59,
       costPerMillionOutputTokens: 0.79,
@@ -83,7 +83,7 @@ async function init(
       tools: 3,
     }),
     generateModelSpec("meta-llama/llama-guard-4-12b", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 1024,
       costPerMillionInputTokens: 0.2,
       costPerMillionOutputTokens: 0.2,
@@ -93,7 +93,7 @@ async function init(
       tools: 1,
     }),
     generateModelSpec("openai/gpt-oss-120b", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 65536,
       costPerMillionInputTokens: 0.15,
       costPerMillionOutputTokens: 0.6,
@@ -103,7 +103,7 @@ async function init(
       tools: 5,
     }),
     generateModelSpec("openai/gpt-oss-20b", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 65536,
       costPerMillionInputTokens: 0.075,
       costPerMillionOutputTokens: 0.3,
@@ -114,7 +114,7 @@ async function init(
     }),
     // Preview Models
     generateModelSpec("meta-llama/llama-4-maverick-17b-128e-instruct", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 8192,
       costPerMillionInputTokens: 0.2,
       costPerMillionOutputTokens: 0.6,
@@ -124,7 +124,7 @@ async function init(
       tools: 3,
     }),
     generateModelSpec("meta-llama/llama-4-scout-17b-16e-instruct", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 8192,
       costPerMillionInputTokens: 0.11,
       costPerMillionOutputTokens: 0.34,
@@ -134,7 +134,7 @@ async function init(
       tools: 3,
     }),
     generateModelSpec("meta-llama/llama-prompt-guard-2-22m", {
-      contextLength: 512,
+      maxContextLength: 512,
       maxCompletionTokens: 512,
       costPerMillionInputTokens: 0.03,
       costPerMillionOutputTokens: 0.03,
@@ -144,7 +144,7 @@ async function init(
       tools: 1,
     }),
     generateModelSpec("meta-llama/llama-prompt-guard-2-86m", {
-      contextLength: 512,
+      maxContextLength: 512,
       maxCompletionTokens: 512,
       costPerMillionInputTokens: 0.04,
       costPerMillionOutputTokens: 0.04,
@@ -154,7 +154,7 @@ async function init(
       tools: 1,
     }),
     generateModelSpec("moonshotai/kimi-k2-instruct-0905", {
-      contextLength: 262144,
+      maxContextLength: 262144,
       maxCompletionTokens: 16384,
       costPerMillionInputTokens: 1.0,
       costPerMillionOutputTokens: 3.0,
@@ -164,13 +164,13 @@ async function init(
       tools: 5,
     }),
     generateModelSpec("openai/gpt-oss-safeguard-20b", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 65536,
       costPerMillionInputTokens: 0.075,
       costPerMillionOutputTokens: 0.3,
     }),
     generateModelSpec("qwen/qwen3-32b", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 40960,
       costPerMillionInputTokens: 0.29,
       costPerMillionOutputTokens: 0.59,

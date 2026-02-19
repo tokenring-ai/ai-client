@@ -20,21 +20,21 @@ export type EmbeddingModelSpec = ModelSpec & {
  * Client for generating embeddings using the Vercel AI SDK.
  */
 export default class AIEmbeddingClient {
-  constructor(private readonly modelSpec: EmbeddingModelSpec, private settings: ChatModelSettings = {}) {
+  constructor(private readonly modelSpec: EmbeddingModelSpec, private settings: ChatModelSettings) {
   }
 
   /**
-   * Sets enabled settings on this client instance. Does not mutate the modelSpec.
+   * Set settings for this client instance.
    */
-  setSettings(settings: ChatModelSettings | undefined): void {
-    this.settings = {...(settings ?? {})};
+  setSettings(settings: ChatModelSettings): void {
+    this.settings = new Map(settings.entries());
   }
 
   /**
-   * Returns a copy of the enabled settings for this client instance.
+   * Get a copy of the settings.
    */
-  getSettings(): Record<string, any> {
-    return {...this.settings};
+  getSettings(): ChatModelSettings {
+    return new Map(this.settings.entries());
   }
 
   /**

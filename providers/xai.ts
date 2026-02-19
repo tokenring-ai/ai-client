@@ -54,19 +54,19 @@ export async function init(
         return !!modelList?.data.some((model) => model.id === modelId);
       },
       mangleRequest(req, settings) {
-        if (settings.websearch) {
+        if (settings.has("websearch")) {
           req.tools.web_search = xai.tools.webSearch({
-            enableImageUnderstanding: settings.webImageUnderstanding as boolean,
+            enableImageUnderstanding: settings.get("webImageUnderstanding") as boolean,
           });
         }
 
-        if (settings.XSearch) {
+        if (settings.has("XSearch")) {
           req.tools.x_search = xai.tools.xSearch({
-            allowedXHandles: (settings.XAllowedHandles as string | undefined)?.split(','),
-            fromDate: settings.XFromDate as string | undefined,
-            toDate: settings.XToDate as string | undefined,
-            enableImageUnderstanding: settings.XImageUnderstanding as boolean,
-            enableVideoUnderstanding: settings.XVideoUnderstanding as boolean,
+            allowedXHandles: (settings.get("XAllowedHandles") as string | undefined)?.split(','),
+            fromDate: settings.get("XFromDate") as string | undefined,
+            toDate: settings.get("XToDate") as string | undefined,
+            enableImageUnderstanding: settings.get("XImageUnderstanding") as boolean,
+            enableVideoUnderstanding: settings.get("XVideoUnderstanding") as boolean,
           });
         }
       },
@@ -131,7 +131,7 @@ export async function init(
         intelligence: 5,
         tools: 5,
         speed: 6,
-        contextLength: 256000,
+        maxContextLength: 256000,
       }),
       generateModelSpec("grok-4-0709", {
         costPerMillionInputTokens: 3,
@@ -140,7 +140,7 @@ export async function init(
         intelligence: 6,
         tools: 6,
         speed: 3,
-        contextLength: 256000,
+        maxContextLength: 256000,
       }),
       generateModelSpec("grok-4-1-fast-reasoning", {
         costPerMillionInputTokens: 0.2,
@@ -150,7 +150,7 @@ export async function init(
         intelligence: 6,
         tools: 6,
         speed: 5,
-        contextLength: 2000000,
+        maxContextLength: 2000000,
       }),
       generateModelSpec("grok-4-1-fast-non-reasoning", {
         costPerMillionInputTokens: 0.2,
@@ -160,7 +160,7 @@ export async function init(
         intelligence: 6,
         tools: 6,
         speed: 6,
-        contextLength: 2000000,
+        maxContextLength: 2000000,
       }),
       generateModelSpec("grok-4-fast-reasoning", {
         costPerMillionInputTokens: 0.2,
@@ -170,7 +170,7 @@ export async function init(
         intelligence: 5,
         tools: 5,
         speed: 3,
-        contextLength: 2000000,
+        maxContextLength: 2000000,
       }),
       generateModelSpec("grok-4-fast-non-reasoning", {
         costPerMillionInputTokens: 0.2,
@@ -180,7 +180,7 @@ export async function init(
         intelligence: 5,
         tools: 5,
         speed: 6,
-        contextLength: 2000000,
+        maxContextLength: 2000000,
       }),
       generateModelSpec("grok-3", {
         costPerMillionInputTokens: 3,
@@ -189,7 +189,7 @@ export async function init(
         intelligence: 5,
         tools: 5,
         speed: 2,
-        contextLength: 131072,
+        maxContextLength: 131072,
       }),
       generateModelSpec("grok-3-mini", {
         costPerMillionInputTokens: 0.3,
@@ -198,7 +198,7 @@ export async function init(
         intelligence: 4,
         tools: 4,
         speed: 3,
-        contextLength: 131072,
+        maxContextLength: 131072,
       }),
       generateModelSpec("grok-4-0709", {
         costPerMillionInputTokens: 3,
@@ -207,7 +207,7 @@ export async function init(
         intelligence: 6,
         tools: 6,
         speed: 3,
-        contextLength: 256000,
+        maxContextLength: 256000,
       }),
     ]);
   });

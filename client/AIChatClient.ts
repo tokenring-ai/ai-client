@@ -24,12 +24,11 @@ export type ChatInputMessage =
   | AssistantModelMessage
   | ToolModelMessage;
 
-export type ChatRequest = {
+export type ChatRequest = Pick<Parameters<typeof streamText>[0],"temperature" | "seed" | "topP" | "topK" | "frequencyPenalty" | "presencePenalty" | "providerOptions"> & {
   tools: Record<string, Tool>;
   messages: ChatInputMessage[];
   parallelTools?: boolean;
   _toolQueue?: any;
-  providerOptions?: any;
 };
 
 export type RerankRequest = {
@@ -50,7 +49,7 @@ export type ChatModelSpec = ModelSpec & {
   tools?: number;
   intelligence?: number;
   maxCompletionTokens?: number;
-  contextLength: number;
+  maxContextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens: number;
   costPerMillionCachedInputTokens?: number;
@@ -111,21 +110,21 @@ const rerankSchema = z.object({
  * replacement for `OpenAIChatCompletionClient`.
  */
 export default class AIChatClient {
-  constructor(private readonly modelSpec: ChatModelSpec, private settings: ChatModelSettings = {}) {
+  constructor(private readonly modelSpec: ChatModelSpec, private settings: ChatModelSettings) {
   }
 
   /**
-   * Sets enabled settings on this client instance. Does not mutate the modelSpec.
+   * Set settings for this client instance.
    */
-  setSettings(settings: ChatModelSettings | undefined): void {
-    this.settings = {...(settings ?? {})};
+  setSettings(settings: ChatModelSettings): void {
+    this.settings = new Map(settings.entries());
   }
 
   /**
-   * Returns a copy of the enabled settings for this client instance.
+   * Get a copy of the settings.
    */
-  getSettings(): Record<string, any> {
-    return {...this.settings};
+  getSettings(): ChatModelSettings {
+    return new Map(this.settings.entries());
   }
 
   /**

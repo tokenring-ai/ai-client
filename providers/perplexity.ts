@@ -1,4 +1,5 @@
 import {perplexity} from "@ai-sdk/perplexity";
+import type {JSONObject} from "@ai-sdk/provider";
 import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec, ChatRequest,} from "../client/AIChatClient.ts";
@@ -72,7 +73,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 2,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("sonar-pro", {
       costPerMillionInputTokens: 3,
@@ -81,7 +82,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 3,
-      contextLength: 200000,
+      maxContextLength: 200000,
     }),
     generateModelSpec("sonar-reasoning", {
       costPerMillionInputTokens: 1,
@@ -90,7 +91,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 2,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("sonar-reasoning-pro", {
       costPerMillionInputTokens: 2,
@@ -99,7 +100,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 2,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("sonar-deep-research", {
       costPerMillionInputTokens: 2,
@@ -110,7 +111,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 1,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     ]);
   });
@@ -122,13 +123,13 @@ async function init(
  */
 function mangleRequest(request: ChatRequest, settings: ChatModelSettings ): void {
   const perplexityOptions = (request.providerOptions ??= {}).perplexity ??= {};
-  const webSearchOptions = perplexityOptions.web_search_options ??= {};
+  const webSearchOptions = (perplexityOptions.web_search_options ??= {}) as JSONObject;
 
-  if (settings.searchContextSize) {
-    webSearchOptions.search_context_size = settings.searchContextSize;
+  if (settings.has("searchContextSize")) {
+    webSearchOptions.search_context_size = settings.get("searchContextSize") as number;
   }
 
-  if (!settings?.websearch) {
+  if (!settings.has("websearch")) {
     perplexityOptions.disable_search = true;
   }
 

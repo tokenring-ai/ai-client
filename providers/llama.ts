@@ -67,7 +67,7 @@ async function init(
   app.waitForService(ChatModelRegistry, chatModelRegistry => {
     chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("Llama-3.3-70B-Instruct", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 32768,
       costPerMillionInputTokens: 0,
       costPerMillionOutputTokens: 0,
@@ -77,7 +77,7 @@ async function init(
       tools: 4, // Good tool use capabilities
     }),
     generateModelSpec("Llama-3.3-8B-Instruct", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 131072,
       costPerMillionInputTokens: 0,
       costPerMillionOutputTokens: 0,
@@ -87,7 +87,7 @@ async function init(
       tools: 3, // Moderate tool use capabilities
     }),
     generateModelSpec("Llama-4-Maverick-17B-128E-Instruct-FP8", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 32768,
       costPerMillionInputTokens: 0,
       costPerMillionOutputTokens: 0,
@@ -97,7 +97,7 @@ async function init(
       tools: 4, // Advanced model likely good with tools
     }),
     generateModelSpec("Llama-4-Scout-17B-16E-Instruct-FP8", {
-      contextLength: 131072,
+      maxContextLength: 131072,
       maxCompletionTokens: 32768,
       costPerMillionInputTokens: 0,
       costPerMillionOutputTokens: 0,

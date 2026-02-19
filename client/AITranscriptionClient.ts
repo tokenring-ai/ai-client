@@ -24,15 +24,21 @@ export type TranscriptionModelSpec = ModelSpec & {
 };
 
 export default class AITranscriptionClient {
-  constructor(private readonly modelSpec: TranscriptionModelSpec, private settings: ChatModelSettings = {}) {
+  constructor(private readonly modelSpec: TranscriptionModelSpec, private settings: ChatModelSettings) {
   }
 
-  setSettings(settings: ChatModelSettings | undefined): void {
-    this.settings = {...(settings ?? {})};
+  /**
+   * Set settings for this client instance.
+   */
+  setSettings(settings: ChatModelSettings): void {
+    this.settings = new Map(settings.entries());
   }
 
-  getSettings(): Record<string, any> {
-    return {...this.settings};
+  /**
+   * Get a copy of the settings.
+   */
+  getSettings(): ChatModelSettings {
+    return new Map(this.settings.entries());
   }
 
   async transcribe(

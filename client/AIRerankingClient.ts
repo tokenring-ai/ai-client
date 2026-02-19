@@ -11,15 +11,21 @@ export type RerankingModelSpec = ModelSpec & {
 };
 
 export default class AIRerankingClient {
-  constructor(private readonly modelSpec: RerankingModelSpec, private settings: ChatModelSettings = {}) {
+  constructor(private readonly modelSpec: RerankingModelSpec, private settings: ChatModelSettings) {
   }
 
-  setSettings(settings: ChatModelSettings | undefined): void {
-    this.settings = {...(settings ?? {})};
+  /**
+   * Set settings for this client instance.
+   */
+  setSettings(settings: ChatModelSettings): void {
+    this.settings = new Map(settings.entries());
   }
 
-  getSettings(): Record<string, any> {
-    return {...this.settings};
+  /**
+   * Get a copy of the settings.
+   */
+  getSettings(): ChatModelSettings {
+    return new Map(this.settings.entries());
   }
 
   getModelId(): string {

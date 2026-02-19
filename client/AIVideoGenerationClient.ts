@@ -6,7 +6,7 @@ import {
 } from "ai";
 import { Experimental_VideoModelV3 } from '@ai-sdk/provider';
 
-import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.js";
+import type {ChatModelSettings, ModelSpec, SettingDefinition} from "../ModelTypeRegistry.js";
 
 export type VideoModel = Experimental_VideoModelV3;
 export type VideoRequest = {
@@ -40,7 +40,7 @@ export type VideoModelSpec = ModelSpec & {
    */
   mangleRequest?: (
     req: VideoRequest,
-    settings?: Record<string, any>,
+    settings?: ChatModelSettings,
   ) => void;
 };
 
@@ -50,21 +50,21 @@ export type VideoModelSpec = ModelSpec & {
 export default class AIVideoGenerationClient {
   constructor(
     private modelSpec: VideoModelSpec,
-    private settings: ChatModelSettings = {}
+    private settings: ChatModelSettings
   ) {}
 
   /**
    * Set settings for this client instance.
    */
-  setSettings(settings: ChatModelSettings | undefined): void {
-    this.settings = { ...(settings ?? {}) };
+  setSettings(settings: ChatModelSettings): void {
+    this.settings = new Map(settings.entries());
   }
 
   /**
    * Get a copy of the settings.
    */
-  getSettings(): Record<string, any> {
-    return { ...this.settings };
+  getSettings(): ChatModelSettings {
+    return new Map(this.settings.entries());
   }
 
   /**

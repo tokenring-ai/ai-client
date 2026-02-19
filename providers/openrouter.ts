@@ -1,3 +1,4 @@
+import type {JSONArray} from "@ai-sdk/provider";
 import {openrouter} from "@openrouter/ai-sdk-provider";
 import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
@@ -107,7 +108,7 @@ async function fetchAndRegisterOpenRouterModels(
         providerDisplayName: providerDisplayName,
         impl: openrouter(model.id),
         isAvailable,
-        contextLength:
+        maxContextLength:
           model.context_length || model.topProvider?.context_length || 4096,
         maxCompletionTokens:
           model.topProvider?.max_completion_tokens ?? undefined,
@@ -116,39 +117,39 @@ async function fetchAndRegisterOpenRouterModels(
         mangleRequest(req, settings) {
           const supported = model.supported_parameters || [];
           
-          if (settings.websearch) {
-            const plugins = ((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= [];
+          if (settings.has("websearch")) {
+            const plugins = (((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= []) as JSONArray;
             const webPlugin: any = { id: "web" };
             
-            if (settings.searchEngine) {
-              webPlugin.engine = settings.searchEngine;
+            if (settings.has("searchEngine")) {
+              webPlugin.engine = settings.get("searchEngine");
             }
-            if (settings.maxResults) {
-              webPlugin.max_results = settings.maxResults;
+            if (settings.has("maxResults")) {
+              webPlugin.max_results = settings.get("maxResults");
             }
-            if (settings.searchPrompt) {
-              webPlugin.search_prompt = settings.searchPrompt;
+            if (settings.has("searchPrompt")) {
+              webPlugin.search_prompt = settings.get("searchPrompt")  ;
             }
             
             plugins.push(webPlugin);
           }
           
-          if (settings.searchContextSize) {
+          if (settings.has("searchContextSize")) {
             const webSearchOptions = (req.providerOptions ??= {}).web_search_options ??= {};
-            webSearchOptions.search_context_size = settings.searchContextSize;
+            webSearchOptions.search_context_size = settings.get("searchContextSize") as number;
           }
 
           const params: Record<string, any> = {};
-          if (supported.includes('frequency_penalty') && settings.frequencyPenalty !== undefined) params.frequency_penalty = settings.frequencyPenalty;
-          if (supported.includes('max_tokens') && settings.maxTokens !== undefined) params.max_tokens = settings.maxTokens;
-          if (supported.includes('min_p') && settings.minP !== undefined) params.min_p = settings.minP;
-          if (supported.includes('presence_penalty') && settings.presencePenalty !== undefined) params.presence_penalty = settings.presencePenalty;
-          if (supported.includes('repetition_penalty') && settings.repetitionPenalty !== undefined) params.repetition_penalty = settings.repetitionPenalty;
-          if (supported.includes('temperature') && settings.temperature !== undefined) params.temperature = settings.temperature;
-          if (supported.includes('top_k') && settings.topK !== undefined) params.top_k = settings.topK;
-          if (supported.includes('top_p') && settings.topP !== undefined) params.top_p = settings.topP;
-          if (supported.includes('include_reasoning') && settings.includeReasoning !== undefined) params.include_reasoning = settings.includeReasoning;
-          if (supported.includes('reasoning') && settings.reasoning !== undefined) params.reasoning = settings.reasoning;
+          if (supported.includes('frequency_penalty') && settings.has("frequencyPenalty")) params.frequency_penalty = settings.get("frequencyPenalty");
+          if (supported.includes('max_tokens') && settings.has("maxTokens")) params.max_tokens = settings.get("maxTokens");
+          if (supported.includes('min_p') && settings.has("minP")) params.min_p = settings.get("minP");
+          if (supported.includes('presence_penalty') && settings.has("presencePenalty")) params.presence_penalty = settings.get("presencePenalty");
+          if (supported.includes('repetition_penalty') && settings.has("repetitionPenalty")) params.repetition_penalty = settings.get("repetitionPenalty");
+          if (supported.includes('temperature') && settings.has("temperature")) params.temperature = settings.get("temperature");
+          if (supported.includes('top_k') && settings.has("topK")) params.top_k = settings.get("topK");
+          if (supported.includes('top_p') && settings.has("topP")) params.top_p = settings.get("topP");
+          if (supported.includes('include_reasoning') && settings.has("includeReasoning")) params.include_reasoning = settings.get("includeReasoning");
+          if (supported.includes('reasoning') && settings.has("reasoning")) params.reasoning = settings.get("reasoning");
 
           if (Object.keys(params).length > 0) {
             Object.assign((req.providerOptions ??= {}).openrouter ??= {}, params);

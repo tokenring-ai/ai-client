@@ -4,7 +4,7 @@ import {z} from "zod";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import {ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry} from "../ModelRegistry.ts";
-import {ChatModelSettings, FeatureSpec} from "../ModelTypeRegistry.ts";
+import {ChatModelSettings, SettingDefinition} from "../ModelTypeRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
 
@@ -55,7 +55,7 @@ async function init(
     const isGemini3 = modelId.startsWith("gemini-3");
     const isGemini25 = modelId.startsWith("gemini-2.5");
     
-    const baseSettings: Record<string, FeatureSpec> = {
+    const baseSettings: Record<string, SettingDefinition> = {
       responseModalities: {
         description: "Response modalities (TEXT, IMAGE)",
         defaultValue: ["TEXT"],
@@ -101,7 +101,7 @@ async function init(
         );
       },
       mangleRequest(req: ChatRequest, settings: ChatModelSettings) {
-        if (settings?.websearch) {
+        if (settings.has("websearch")) {
           (req.tools ??= {}).google_search = googleProvider.tools.googleSearch(
             {},
           );
@@ -109,15 +109,15 @@ async function init(
         
         const googleOptions: GoogleGenerativeAIProviderOptions = (req.providerOptions ??= {}).google ??= {};
         
-        if (settings?.responseModalities !== undefined) {
-          googleOptions.responseModalities = (settings.responseModalities as any)?.map((s: string) => s.toUpperCase());
+        if (settings.has("responseModalities")) {
+          googleOptions.responseModalities = (settings.get("responseModalities") as any)?.map((s: string) => s.toUpperCase());
         }
         
-        if (settings?.thinkingLevel !== undefined || settings?.thinkingBudget !== undefined || settings?.includeThoughts !== undefined) {
+        if (settings.has("thinkingLevel") || settings.has("thinkingBudget") || settings.has("includeThoughts")) {
           const thinkingConfig: any = {};
-          if (settings?.thinkingLevel !== undefined) thinkingConfig.thinkingLevel = settings.thinkingLevel;
-          if (settings?.thinkingBudget !== undefined) thinkingConfig.thinkingBudget = settings.thinkingBudget;
-          if (settings?.includeThoughts !== undefined) thinkingConfig.includeThoughts = settings.includeThoughts;
+          if (settings.has("thinkingLevel")) thinkingConfig.thinkingLevel = settings.get("thinkingLevel");
+          if (settings.has("thinkingBudget")) thinkingConfig.thinkingBudget = settings.get("thinkingBudget");
+          if (settings.has("includeThoughts")) thinkingConfig.includeThoughts = settings.get("includeThoughts");
           googleOptions.thinkingConfig = thinkingConfig;
         }
       },
@@ -163,7 +163,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 1000000,
+      maxContextLength: 1000000,
     }),
 
     generateModelSpec("gemini-2.5-pro", {
@@ -180,7 +180,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 1000000,
+      maxContextLength: 1000000,
     }),
     generateModelSpec("gemini-2.5-flash", {
       costPerMillionInputTokens: 0.3,
@@ -196,7 +196,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 1000000,
+      maxContextLength: 1000000,
     }),
       generateModelSpec("gemini-3-flash-preview", {
         costPerMillionInputTokens: 0.50,
@@ -212,7 +212,7 @@ async function init(
             type: "boolean",
           }
         },
-        contextLength: 1000000,
+        maxContextLength: 1000000,
       }),
     generateModelSpec("gemini-2.5-flash-lite", {
       costPerMillionInputTokens: 0.1,
@@ -221,7 +221,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 5,
-      contextLength: 1000000,
+      maxContextLength: 1000000,
     }),
     ]);
   });

@@ -88,29 +88,29 @@ async function init(
         return !!modelList?.data.some((model) => model.id === modelId);
       },
       mangleRequest(req, settings) {
-        if (settings?.websearch) {
+        if (settings.has("websearch")) {
           (req.tools ??= {}).web_search = openai.tools.webSearch({});
         }
         
         const openaiOptions: OpenAIResponsesProviderOptions = (req.providerOptions ??= {}).openai ??= {};
         
-        if (settings?.reasoningEffort !== undefined) {
-          openaiOptions.reasoningEffort = settings.reasoningEffort as string;
+        if (settings.has("reasoningEffort")) {
+          openaiOptions.reasoningEffort = settings.get("reasoningEffort") as string;
         }
-        if (settings?.reasoningSummary !== undefined) {
-          openaiOptions.reasoningSummary = settings.reasoningSummary as string;
+        if (settings.has("reasoningSummary")) {
+          openaiOptions.reasoningSummary = settings.get("reasoningSummary") as string;
         }
-        if (settings?.strictJsonSchema !== undefined) {
-          openaiOptions.strictJsonSchema = settings.strictJsonSchema as boolean;
+        if (settings.has("strictJsonSchema")) {
+          openaiOptions.strictJsonSchema = settings.get("strictJsonSchema") as boolean;
         }
-        if (settings?.serviceTier !== undefined) {
-          openaiOptions.serviceTier = settings.serviceTier as any;
+        if (settings.has("serviceTier")) {
+          openaiOptions.serviceTier = settings.get("serviceTier") as any;
         }
-        if (settings?.textVerbosity !== undefined) {
-          openaiOptions.textVerbosity = settings.textVerbosity as any;
+        if (settings.has("textVerbosity")) {
+          openaiOptions.textVerbosity = settings.get("textVerbosity") as any;
         }
-        if (settings?.promptCacheRetention !== undefined) {
-          openaiOptions.promptCacheRetention = settings.promptCacheRetention as any;
+        if (settings.has("promptCacheRetention")) {
+          openaiOptions.promptCacheRetention = settings.get("promptCacheRetention") as any;
         }
 
         return undefined;
@@ -155,7 +155,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 3,
-      contextLength: 1000000,
+      maxContextLength: 1000000,
     }),
     generateModelSpec("gpt-4.1-mini", {
       costPerMillionInputTokens: 0.4,
@@ -165,7 +165,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 4,
-      contextLength: 1000000,
+      maxContextLength: 1000000,
     }),
     generateModelSpec("gpt-4.1-nano", {
       costPerMillionInputTokens: 0.1,
@@ -175,7 +175,7 @@ async function init(
       intelligence: 2,
       tools: 2,
       speed: 5,
-      contextLength: 1000000,
+      maxContextLength: 1000000,
     }),
     generateModelSpec("gpt-5", {
       costPerMillionInputTokens: 1.25,
@@ -185,7 +185,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
 
     generateModelSpec("gpt-5.1", {
@@ -196,7 +196,7 @@ async function init(
       intelligence: 6,
       tools: 6,
       speed: 3,
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
 
       generateModelSpec("gpt-5.2", {
@@ -207,7 +207,7 @@ async function init(
         intelligence: 6,
         tools: 6,
         speed: 3,
-        contextLength: 400000,
+        maxContextLength: 400000,
       }),
 
       generateModelSpec("gpt-5-codex", {
@@ -225,7 +225,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
 
     generateModelSpec("gpt-5.1-codex", {
@@ -243,7 +243,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
 
     generateModelSpec("gpt-5-mini", {
@@ -261,7 +261,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
     generateModelSpec("gpt-5-nano", {
       costPerMillionInputTokens: 0.05,
@@ -278,7 +278,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
     generateModelSpec("o4-mini", {
       costPerMillionInputTokens: 1.1,
@@ -295,7 +295,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 200000,
+      maxContextLength: 200000,
     }),
     generateModelSpec("o3", {
       costPerMillionInputTokens: 2.0,
@@ -312,7 +312,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 200000,
+      maxContextLength: 200000,
     }),
     generateModelSpec("o3-mini", {
       costPerMillionInputTokens: 1.1,
@@ -329,7 +329,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 200000,
+      maxContextLength: 200000,
     }),
     generateModelSpec("o3-pro", {
       costPerMillionInputTokens: 20.0,
@@ -345,7 +345,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 200000,
+      maxContextLength: 200000,
     }),
     generateModelSpec("o3-deep-research", {
       costPerMillionInputTokens: 10.0,
@@ -362,7 +362,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 200000,
+      maxContextLength: 200000,
     }),
     generateModelSpec("o4-mini-deep-research", {
       costPerMillionInputTokens: 2.0,
@@ -379,7 +379,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 200000,
+      maxContextLength: 200000,
     }),
     generateModelSpec("o1", {
       costPerMillionInputTokens: 15.0,
@@ -396,7 +396,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 200000,
+      maxContextLength: 200000,
     }),
     generateModelSpec("o1-pro", {
       costPerMillionInputTokens: 150.0,
@@ -412,7 +412,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 200000,
+      maxContextLength: 200000,
     }),
     generateModelSpec("gpt-5-pro", {
       costPerMillionInputTokens: 15.0,
@@ -428,7 +428,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
     generateModelSpec("gpt-5-chat-latest", {
       costPerMillionInputTokens: 1.25,
@@ -445,7 +445,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
     generateModelSpec("gpt-5.1-chat-latest", {
       costPerMillionInputTokens: 1.25,
@@ -462,7 +462,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
     generateModelSpec("gpt-5.1-codex-mini", {
       costPerMillionInputTokens: 0.25,
@@ -479,7 +479,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
     generateModelSpec("codex-mini-latest", {
       costPerMillionInputTokens: 1.5,
@@ -496,7 +496,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
     generateModelSpec("gpt-5-search-api", {
       costPerMillionInputTokens: 1.25,
@@ -513,7 +513,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 400000,
+      maxContextLength: 400000,
     }),
     generateModelSpec("gpt-4o", {
       costPerMillionInputTokens: 2.5,
@@ -523,7 +523,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 4,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-4o-2024-05-13", {
       costPerMillionInputTokens: 5.0,
@@ -532,7 +532,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 4,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-4o-mini", {
       costPerMillionInputTokens: 0.15,
@@ -542,7 +542,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 5,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-4o-mini-search-preview", {
       costPerMillionInputTokens: 0.15,
@@ -558,7 +558,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-4o-search-preview", {
       costPerMillionInputTokens: 2.5,
@@ -574,7 +574,7 @@ async function init(
           type: "boolean",
         }
       },
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-realtime", {
       costPerMillionInputTokens: 4.0,
@@ -584,7 +584,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 5,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-realtime-mini", {
       costPerMillionInputTokens: 0.6,
@@ -594,7 +594,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 5,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-4o-realtime-preview", {
       costPerMillionInputTokens: 5.0,
@@ -604,7 +604,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 4,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-4o-mini-realtime-preview", {
       costPerMillionInputTokens: 0.6,
@@ -614,7 +614,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 5,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-audio", {
       costPerMillionInputTokens: 2.5,
@@ -623,7 +623,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 4,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-audio-mini", {
       costPerMillionInputTokens: 0.6,
@@ -632,7 +632,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 5,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-4o-audio-preview", {
       costPerMillionInputTokens: 2.5,
@@ -641,7 +641,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 4,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("gpt-4o-mini-audio-preview", {
       costPerMillionInputTokens: 0.15,
@@ -650,7 +650,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 5,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("computer-use-preview", {
       costPerMillionInputTokens: 3.0,
@@ -659,7 +659,7 @@ async function init(
       intelligence: 5,
       tools: 6,
       speed: 3,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
   ]);
 

@@ -70,7 +70,7 @@ async function init(
       intelligence: 2,
       tools: 2,
       speed: 10,
-      contextLength: 32000,
+      maxContextLength: 32000,
     }),
     generateModelSpec("llama-3.3-70b", {
       costPerMillionInputTokens: 0.85,
@@ -79,7 +79,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 10,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpec("qwen-3-32b", {
       costPerMillionInputTokens: 0.4,
@@ -88,7 +88,7 @@ async function init(
       intelligence: 1,
       tools: 1,
       speed: 10,
-      contextLength: 131000,
+      maxContextLength: 131000,
     }),
     generateModelSpec("qwen-3-235b-a22b-instruct-2507", {
       costPerMillionInputTokens: 0.6,
@@ -97,7 +97,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 10,
-      contextLength: 131000,
+      maxContextLength: 131000,
     }),
 
     generateModelSpec("zai-glm-4.6", {
@@ -107,7 +107,7 @@ async function init(
       intelligence: 4,
       tools: 4,
       speed: 10,
-      contextLength: 131000,
+      maxContextLength: 131000,
     }),
     generateModelSpec("gpt-oss-120b", {
       costPerMillionInputTokens: 0.35,
@@ -116,7 +116,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 10,
-      contextLength: 131000,
+      maxContextLength: 131000,
     }),
     ]);
   });

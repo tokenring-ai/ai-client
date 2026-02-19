@@ -69,7 +69,7 @@ async function init(
       intelligence: 3,
       tools: 3,
       speed: 2,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     generateModelSpecs("deepseek-reasoner", {
       costPerMillionInputTokens: 0.28,
@@ -78,7 +78,7 @@ async function init(
       intelligence: 5,
       tools: 5,
       speed: 2,
-      contextLength: 128000,
+      maxContextLength: 128000,
     }),
     ]);
   });
