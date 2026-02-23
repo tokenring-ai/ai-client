@@ -24,6 +24,15 @@ export default function autoConfig() {
     };
   }
 
+  if (process.env.CHUTES_API_KEY) {
+    config.Chutes = {
+      provider: "openaiCompatible",
+      apiKey: process.env.CHUTES_API_KEY,
+      baseURL: 'https://llm.chutes.ai/v1',
+      defaultContextLength: 128000
+    };
+  }
+
   if (process.env.DEEPSEEK_API_KEY) {
     config.DeepSeek = {
       provider: "deepseek",
@@ -54,6 +63,15 @@ export default function autoConfig() {
     };
   }
 
+  if (process.env.NVIDIA_NIM_API_KEY) {
+    config.Nvidia = {
+      provider: "openaiCompatible",
+      apiKey: process.env.NVIDIA_NIM_API_KEY,
+      baseURL: 'https://integrate.api.nvidia.com/v1',
+      defaultContextLength: 32000
+    }
+  }
+
   if (process.env.OPENAI_API_KEY) {
     config.OpenAI = {
       provider: "openai",
@@ -66,7 +84,7 @@ export default function autoConfig() {
       provider: "openaiCompatible",
       baseURL: process.env.LLAMA_BASE_URL ?? "http://127.0.0.1:11434/v1",
       ...(process.env.LLAMA_API_KEY && {apiKey: process.env.LLAMA_API_KEY}),
-      defaultContextLength: 32000
+      defaultContextLength: 128000
     };
   }
 

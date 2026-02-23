@@ -8,7 +8,7 @@ The AI Client package acts as a unified interface to multiple AI providers, abst
 
 ### Key Features
 
-- **Multi-Provider Support**: 17 AI providers including Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, Qwen, xAI Responses, and z.ai
+- **Multi-Provider Support**: 19 AI providers including Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, Qwen, xAI Responses, z.ai, Chutes, and Nvidia NIM
 - **Seven AI Capabilities**: Chat, Embeddings, Image Generation, Video Generation, Reranking, Speech, and Transcription
 - **Model Registries**: Seven dedicated service registries for managing model specifications and capabilities
 - **Dynamic Model Registration**: Register custom models with availability checks
@@ -48,6 +48,8 @@ The package supports the following AI providers:
 | llama.cpp | Self-hosted models | Local inference |
 | Qwen | Qwen models | Chinese language support |
 | z.ai | z.ai API | Coding and general purpose |
+| Chutes | OpenAI-compatible | Broad model access |
+| Nvidia NIM | OpenAI-compatible | Optimized model inference |
 
 ## Configuration
 
@@ -126,6 +128,12 @@ OLLAMA_API_KEY=...
 
 # z.ai
 ZAI_API_KEY=...
+
+# Chutes
+CHUTES_API_KEY=...
+
+# Nvidia NIM
+NVIDIA_NIM_API_KEY=...
 ```
 
 ### Manual Configuration
