@@ -1,5 +1,4 @@
 import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
-import {xai} from "@ai-sdk/xai";
 import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
@@ -43,7 +42,7 @@ type ModelConfigResults = {
 type ModelListData = {
   id: string;
   object: "model";
-  owned_by: "organization" | "openai";
+  owned_by: "organization" | "openai" | "vllm";
   created: number;
   max_model_len?: number;
   permission?: { allow_sampling?: boolean}[],
@@ -139,7 +138,7 @@ async function init(
         propsResponse?.default_generation_settings?.n_ctx ??
         config.defaultContextLength;
 
-      const isVLLMAndAllowsSampling = modelInfo.permission?.[0]?.allow_sampling;
+      const allowsSampling = modelInfo.permission?.[0]?.allow_sampling;
 
       const settings: Record<string, SettingDefinition> = {
         temperature: {
@@ -173,7 +172,7 @@ async function init(
       };
 
 
-      if (isVLLMAndAllowsSampling || propsResponse?.default_generation_settings?.params?.top_k) {
+      if (allowsSampling || propsResponse?.default_generation_settings?.params?.top_k) {
         settings.top_k = {
           description: "Reduces the probability of generating nonsense. A higher value (e.g. 100) will give more diverse answers, while a lower value (e.g. 10) will be more conservative.",
           type: "number",
@@ -181,7 +180,7 @@ async function init(
           max: 100,
         };
       }
-      if (isVLLMAndAllowsSampling || propsResponse?.default_generation_settings?.params?.min_p) {
+      if (allowsSampling || propsResponse?.default_generation_settings?.params?.min_p) {
         settings.min_p = {
           description: "Sets a minimum probability threshold for tokens relative to the most likely token. Helps filter out low-probability noise.",
           type: "number",
@@ -189,7 +188,7 @@ async function init(
           max: 1,
         };
       }
-      if (isVLLMAndAllowsSampling || propsResponse?.default_generation_settings?.params?.repetition_penalty) {
+      if (allowsSampling || propsResponse?.default_generation_settings?.params?.repetition_penalty) {
         settings.repetition_penalty = {
           description: "Sets how strongly to penalize tokens based on their existing presence in the text. 1.0 is neutral, higher values discourage repetition.",
           type: "number",
@@ -197,7 +196,7 @@ async function init(
           max: 2,
         };
       }
-      if (isVLLMAndAllowsSampling || propsResponse?.default_generation_settings?.params?.length_penalty) {
+      if (allowsSampling || propsResponse?.default_generation_settings?.params?.length_penalty) {
         settings.length_penalty = {
           description: "Adjusts the probability of shorter or longer completions. Values > 1.0 favor longer sequences.",
           type: "number",
@@ -205,11 +204,18 @@ async function init(
           max: 5,
         };
       }
-      if (isVLLMAndAllowsSampling || propsResponse?.default_generation_settings?.params?.min_tokens) {
+      if (allowsSampling || propsResponse?.default_generation_settings?.params?.min_tokens) {
         settings.min_tokens = {
           description: "The minimum number of tokens the model must generate before it can stop.",
           type: "number",
           min: 0,
+        }
+      }
+
+      if (modelInfo.owned_by === "vllm") {
+        settings.enable_thinking = {
+          description: "Enables thinking mode, which allows the model to generate longer sequences by leveraging the context it has seen so far.",
+          type: "boolean",
         }
       }
 
@@ -239,6 +245,7 @@ async function init(
           if (settings.has("repetition_penalty")) ourOptions.repetition_penalty = settings.get("repetition_penalty") as number;
           if (settings.has("length_penalty")) ourOptions.length_penalty = settings.get("length_penalty") as number;
           if (settings.has("min_tokens")) ourOptions.min_tokens = settings.get("min_tokens") as number;
+          if (settings.has("enable_thinking")) ourOptions.enable_thinking = !!settings.get("enable_thinking");
         },
         ...capabilities,
       });

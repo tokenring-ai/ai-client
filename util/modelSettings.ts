@@ -26,7 +26,7 @@ export function coerceFeatureValue(v: string): any {
 }
 
 export function serializeModel(base: string, settings: ChatModelSettings): string {
-  const entries = Object.entries(settings).filter(([, v]) => v !== undefined);
+  const entries = Array.from(settings.entries()).filter(([, v]) => v !== undefined);
   if (entries.length === 0) return base;
   const query = entries
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "boolean" ? (v ? "1" : "0") : String(v))}`)
