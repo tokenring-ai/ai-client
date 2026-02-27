@@ -2,6 +2,7 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import {AIProviderConfigSchema} from "./providers.ts";
 
+export type {TextPart, ImagePart, FilePart, UserModelMessage} from "ai";
 export type ModelRequirements = {
   /**
    * The name of the provider and model, possibly including wildcards
