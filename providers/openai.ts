@@ -481,23 +481,6 @@ async function init(
       },
       maxContextLength: 400000,
     }),
-    generateModelSpec("codex-mini-latest", {
-      costPerMillionInputTokens: 1.5,
-      costPerMillionOutputTokens: 6,
-      costPerMillionCachedInputTokens: 0.375,
-      reasoningText: 4,
-      intelligence: 5,
-      tools: 5,
-      speed: 3,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        }
-      },
-      maxContextLength: 400000,
-    }),
     generateModelSpec("gpt-5-search-api", {
       costPerMillionInputTokens: 1.25,
       costPerMillionCachedInputTokens: 0.125,

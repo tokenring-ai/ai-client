@@ -72,24 +72,6 @@ async function init(
       speed: 10,
       maxContextLength: 32000,
     }),
-    generateModelSpec("llama-3.3-70b", {
-      costPerMillionInputTokens: 0.85,
-      costPerMillionOutputTokens: 1.2,
-      reasoningText: 3,
-      intelligence: 3,
-      tools: 3,
-      speed: 10,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("qwen-3-32b", {
-      costPerMillionInputTokens: 0.4,
-      costPerMillionOutputTokens: 0.8,
-      reasoningText: 1,
-      intelligence: 1,
-      tools: 1,
-      speed: 10,
-      maxContextLength: 131000,
-    }),
     generateModelSpec("qwen-3-235b-a22b-instruct-2507", {
       costPerMillionInputTokens: 0.6,
       costPerMillionOutputTokens: 1.2,
@@ -100,7 +82,7 @@ async function init(
       maxContextLength: 131000,
     }),
 
-    generateModelSpec("zai-glm-4.6", {
+    generateModelSpec("zai-glm-4.7", {
       costPerMillionInputTokens: 2.25,
       costPerMillionOutputTokens: 2.75,
       reasoningText: 4,
