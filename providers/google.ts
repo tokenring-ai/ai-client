@@ -3,7 +3,7 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry} from "../ModelRegistry.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
 import {ChatModelSettings, SettingDefinition} from "../ModelTypeRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
 import cachedDataRetriever from "../util/cachedDataRetriever.ts";
@@ -50,11 +50,12 @@ async function init(
     modelSpec: Omit<
       ChatModelSpec,
       "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"
-    >,
+    > & { providerModelId?: string },
   ): ChatModelSpec {
-    const isGemini3 = modelId.startsWith("gemini-3");
-    const isGemini25 = modelId.startsWith("gemini-2.5");
-    
+    const providerModelId = modelSpec.providerModelId ?? modelId;
+    const isGemini3 = providerModelId.startsWith("gemini-3");
+    const isGemini25 = providerModelId.startsWith("gemini-2.5");
+
     const baseSettings: Record<string, SettingDefinition> = {
       responseModalities: {
         description: "Response modalities (TEXT, IMAGE)",
@@ -62,7 +63,7 @@ async function init(
         type: "array"
       }
     };
-    
+
     if (isGemini3) {
       baseSettings.thinkingLevel = {
         description: "Thinking depth (low, high)",
@@ -89,15 +90,15 @@ async function init(
         type: "boolean"
       };
     }
-    
+
     return {
       modelId,
       providerDisplayName: providerDisplayName,
-      impl: googleProvider(modelId),
+      impl: googleProvider(providerModelId),
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.models.some((model) =>
-          model.name.includes(modelId),
+          model.name.includes(providerModelId),
         );
       },
       mangleRequest(req: ChatRequest, settings: ChatModelSettings) {
@@ -106,13 +107,13 @@ async function init(
             {},
           );
         }
-        
+
         const googleOptions: GoogleGenerativeAIProviderOptions = (req.providerOptions ??= {}).google ??= {};
-        
+
         if (settings.has("responseModalities")) {
           googleOptions.responseModalities = (settings.get("responseModalities") as any)?.map((s: string) => s.toUpperCase());
         }
-        
+
         if (settings.has("thinkingLevel") || settings.has("thinkingBudget") || settings.has("includeThoughts")) {
           const thinkingConfig: any = {};
           if (settings.has("thinkingLevel")) thinkingConfig.thinkingLevel = settings.get("thinkingLevel");
@@ -121,7 +122,7 @@ async function init(
           googleOptions.thinkingConfig = thinkingConfig;
         }
       },
-      settings: { ...baseSettings, ...modelSpec.settings },
+      settings: {...baseSettings, ...modelSpec.settings},
       ...modelSpec,
     } satisfies ChatModelSpec;
   }
@@ -141,7 +142,7 @@ async function init(
         //const modelList = await getModels();
         //return !!modelList?.models.some((model) => model.name.includes(modelId));
       },
-      calculateImageCost(req, result) {
+      calculateImageCost() {
         return costPerImage
       },
     };
@@ -149,56 +150,92 @@ async function init(
 
   app.waitForService(ChatModelRegistry, chatModelRegistry => {
     chatModelRegistry.registerAllModelSpecs([
-    generateModelSpec("gemini-3-pro-preview", {
-      costPerMillionInputTokens: 4.0,
-      costPerMillionOutputTokens: 18.0,
-      reasoningText: 7,
-      intelligence: 7,
-      tools: 7,
-      speed: 3,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        }
-      },
-      maxContextLength: 1000000,
-    }),
+      generateModelSpec("gemini-3.1-pro-long-context", {
+        providerModelId: 'gemini-3.1-pro-preview',
+        costPerMillionInputTokens: 4.0,
+        costPerMillionOutputTokens: 18.0,
+        reasoningText: 8,
+        intelligence: 8,
+        tools: 8,
+        speed: 3,
+        settings: {
+          websearch: {
+            description: "Enables web search",
+            defaultValue: false,
+            type: "boolean",
+          }
+        },
+        maxContextLength: 2000000,
+      }),
+      generateModelSpec("gemini-3.1-pro", {
+        providerModelId: 'gemini-3.1-pro-preview',
+        costPerMillionInputTokens: 2.0,
+        costPerMillionOutputTokens: 12.0,
+        reasoningText: 8,
+        intelligence: 8,
+        tools: 8,
+        speed: 3,
+        settings: {
+          websearch: {
+            description: "Enables web search",
+            defaultValue: false,
+            type: "boolean",
+          }
+        },
+        maxContextLength: 200000,
+      }),
+      generateModelSpec("gemini-3-pro", {
+        providerModelId: 'gemini-3-pro-preview',
+        costPerMillionInputTokens: 4.0,
+        costPerMillionOutputTokens: 18.0,
+        reasoningText: 7,
+        intelligence: 7,
+        tools: 7,
+        speed: 3,
+        settings: {
+          websearch: {
+            description: "Enables web search",
+            defaultValue: false,
+            type: "boolean",
+          }
+        },
+        maxContextLength: 1000000,
+      }),
 
-    generateModelSpec("gemini-2.5-pro", {
-      costPerMillionInputTokens: 2.5,
-      costPerMillionOutputTokens: 15.0,
-      reasoningText: 6,
-      intelligence: 6,
-      tools: 6,
-      speed: 2,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        }
-      },
-      maxContextLength: 1000000,
-    }),
-    generateModelSpec("gemini-2.5-flash", {
-      costPerMillionInputTokens: 0.3,
-      costPerMillionOutputTokens: 2.5,
-      reasoningText: 5,
-      intelligence: 4,
-      tools: 4,
-      speed: 4,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        }
-      },
-      maxContextLength: 1000000,
-    }),
-      generateModelSpec("gemini-3-flash-preview", {
+      generateModelSpec("gemini-2.5-pro", {
+        costPerMillionInputTokens: 2.5,
+        costPerMillionOutputTokens: 15.0,
+        reasoningText: 6,
+        intelligence: 6,
+        tools: 6,
+        speed: 2,
+        settings: {
+          websearch: {
+            description: "Enables web search",
+            defaultValue: false,
+            type: "boolean",
+          }
+        },
+        maxContextLength: 1000000,
+      }),
+      generateModelSpec("gemini-2.5-flash", {
+        costPerMillionInputTokens: 0.3,
+        costPerMillionOutputTokens: 2.5,
+        reasoningText: 5,
+        intelligence: 4,
+        tools: 4,
+        speed: 4,
+        settings: {
+          websearch: {
+            description: "Enables web search",
+            defaultValue: false,
+            type: "boolean",
+          }
+        },
+        maxContextLength: 1000000,
+      }),
+      generateModelSpec("gemini-3-flash", {
+        providerModelId: 'gemini-3-flash-preview',
         costPerMillionInputTokens: 0.50,
         costPerMillionOutputTokens: 3,
         reasoningText: 6,
@@ -214,15 +251,15 @@ async function init(
         },
         maxContextLength: 1000000,
       }),
-    generateModelSpec("gemini-2.5-flash-lite", {
-      costPerMillionInputTokens: 0.1,
-      costPerMillionOutputTokens: 0.4,
-      reasoningText: 2,
-      intelligence: 3,
-      tools: 3,
-      speed: 5,
-      maxContextLength: 1000000,
-    }),
+      generateModelSpec("gemini-2.5-flash-lite", {
+        costPerMillionInputTokens: 0.1,
+        costPerMillionOutputTokens: 0.4,
+        reasoningText: 2,
+        intelligence: 3,
+        tools: 3,
+        speed: 5,
+        maxContextLength: 1000000,
+      }),
     ]);
   });
 

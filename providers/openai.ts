@@ -47,10 +47,11 @@ async function init(
     modelSpec: Omit<
       ChatModelSpec,
       "isAvailable" | "providerDisplayName" | "impl" | "modelId"
-    >,
+    > & { providerModelId?: string },
   ): ChatModelSpec {
-    const isReasoningModel = modelId.startsWith("gpt-5") || modelId.startsWith("o");
-    const isGpt51 = modelId === "gpt-5.1" || modelId.startsWith("gpt-5.1-");
+    const providerModelId = modelSpec.providerModelId ?? modelId;
+    const isReasoningModel = providerModelId.startsWith("gpt-5") || providerModelId.startsWith("o");
+    const isGpt51 = providerModelId === "gpt-5.1" || providerModelId.startsWith("gpt-5.1-");
     
     const baseSettings: any = {
       websearch: { description: "Enables web search", defaultValue: false, type: "boolean" },
@@ -82,10 +83,10 @@ async function init(
     return {
       modelId,
       providerDisplayName: providerDisplayName,
-      impl: openai(modelId),
+      impl: openai(providerModelId),
       async isAvailable() {
         const modelList = await getModels();
-        return !!modelList?.data.some((model) => model.id === modelId);
+        return !!modelList?.data.some((model) => model.id === providerModelId);
       },
       mangleRequest(req, settings) {
         if (settings.has("websearch")) {
@@ -137,7 +138,7 @@ async function init(
         const modelList = await getModels();
         return !!modelList?.data.some((model) => model.id === modelId);
       },
-      calculateImageCost(req, result) {
+      calculateImageCost(req) {
         const size = req.size.split("x").map(Number)
         return costPerMegapixel * size[0] * size[1] / 1000000;
       },
@@ -198,7 +199,6 @@ async function init(
       speed: 3,
       maxContextLength: 400000,
     }),
-
       generateModelSpec("gpt-5.2", {
         costPerMillionInputTokens: 1.75,
         costPerMillionCachedInputTokens: 0.175,
@@ -208,6 +208,51 @@ async function init(
         tools: 6,
         speed: 3,
         maxContextLength: 400000,
+      }),
+
+
+      generateModelSpec("gpt-5.4", {
+        costPerMillionInputTokens: 2.50,
+        costPerMillionCachedInputTokens: 0.25,
+        costPerMillionOutputTokens: 15.00,
+        reasoningText: 5,
+        intelligence: 7,
+        tools: 7,
+        speed: 3,
+        maxContextLength: 272000,
+      }),
+
+      generateModelSpec("gpt-5.4-long-context", {
+        providerModelId: "gpt-5.4", // Assuming it uses the same base model ID
+        costPerMillionInputTokens: 5.00,
+        costPerMillionCachedInputTokens: 0.50,
+        costPerMillionOutputTokens: 22.50,
+        reasoningText: 5,
+        intelligence: 7,
+        tools: 7,
+        speed: 3,
+        maxContextLength: 1000000,
+      }),
+
+      generateModelSpec("gpt-5.4-pro", {
+        costPerMillionInputTokens: 30.00,
+        costPerMillionOutputTokens: 180.00,
+        reasoningText: 7,
+        intelligence: 8,
+        tools: 8,
+        speed: 2,
+        maxContextLength: 272000,
+      }),
+
+      generateModelSpec("gpt-5.4-pro-long-context", {
+        providerModelId: "gpt-5.4-pro", // Assuming it uses the same base model ID
+        costPerMillionInputTokens: 60.00,
+        costPerMillionOutputTokens: 270.00,
+        reasoningText: 7,
+        intelligence: 8,
+        tools: 8,
+        speed: 2,
+        maxContextLength: 1000000,
       }),
 
       generateModelSpec("gpt-5-codex", {

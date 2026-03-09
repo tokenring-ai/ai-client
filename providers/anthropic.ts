@@ -42,7 +42,7 @@ async function init(
     },
   }) as () => Promise<ModelsResponse | null>;
 
-  const anthropicProvider = createAnthropic({
+  const anthropicClient = createAnthropic({
     apiKey: config.apiKey,
   });
 
@@ -57,25 +57,40 @@ async function init(
     return {
       modelId,
       providerDisplayName: providerDisplayName,
-      impl: anthropicProvider(anthropicModelId),
+      impl: anthropicClient(anthropicModelId),
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some((model) => model.id === anthropicModelId);
       },
       mangleRequest(req, settings) {
+        const anthropicProvider = (req.providerOptions ??= {}).anthropic ??= {}
+        if (settings.get("caching") as boolean) {
+          anthropicProvider.cacheControl = { type: 'ephemeral' }
+        }
+
         // Add web search tool if enabled
-        if (settings.has("maxSearchUses")) {
-          (req.tools ??= {}).web_search = anthropicProvider.tools.webSearch_20250305({
-            maxUses: settings.get("maxSearchUses") as number,
+        if (settings.get("websearch") as boolean) {
+          (req.tools ??= {}).web_search = anthropicClient.tools.webSearch_20250305({
+            maxUses: settings.get("maxSearchUses") as number ?? 5,
           });
         }
       },
       settings: {
+        caching: {
+          description: "Enable context caching for this model",
+          defaultValue: true,
+          type: "boolean",
+        },
+        websearch: {
+          description: "Enables web search",
+          defaultValue: false,
+          type: "boolean",
+        },
         maxSearchUses: {
           description: "Maximum number of web searches Claude can perform (0 to disable)",
-          defaultValue: 0,
+          defaultValue: 5,
           type: "number",
-          min: 0,
+          min: 1,
           max: 20,
         },
       },

@@ -64,6 +64,7 @@ async function init(
     chatModelRegistry.registerAllModelSpecs([
     generateModelSpecs("deepseek-chat", {
       costPerMillionInputTokens: 0.28,
+      costPerMillionCachedInputTokens: 0.028,
       costPerMillionOutputTokens: 0.42,
       reasoningText: 1,
       intelligence: 3,
@@ -73,6 +74,7 @@ async function init(
     }),
     generateModelSpecs("deepseek-reasoner", {
       costPerMillionInputTokens: 0.28,
+      costPerMillionCachedInputTokens: 0.028,
       costPerMillionOutputTokens: 0.42,
       reasoningText: 5,
       intelligence: 5,
