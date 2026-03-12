@@ -1,4 +1,5 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {MetricsService} from "@tokenring-ai/metrics";
 import {
   experimental_generateVideo as generateVideo,
   type GenerateVideoResult,
@@ -6,7 +7,7 @@ import {
 } from "ai";
 import { Experimental_VideoModelV3 } from '@ai-sdk/provider';
 
-import type {ChatModelSettings, ModelSpec, SettingDefinition} from "../ModelTypeRegistry.js";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 
 export type VideoModel = Experimental_VideoModelV3;
 export type VideoRequest = {
@@ -99,9 +100,10 @@ export default class AIVideoGenerationClient {
 
       const cost = this.modelSpec.calculateVideoCost(finalRequest, result);
 
-      agent.addCost(
+      agent.getServiceByType(MetricsService)?.addCost(
         `Video Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
-        cost
+        cost,
+        agent
       );
 
       return [result.video, result];

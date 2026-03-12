@@ -1,4 +1,5 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {MetricsService} from "@tokenring-ai/metrics";
 import {type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel,} from "ai";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 
@@ -103,7 +104,7 @@ export default class AIImageGenerationClient {
 
       const cost = this.modelSpec.calculateImageCost(request, result);
 
-      agent.addCost(`Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost);
+      agent.getServiceByType(MetricsService)?.addCost(`Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost, agent);
 
 
       return [result.image, result];

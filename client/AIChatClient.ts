@@ -1,5 +1,6 @@
 import type {LanguageModelV2Usage, LanguageModelV3Source, SharedV3Warning,} from "@ai-sdk/provider";
 import Agent from "@tokenring-ai/agent/Agent";
+import {MetricsService} from "@tokenring-ai/metrics";
 
 import {
   type AssistantModelMessage,
@@ -260,7 +261,7 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0);
+    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
 
     return response;
   }
@@ -288,7 +289,7 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0);
+    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
 
     return [response.text ?? "", response];
   }
@@ -322,7 +323,7 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent.addCost(`GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0);
+    agent.getServiceByType(MetricsService)?.addCost(`GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
 
     return [result.output as z.infer<typeof request.schema>, response];
   }
