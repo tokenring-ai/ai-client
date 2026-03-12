@@ -1,14 +1,14 @@
 import {TokenRingPlugin} from "@tokenring-ai/app";
 import {RpcService} from "@tokenring-ai/rpc";
 import {z} from "zod";
-import autoConfig from "./autoConfig.ts";
 import {
   ChatModelRegistry,
   EmbeddingModelRegistry,
   ImageGenerationModelRegistry,
   RerankingModelRegistry,
   SpeechModelRegistry,
-  TranscriptionModelRegistry, VideoGenerationModelRegistry
+  TranscriptionModelRegistry,
+  VideoGenerationModelRegistry
 } from "./ModelRegistry.ts";
 import packageJSON from "./package.json" with {type: "json"};
 import {registerProviders} from "./providers.js";
@@ -38,13 +38,7 @@ export default {
   },
 
   async start(app, config): Promise<void> {
-    let providerConfig = config.ai.providers;
-    if (config.ai.autoConfigure || !providerConfig) {
-      providerConfig = autoConfig()
-    }
-
-    await registerProviders(
-      providerConfig,
+    await registerProviders(config.ai.providers,
       app
     );
   },
