@@ -226,36 +226,73 @@ export default class AIChatClient {
     });
 
     const stream = result.fullStream;
-    for await (const part of stream) {
-      switch (part.type) {
-        case "file":
-          agent.artifactOutput({
-            name: "Generated File",
-            encoding: "base64",
-            mimeType: part.file.mediaType,
-            body: part.file.base64
-          });
-          break;
-        case "text-delta": {
-          agent.chatOutput(part.text);
-          break;
-        }
-        case "reasoning-delta": {
-          agent.reasoningOutput(part.text);
-          break;
-        }
-        case "finish": {
-          agent.chatOutput("\n");
-          break;
-        }
-        case "error": {
-          if (part.error) {
-            agent.errorMessage("Error while handling request:\n", part.error as Error);
-          } else {
-            agent.errorMessage("Unknown error while handling request");
+
+    // Buffers for chat and reasoning output
+    let chatBuffer = "";
+    let reasoningBuffer = "";
+    let flushTimer: ReturnType<typeof setInterval> | null = null;
+
+    // Function to flush buffers
+    const flushBuffers = () => {
+      if (chatBuffer) {
+        agent.chatOutput(chatBuffer);
+        chatBuffer = "";
+      }
+      if (reasoningBuffer) {
+        agent.reasoningOutput(reasoningBuffer);
+        reasoningBuffer = "";
+      }
+    };
+
+    // Start the flush timer (flush every 50ms)
+    flushTimer = setInterval(flushBuffers, 100);
+
+    try {
+      for await (const part of stream) {
+        switch (part.type) {
+          case "file":
+            flushBuffers();
+            agent.artifactOutput({
+              name: "Generated File",
+              encoding: "base64",
+              mimeType: part.file.mediaType,
+              body: part.file.base64
+            });
+            break;
+          case "text-delta": {
+            if (reasoningBuffer) {
+              flushBuffers()
+            }
+            chatBuffer += part.text;
+            break;
+          }
+          case "reasoning-delta": {
+            if (chatBuffer) {
+              flushBuffers()
+            }
+            reasoningBuffer += part.text;
+            break;
+          }
+          case "finish": {
+            //agent.chatOutput("\n");
+            break;
+          }
+          case "error": {
+            flushBuffers();
+            if (part.error) {
+              agent.errorMessage("Error while handling request:\n", part.error as Error);
+            } else {
+              agent.errorMessage("Unknown error while handling request");
+            }
           }
         }
       }
+    } finally {
+      // Flush any remaining buffered content
+      if (flushTimer) {
+        clearInterval(flushTimer);
+      }
+      flushBuffers();
     }
 
     const elapsedMs = Date.now() - start;
