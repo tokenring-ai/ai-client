@@ -6,7 +6,7 @@ import type {ChatModelSpec} from "../client/AIChatClient.js";
 import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
 import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
-import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 
 const OllamaModelProviderConfigSchema = z.object({
   provider: z.literal('ollama'),

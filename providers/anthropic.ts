@@ -5,7 +5,7 @@ import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
 
-import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 
 const AnthropicModelProviderConfigSchema = z.object({
   provider: z.literal('anthropic'),

@@ -62,8 +62,8 @@ export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSp
 }
 
 export class VideoGenerationModelRegistry extends ModelTypeRegistry<VideoModelSpec, AIVideoGenerationClient, VideoModelRequirements> implements TokenRingService {
-  readonly name = "ImageGenerationModelRegistry";
-  description = "Model registry for image generation models";
+  readonly name = "VideoGenerationModelRegistry";
+  description = "Model registry for video generation models";
 
   constructor() {
     super(AIVideoGenerationClient);

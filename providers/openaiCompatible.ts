@@ -6,7 +6,7 @@ import type {EmbeddingModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddi
 import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
 import type {SettingDefinition} from "../ModelTypeRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
-import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 
 const OAICompatibleModelConfigSchema = z.object({
   provider: z.literal('openaiCompatible'),

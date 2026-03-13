@@ -6,7 +6,7 @@ import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
 import {ChatModelSettings, SettingDefinition} from "../ModelTypeRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
-import cachedDataRetriever from "../util/cachedDataRetriever.ts";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 
 const GoogleModelProviderConfigSchema = z.object({
   provider: z.literal('google'),

@@ -8,17 +8,18 @@ The AI Client package acts as a unified interface to multiple AI providers, abst
 
 ### Key Features
 
-- **Multi-Provider Support**: 19 AI providers including Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, Qwen, xAI Responses, z.ai, Chutes, and Nvidia NIM
+- **17+ AI Providers**: Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, and more
 - **Seven AI Capabilities**: Chat, Embeddings, Image Generation, Video Generation, Reranking, Speech, and Transcription
-- **Model Registries**: Seven dedicated service registries for managing model specifications and capabilities
+- **Seven Model Registries**: Dedicated service registries for managing model specifications and capabilities
 - **Dynamic Model Registration**: Register custom models with availability checks
 - **Model Status Tracking**: Monitor model online, cold, and offline status
 - **Auto-Configuration**: Automatic provider setup from environment variables
 - **JSON-RPC API**: Remote procedure call endpoints for programmatic access via plugin registration
-- **Streaming Support**: Real-time streaming responses with delta handling
+- **Streaming Support**: Real-time streaming responses with delta handling for text and reasoning
 - **Agent Integration**: Seamless integration with Token Ring agent system through services
-- **Feature Queries**: Support for query parameters in model names (e.g., `provider:model?websearch=1`)
 - **Feature System**: Rich feature specification system supporting boolean, number, string, enum, and array types with validation
+- **Cost Tracking**: Automatic cost calculation and metrics integration
+- **Model Requirements**: Query models by capabilities (context length, reasoning, intelligence, speed, etc.)
 
 ## Installation
 
@@ -30,27 +31,223 @@ bun add @tokenring-ai/ai-client
 
 The package supports the following AI providers through dedicated integrations:
 
-| Provider   | SDK/Model Support        | Key Features                           |
-|------------|--------------------------|----------------------------------------|
-| Anthropic  | Claude models            | Reasoning, analysis, web search        |
-| OpenAI     | GPT models, Whisper, TTS | Reasoning, multimodal, real-time audio |
-| Google     | Gemini, Imagen           | Thinking, multimodal, image generation |
-| Groq       | LLaMA-based models       | High-speed inference                   |
-| Cerebras   | LLaMA-based models       | High performance                       |
-| DeepSeek   | DeepSeek models          | Reasoning capabilities                 |
-| ElevenLabs | Speech synthesis         | Multilingual voice generation          |
-| Fal        | Image generation         | Fast image generation                  |
-| xAI        | xAI models               | Reasoning and analysis                 |
-| OpenRouter | Aggregated access        | Multiple provider access               |
-| Perplexity | Perplexity models        | Web search integration                 |
-| Azure      | Azure OpenAI             | Enterprise deployment                  |
-| Ollama     | Self-hosted models       | Local inference                        |
-| llama.cpp  | Self-hosted models       | Local inference                        |
-| Meta       | LLaMA-base models        | Banana                                 |
-| Qwen       | Qwen models              | Chinese language support               |
-| z.ai       | z.ai API                 | Coding and general purpose             |
-| Chutes     | OpenAI-compatible        | Broad model access                     |
-| Nvidia NIM | OpenAI-compatible        | Optimized model inference              |
+| Provider | SDK/Model Support | Key Features |
+|----------|-------------------|--------------|
+| Anthropic | Claude models | Reasoning, analysis, web search, context caching |
+| OpenAI | GPT models, Whisper, TTS, Image Generation | Reasoning, multimodal, real-time audio, image generation |
+| Google | Gemini, Imagen | Thinking, multimodal, image generation, web search |
+| Groq | LLaMA-based models | High-speed inference |
+| Cerebras | LLaMA-based models | High performance |
+| DeepSeek | DeepSeek models | Reasoning capabilities |
+| ElevenLabs | Speech synthesis | Multilingual voice generation |
+| Fal | Image generation | Fast image generation |
+| xAI | xAI models | Reasoning and analysis |
+| OpenRouter | Aggregated access | Multiple provider access |
+| Perplexity | Perplexity models | Web search integration |
+| Azure | Azure OpenAI | Enterprise deployment |
+| Ollama | Self-hosted models | Local inference |
+| llama.cpp | Self-hosted models | Local inference |
+| Chutes | OpenAI-compatible | Local/remote inference |
+| Nvidia NIM | OpenAI-compatible | GPU-accelerated inference |
+| Qwen (DashScope) | OpenAI-compatible | Alibaba models |
+| zAI | OpenAI-compatible | Z.ai models |
+
+Additional providers can be configured using the `openaiCompatible` provider for OpenAI-compatible APIs.
+
+## Core Components
+
+### Model Registries
+
+The package provides seven model registry services, each implementing the `TokenRingService` interface:
+
+- **ChatModelRegistry**: Manages chat model specifications
+- **ImageGenerationModelRegistry**: Manages image generation model specifications
+- **VideoGenerationModelRegistry**: Manages video generation model specifications
+- **EmbeddingModelRegistry**: Manages embedding model specifications
+- **SpeechModelRegistry**: Manages speech synthesis model specifications
+- **TranscriptionModelRegistry**: Manages speech-to-text transcription model specifications
+- **RerankingModelRegistry**: Manages document reranking model specifications
+
+### Client Classes
+
+- **AIChatClient**: Chat completion and structured output generation
+- **AIEmbeddingClient**: Text vectorization and embeddings
+- **AIImageGenerationClient**: Image generation from text prompts
+- **AIVideoGenerationClient**: Video generation from text or images
+- **AISpeechClient**: Text-to-speech synthesis
+- **AITranscriptionClient**: Audio-to-text transcription
+- **AIRerankingClient**: Document relevance ranking
+
+### Utilities
+
+- **cachedDataRetriever**: Caches API responses to reduce redundant requests
+- **modelSettings**: Parses and serializes model names with feature settings
+- **resequenceMessages**: Resequences chat messages to maintain proper alternation
+
+## Services
+
+The package registers seven service registries for different AI capabilities. Each registry implements the `TokenRingService` interface and provides methods for managing model specifications and retrieving clients.
+
+### ChatModelRegistry
+
+Manages chat model specifications and provides access to chat completion capabilities.
+
+**Methods:**
+
+- `registerAllModelSpecs(specs)`: Register multiple chat model specifications
+- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
+- `getModelsByProvider()`: Get all registered models grouped by provider
+- `getAllModelsWithOnlineStatus()`: Get all models with their online status
+- `getClient(name)`: Get a client instance matching the model name
+- `getCheapestModelByRequirements(requirements, estimatedContextLength)`: Find the cheapest model matching requirements
+
+**Model Requirements:**
+
+- `nameLike`: Filter models by name pattern
+- `contextLength`: Maximum context length in tokens
+- `maxCompletionTokens`: Maximum output tokens
+- `research`: Research ability (0-infinity)
+- `reasoningText`: Reasoning capability score (0-infinity)
+- `intelligence`: Intelligence capability score (0-infinity)
+- `speed`: Speed capability score (0-infinity)
+- `webSearch`: Web search capability score (0-infinity)
+
+**Model Specification:**
+
+Each model specification includes:
+
+- `modelId`: Unique identifier for the model
+- `providerDisplayName`: Display name of the provider
+- `impl`: Model implementation interface
+- `costPerMillionInputTokens`: Cost per million input token (default: 600)
+- `costPerMillionOutputTokens`: Cost per million output tokens (default: 600)
+- `costPerMillionCachedInputTokens`: Cost per million cached input tokens (optional)
+- `costPerMillionReasoningTokens`: Cost per million reasoning tokens (optional)
+- `maxContextLength`: Maximum context length in tokens
+- `isAvailable()`: Async function to check model availability
+- `isHot()`: Async function to check if model is warmed up
+- `mangleRequest()`: Optional function to modify the request before sending
+- `settings`: Optional feature specifications for query parameters
+- `speed`: Speed capability score (0-infinity)
+- `research`: Research ability (0-infinity)
+- `reasoningText`: Reasoning capability score (0-infinity)
+- `tools`: Tools capability score (0-infinity)
+- `intelligence`: Intelligence capability score (0-infinity)
+- `maxCompletionTokens`: Maximum output tokens (optional)
+
+**Example:**
+
+```typescript
+chatRegistry.registerAllModelSpecs([
+  {
+    modelId: "custom-model",
+    providerDisplayName: "CustomProvider",
+    impl: customProvider("custom-model"),
+    costPerMillionInputTokens: 5,
+    costPerMillionOutputTokens: 15,
+    maxContextLength: 100000,
+    async isAvailable() {
+      return true;
+    }
+  }
+]);
+```
+
+### ImageGenerationModelRegistry
+
+Manages image generation model specifications.
+
+**Methods:**
+
+- `registerAllModelSpecs(specs)`: Register image generation model specifications
+- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
+- `getModelsByProvider()`: Get all registered models grouped by provider
+- `getAllModelsWithOnlineStatus()`: Get all models with their online status
+- `getClient(name)`: Get a client instance matching the model name
+
+**Model Requirements:**
+
+- `nameLike`: Filter models by name pattern
+
+### VideoGenerationModelRegistry
+
+Manages video generation model specifications.
+
+**Methods:**
+
+- `registerAllModelSpecs(specs)`: Register video generation model specifications
+- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
+- `getModelsByProvider()`: Get all registered models grouped by provider
+- `getAllModelsWithOnlineStatus()`: Get all models with their online status
+- `getClient(name)`: Get a client instance matching the model name
+
+**Model Requirements:**
+
+- `nameLike`: Filter models by name pattern
+
+### EmbeddingModelRegistry
+
+Manages embedding model specifications for text vectorization.
+
+**Methods:**
+
+- `registerAllModelSpecs(specs)`: Register embedding model specifications
+- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
+- `getModelsByProvider()`: Get all registered models grouped by provider
+- `getAllModelsWithOnlineStatus()`: Get all models with their online status
+- `getClient(name)`: Get a client instance matching the model name
+
+**Model Requirements:**
+
+- `nameLike`: Filter models by name pattern
+
+### SpeechModelRegistry
+
+Manages speech synthesis model specifications.
+
+**Methods:**
+
+- `registerAllModelSpecs(specs)`: Register speech model specifications
+- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
+- `getModelsByProvider()`: Get all registered models grouped by provider
+- `getAllModelsWithOnlineStatus()`: Get all models with their online status
+- `getClient(name)`: Get a client instance matching the model name
+
+**Model Requirements:**
+
+- `nameLike`: Filter models by name pattern
+
+### TranscriptionModelRegistry
+
+Manages speech-to-text transcription model specifications.
+
+**Methods:**
+
+- `registerAllModelSpecs(specs)`: Register transcription model specifications
+- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
+- `getModelsByProvider()`: Get all registered models grouped by provider
+- `getAllModelsWithOnlineStatus()`: Get all models with their online status
+- `getClient(name)`: Get a client instance matching the model name
+
+**Model Requirements:**
+
+- `nameLike`: Filter models by name pattern
+
+### RerankingModelRegistry
+
+Manages document reranking model specifications.
+
+**Methods:**
+
+- `registerAllModelSpecs(specs)`: Register reranking model specifications
+- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
+- `getModelsByProvider()`: Get all registered models grouped by provider
+- `getAllModelsWithOnlineStatus()`: Get all models with their online status
+- `getClient(name)`: Get a client instance matching the model name
+
+**Model Requirements:**
+
+- `nameLike`: Filter models by name pattern
 
 ## Configuration
 
@@ -121,7 +318,7 @@ CHUTES_API_KEY=...
 # NVIDIA NIM
 NVIDIA_NIM_API_KEY=...
 
-# LLama.cpp API
+# llama.cpp
 LLAMA_BASE_URL=http://127.0.0.1:11434/v1
 LLAMA_API_KEY=...
 
@@ -172,174 +369,6 @@ The plugin configuration schema is:
 ```
 
 **Note**: The `provider` field in `AIProviderConfig` is a discriminator that matches provider names like "anthropic", "openai", "google", and so on (lowercase).
-
-## Services
-
-The package registers seven service registries for different AI capabilities. Each registry implements the `TokenRingService` interface and provides methods for managing model specifications and retrieving clients.
-
-### ChatModelRegistry
-
-Manages chat model specifications and provides access to chat completion capabilities.
-
-**Methods:**
-
-- `registerAllModelSpecs(specs)`: Register multiple chat model specifications
-- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
-- `getModelsByProvider()`: Get all registered models grouped by provider
-- `getAllModelsWithOnlineStatus()`: Get all models with their online status
-- `getClient(name)`: Get a client instance matching the model name
-- `getCheapestModelByRequirements(requirements, estimatedContextLength)`: Find the cheapest model matching requirements
-
-**Model Requirements:**
-
-- `nameLike`: Filter models by name pattern
-- `contextLength`: Maximum context length in tokens
-- `maxCompletionTokens`: Maximum output tokens
-- `research`: Research ability (0-infinity)
-- `reasoningText`: Reasoning capability score (0-infinity)
-- `intelligence`: Intelligence capability score (0-infinity)
-- `speed`: Speed capability score (0-infinity)
-- `webSearch`: Web search capability score (0-infinity)
-
-**Model Specification:**
-
-Each model specification includes:
-
-- `modelId`: Unique identifier for the model
-- `providerDisplayName`: Display name of the provider
-- `impl`: Model implementation interface
-- `costPerMillionInputTokens`: Cost per million input tokens (default: 600)
-- `costPerMillionOutputTokens`: Cost per million output tokens (default: 600)
-- `costPerMillionCachedInputTokens`: Cost per million cached input tokens (optional)
-- `costPerMillionReasoningTokens`: Cost per million reasoning tokens (optional)
-- `maxContextLength`: Maximum context length in tokens
-- `isAvailable()`: Async function to check model availability
-- `isHot()`: Async function to check if model is warmed up
-- `mangleRequest()`: Optional function to modify the request before sending
-- `settings`: Optional feature specifications for query parameters
-- `speed`: Speed capability score (0-infinity)
-- `research`: Research ability (0-infinity)
-- `reasoningText`: Reasoning capability score (0-infinity)
-- `tools`: Tools capability score (0-infinity)
-- `intelligence`: Intelligence capability score (0-infinity)
-- `maxCompletionTokens`: Maximum output tokens (optional)
-
-**Example:**
-
-```typescript
-chatRegistry.registerAllModelSpecs([
-  {
-    modelId: "custom-model",
-    providerDisplayName: "CustomProvider",
-    impl: customProvider("custom-model"),
-    costPerMillionInputTokens: 5,
-    costPerMillionOutputTokens: 15,
-    maxContextLength: 100000,
-    async isAvailable() {
-      return true;
-    }
-  }
-]);
-```
-
-### ImageGenerationModelRegistry
-
-Manages image generation model specifications.
-
-**Methods:**
-
-- `registerAllModelSpecs(specs)`: Register image generation model specifications
-- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
-- `getModelsByProvider()`: Get all registered models grouped by provider
-- `getAllModelsWithOnlineStatus()`: Get all models with their online status
-- `getClient(name)`: Get a client instance matching the model name
-
-**Model Requirements:**
-
-- `nameLike`: Filter models by name pattern
-- `contextLength`: Maximum context length in tokens
-
-### VideoGenerationModelRegistry
-
-Manages video generation model specifications.
-
-**Methods:**
-
-- `registerAllModelSpecs(specs)`: Register video generation model specifications
-- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
-- `getModelsByProvider()`: Get all registered models grouped by provider
-- `getAllModelsWithOnlineStatus()`: Get all models with their online status
-- `getClient(name)`: Get a client instance matching the model name
-
-**Model Requirements:**
-
-- `nameLike`: Filter models by name pattern
-- `contextLength`: Maximum context length in tokens
-
-### EmbeddingModelRegistry
-
-Manages embedding model specifications for text vectorization.
-
-**Methods:**
-
-- `registerAllModelSpecs(specs)`: Register embedding model specifications
-- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
-- `getModelsByProvider()`: Get all registered models grouped by provider
-- `getAllModelsWithOnlineStatus()`: Get all models with their online status
-- `getClient(name)`: Get a client instance matching the model name
-
-**Model Requirements:**
-
-- `nameLike`: Filter models by name pattern
-- `contextLength`: Maximum context length in tokens
-
-### SpeechModelRegistry
-
-Manages speech synthesis model specifications.
-
-**Methods:**
-
-- `registerAllModelSpecs(specs)`: Register speech model specifications
-- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
-- `getModelsByProvider()`: Get all registered models grouped by provider
-- `getAllModelsWithOnlineStatus()`: Get all models with their online status
-- `getClient(name)`: Get a client instance matching the model name
-
-**Model Requirements:**
-
-- `nameLike`: Filter models by name pattern
-
-### TranscriptionModelRegistry
-
-Manages speech-to-text transcription model specifications.
-
-**Methods:**
-
-- `registerAllModelSpecs(specs)`: Register transcription model specifications
-- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
-- `getModelsByProvider()`: Get all registered models grouped by provider
-- `getAllModelsWithOnlineStatus()`: Get all models with their online status
-- `getClient(name)`: Get a client instance matching the model name
-
-**Model Requirements:**
-
-- `nameLike`: Filter models by name pattern
-
-### RerankingModelRegistry
-
-Manages document reranking model specifications.
-
-**Methods:**
-
-- `registerAllModelSpecs(specs)`: Register reranking model specifications
-- `getModelSpecsByRequirements(requirements)`: Get models matching specific requirements
-- `getModelsByProvider()`: Get all registered models grouped by provider
-- `getAllModelsWithOnlineStatus()`: Get all models with their online status
-- `getClient(name)`: Get a client instance matching the model name
-
-**Model Requirements:**
-
-- `nameLike`: Filter models by name pattern
 
 ## Client Usage
 
@@ -854,7 +883,15 @@ Different providers support different features:
 - `promptCacheRetention`: Prompt cache retention policy (in_memory, 24h)
 
 **Anthropic:**
+- `caching`: Enable context caching
+- `websearch`: Enable web search tool
 - `maxSearchUses`: Maximum number of web searches (0 to disable, max 20)
+
+**Google:**
+- `responseModalities`: Response modalities (TEXT, IMAGE)
+- `thinkingBudget`: Thinking token budget (for Gemini 2.5)
+- `thinkingLevel`: Thinking depth (for Gemini 3)
+- `includeThoughts`: Include thought summaries
 
 ## Best Practices
 
@@ -892,6 +929,7 @@ bun run test:coverage
 - `@tokenring-ai/agent`: Agent framework for tool execution
 - `@tokenring-ai/rpc`: RPC service for programmatic access
 - `@tokenring-ai/utility`: Shared utilities and registry functionality
+- `@tokenring-ai/metrics`: Metrics service for cost tracking
 - `ai`: Vercel AI SDK for streaming and client functionality
 - `zod`: Runtime schema validation
 - `axios`: HTTP client for API requests
@@ -934,6 +972,80 @@ The package exports the following from `index.ts`:
 - `stepCountIs`: Step counting function from Vercel AI SDK
 
 The actual client classes (`AIChatClient`, `AIEmbeddingClient`, etc.) are internal implementation details and are accessed through the model registries.
+
+### Utility Functions
+
+The package includes several utility functions in the `util/` directory:
+
+#### cachedDataRetriever
+
+Caches API responses to reduce redundant requests. Useful for checking model availability without making excessive API calls.
+
+**Usage:**
+
+```typescript
+import cachedDataRetriever from "./util/cachedDataRetriever";
+
+const getModels = cachedDataRetriever("https://api.example.com/models", {
+  headers: {
+    Authorization: "Bearer token"
+  },
+  cacheTime: 30000,  // Cache for 30 seconds
+  timeout: 1000      // 1 second timeout
+});
+
+// Returns cached data if within cacheTime, otherwise fetches fresh data
+const models = await getModels();
+```
+
+#### modelSettings
+
+Provides functions for parsing and serializing model names with feature settings.
+
+**Functions:**
+
+- `parseModelAndSettings(model)`: Parse model name and extract settings from query string
+- `serializeModel(base, settings)`: Serialize model name and settings back to string format
+- `coerceFeatureValue(value)`: Convert string values to appropriate types (boolean, number, string)
+- `getModelAndSettings(chatService, agent)`: Get current model from chat service and parse it
+
+**Usage:**
+
+```typescript
+import {parseModelAndSettings, serializeModel} from "./util/modelSettings";
+
+// Parse model with settings
+const {base, settings} = parseModelAndSettings("openai:gpt-5?websearch=1&reasoningEffort=high");
+// base: "openai:gpt-5"
+// settings: Map { "websearch" => true, "reasoningEffort" => "high" }
+
+// Serialize model with settings
+const modelString = serializeModel("openai:gpt-5", settings);
+// "openai:gpt-5?websearch=1&reasoningEffort=high"
+```
+
+#### resequenceMessages
+
+Resequences chat messages to maintain proper alternating user/assistant pattern. This is useful when preparing messages for chat models that require strict alternation.
+
+**Usage:**
+
+```typescript
+import {resequenceMessages} from "./util/resequenceMessages";
+
+const request = {
+  messages: [
+    { role: "user", content: "Hello" },
+    { role: "user", content: "How are you?" },  // Consecutive user messages
+    { role: "assistant", content: "I'm good" },
+    { role: "user", content: "Thanks" }
+  ],
+  tools: {}
+};
+
+resequenceMessages(request);
+// Messages are combined and resequenced to maintain alternation
+```
 
 ## License
 
