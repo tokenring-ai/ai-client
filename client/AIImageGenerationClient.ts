@@ -2,6 +2,12 @@ import Agent from "@tokenring-ai/agent/Agent";
 import {MetricsService} from "@tokenring-ai/metrics";
 import {type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel,} from "ai";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
+import {z} from "zod";
+import {
+  createModelSpecSchema,
+  type ModelInputCapabilities,
+  ModelInputCapabilitiesSchema,
+} from "./modelCapabilities.ts";
 
 export type ImageRequest = {
   prompt: string;
@@ -32,6 +38,7 @@ export type ImageModelSpec = ModelSpec & {
    * - The AI SDK image generation model implementation.
    */
   impl: ImageModel;
+  inputCapabilities?: Partial<ModelInputCapabilities>;
 
   /**
    * - Provider-specific options for the image generation model.
@@ -51,6 +58,18 @@ export type ImageModelSpec = ModelSpec & {
     settings?: Record<string, any>,
   ) => void;
 };
+
+export const ImageModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+  contextLength: z.number().optional(),
+  calculateImageCost: z.function({input: z.tuple([z.any(), z.any()]), output: z.number()}),
+});
+
+export function normalizeImageModelSpec(modelSpec: ImageModelSpec): ImageModelSpec {
+  return ImageModelSpecSchema.parse({
+    ...modelSpec,
+    inputCapabilities: modelSpec.inputCapabilities ?? {},
+  }) as ImageModelSpec;
+}
 
 /**
  * Client for generating images using the Vercel AI SDK's experimental image generation settings.

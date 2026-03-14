@@ -1,6 +1,12 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {experimental_generateSpeech as generateSpeech, Experimental_SpeechResult, type SpeechModel,} from "ai";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
+import {z} from "zod";
+import {
+  createModelSpecSchema,
+  type ModelInputCapabilities,
+  ModelInputCapabilitiesSchema,
+} from "./modelCapabilities.ts";
 
 export type SpeechRequest = {
   text: string;
@@ -11,6 +17,7 @@ export type SpeechRequest = {
 export type SpeechModelSpec = ModelSpec & {
   costPerMillionCharacters?: number;
   impl: SpeechModel;
+  inputCapabilities?: Partial<ModelInputCapabilities>;
   providerOptions?: any;
   /** Optional hook to adjust the request prior to sending. */
   mangleRequest?: (
@@ -18,6 +25,17 @@ export type SpeechModelSpec = ModelSpec & {
     settings?: Record<string, any>,
   ) => void;
 };
+
+export const SpeechModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+  costPerMillionCharacters: z.number().optional(),
+});
+
+export function normalizeSpeechModelSpec(modelSpec: SpeechModelSpec): SpeechModelSpec {
+  return SpeechModelSpecSchema.parse({
+    ...modelSpec,
+    inputCapabilities: modelSpec.inputCapabilities ?? {},
+  }) as SpeechModelSpec;
+}
 
 export default class AISpeechClient {
   constructor(private modelSpec: SpeechModelSpec, private settings: ChatModelSettings) {

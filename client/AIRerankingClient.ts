@@ -1,14 +1,32 @@
 import {rerank, type RerankingModel, type RerankResult} from "ai";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
+import {z} from "zod";
+import {
+  createModelSpecSchema,
+  type ModelInputCapabilities,
+  ModelInputCapabilitiesSchema,
+} from "./modelCapabilities.ts";
 
 export type RerankingModelSpec = ModelSpec & {
   costPerMillionInputTokens?: number;
   impl: Exclude<RerankingModel, string>;
+  inputCapabilities?: Partial<ModelInputCapabilities>;
   mangleRequest?: (
     req: { query: string; documents: string[] },
     settings?: Record<string, any>,
   ) => void;
 };
+
+export const RerankingModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+  costPerMillionInputTokens: z.number().optional(),
+});
+
+export function normalizeRerankingModelSpec(modelSpec: RerankingModelSpec): RerankingModelSpec {
+  return RerankingModelSpecSchema.parse({
+    ...modelSpec,
+    inputCapabilities: modelSpec.inputCapabilities ?? {},
+  }) as RerankingModelSpec;
+}
 
 export default class AIRerankingClient {
   constructor(private readonly modelSpec: RerankingModelSpec, private settings: ChatModelSettings) {

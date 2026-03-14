@@ -3,6 +3,9 @@ import {z} from "zod";
 import {type AIProviderConfig, AIProviderConfigSchema} from "./providers.ts";
 
 export type {TextPart, ImagePart, FilePart, UserModelMessage} from "ai";
+export type {ModelInputCapability} from "./client/modelCapabilities.ts";
+import type {ModelInputCapability} from "./client/modelCapabilities.ts";
+
 export type ModelRequirements = {
   /**
    * The name of the provider and model, possibly including wildcards
@@ -19,26 +22,16 @@ export type ChatModelRequirements = ModelRequirements & {
    * Maximum output tokens the model allows
    */
   maxCompletionTokens?: number;
+  image?: ModelInputCapability;
+  video?: ModelInputCapability;
+  audio?: ModelInputCapability;
+  file?: ModelInputCapability;
+  tools?: boolean;
+  structuredOutput?: boolean;
   /**
-   * Research ability (0-infinity)
+   * Web search support
    */
-  research?: number;
-  /**
-   * Reasoning capability score (0-infinity)
-   */
-  reasoningText?: number;
-  /**
-   * Intelligence capability score (0-infinity)
-   */
-  intelligence?: number;
-  /**
-   * Speed capability score (0-infinity)
-   */
-  speed?: number;
-  /**
-   * Web search capability score (0-infinity)
-   */
-  webSearch?: number;
+  webSearch?: boolean;
 };
 
 export type EmbeddingModelRequirements = ModelRequirements & {

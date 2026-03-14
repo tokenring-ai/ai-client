@@ -122,6 +122,12 @@ async function init(
           googleOptions.thinkingConfig = thinkingConfig;
         }
       },
+      inputCapabilities: {
+        image: true,
+        video: true,
+        audio: true,
+        file: true,
+      },
       settings: {...baseSettings, ...modelSpec.settings},
       ...modelSpec,
     } satisfies ChatModelSpec;
@@ -154,10 +160,6 @@ async function init(
         providerModelId: 'gemini-3.1-pro-preview',
         costPerMillionInputTokens: 4.0,
         costPerMillionOutputTokens: 18.0,
-        reasoningText: 8,
-        intelligence: 8,
-        tools: 8,
-        speed: 3,
         settings: {
           websearch: {
             description: "Enables web search",
@@ -171,10 +173,6 @@ async function init(
         providerModelId: 'gemini-3.1-pro-preview',
         costPerMillionInputTokens: 2.0,
         costPerMillionOutputTokens: 12.0,
-        reasoningText: 8,
-        intelligence: 8,
-        tools: 8,
-        speed: 3,
         settings: {
           websearch: {
             description: "Enables web search",
@@ -188,10 +186,6 @@ async function init(
         providerModelId: 'gemini-3-pro-preview',
         costPerMillionInputTokens: 4.0,
         costPerMillionOutputTokens: 18.0,
-        reasoningText: 7,
-        intelligence: 7,
-        tools: 7,
-        speed: 3,
         settings: {
           websearch: {
             description: "Enables web search",
@@ -205,10 +199,6 @@ async function init(
       generateModelSpec("gemini-2.5-pro", {
         costPerMillionInputTokens: 2.5,
         costPerMillionOutputTokens: 15.0,
-        reasoningText: 6,
-        intelligence: 6,
-        tools: 6,
-        speed: 2,
         settings: {
           websearch: {
             description: "Enables web search",
@@ -221,10 +211,6 @@ async function init(
       generateModelSpec("gemini-2.5-flash", {
         costPerMillionInputTokens: 0.3,
         costPerMillionOutputTokens: 2.5,
-        reasoningText: 5,
-        intelligence: 4,
-        tools: 4,
-        speed: 4,
         settings: {
           websearch: {
             description: "Enables web search",
@@ -238,10 +224,6 @@ async function init(
         providerModelId: 'gemini-3-flash-preview',
         costPerMillionInputTokens: 0.50,
         costPerMillionOutputTokens: 3,
-        reasoningText: 6,
-        intelligence: 5,
-        tools: 4,
-        speed: 4,
         settings: {
           websearch: {
             description: "Enables web search",
@@ -254,10 +236,6 @@ async function init(
       generateModelSpec("gemini-2.5-flash-lite", {
         costPerMillionInputTokens: 0.1,
         costPerMillionOutputTokens: 0.4,
-        reasoningText: 2,
-        intelligence: 3,
-        tools: 3,
-        speed: 5,
         maxContextLength: 1000000,
       }),
     ]);

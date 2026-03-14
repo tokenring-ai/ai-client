@@ -66,38 +66,22 @@ async function init(
     generateModelSpec("llama3.1-8b", {
       costPerMillionInputTokens: 0.10,
       costPerMillionOutputTokens: 0.10,
-      reasoningText: 1,
-      intelligence: 2,
-      tools: 2,
-      speed: 10,
       maxContextLength: 32000,
     }),
     generateModelSpec("qwen-3-235b-a22b-instruct-2507", {
       costPerMillionInputTokens: 0.6,
       costPerMillionOutputTokens: 1.2,
-      reasoningText: 4,
-      intelligence: 4,
-      tools: 4,
-      speed: 10,
       maxContextLength: 131000,
     }),
 
     generateModelSpec("zai-glm-4.7", {
       costPerMillionInputTokens: 2.25,
       costPerMillionOutputTokens: 2.75,
-      reasoningText: 4,
-      intelligence: 4,
-      tools: 4,
-      speed: 10,
       maxContextLength: 131000,
     }),
     generateModelSpec("gpt-oss-120b", {
       costPerMillionInputTokens: 0.35,
       costPerMillionOutputTokens: 0.75,
-      reasoningText: 3,
-      intelligence: 3,
-      tools: 3,
-      speed: 10,
       maxContextLength: 131000,
     }),
     ]);

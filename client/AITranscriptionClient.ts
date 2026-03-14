@@ -1,6 +1,12 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {type DataContent, experimental_transcribe as transcribe, type TranscriptionModel,} from "ai";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
+import {z} from "zod";
+import {
+  createModelSpecSchema,
+  type ModelInputCapabilities,
+  TranscriptionModelInputCapabilitiesSchema,
+} from "./modelCapabilities.ts";
 
 export interface TranscriptionResult {
   text: string;
@@ -15,6 +21,7 @@ export type TranscriptionRequest = {
 export type TranscriptionModelSpec = ModelSpec & {
   costPerMinute?: number;
   impl: TranscriptionModel;
+  inputCapabilities?: Partial<ModelInputCapabilities>;
   providerOptions?: any;
   /** Optional hook to adjust the request prior to sending. */
   mangleRequest?: (
@@ -22,6 +29,21 @@ export type TranscriptionModelSpec = ModelSpec & {
     settings?: Record<string, any>,
   ) => void;
 };
+
+export const TranscriptionModelSpecSchema = createModelSpecSchema(
+  TranscriptionModelInputCapabilitiesSchema,
+).extend({
+  costPerMinute: z.number().optional(),
+});
+
+export function normalizeTranscriptionModelSpec(
+  modelSpec: TranscriptionModelSpec,
+): TranscriptionModelSpec {
+  return TranscriptionModelSpecSchema.parse({
+    ...modelSpec,
+    inputCapabilities: modelSpec.inputCapabilities ?? {},
+  }) as TranscriptionModelSpec;
+}
 
 export default class AITranscriptionClient {
   constructor(private readonly modelSpec: TranscriptionModelSpec, private settings: ChatModelSettings) {

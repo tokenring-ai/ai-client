@@ -1,11 +1,18 @@
 import {embed, type EmbeddingModel, type EmbedResult} from "ai";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
+import {z} from "zod";
+import {
+  createModelSpecSchema,
+  type ModelInputCapabilities,
+  ModelInputCapabilitiesSchema,
+} from "./modelCapabilities.ts";
 
 export type EmbeddingModelSpec = ModelSpec & {
   contextLength: number;
   costPerMillionInputTokens: number;
   costPerMillionOutputTokens?: number;
   impl: Exclude<EmbeddingModel, string>;
+  inputCapabilities?: Partial<ModelInputCapabilities>;
   /**
    * Optional hook to adjust the request prior to sending.
    * Receives the runtime feature flags as the second parameter.
@@ -15,6 +22,19 @@ export type EmbeddingModelSpec = ModelSpec & {
     settings?: Record<string, any>,
   ) => void;
 };
+
+export const EmbeddingModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+  contextLength: z.number(),
+  costPerMillionInputTokens: z.number(),
+  costPerMillionOutputTokens: z.number().optional(),
+});
+
+export function normalizeEmbeddingModelSpec(modelSpec: EmbeddingModelSpec): EmbeddingModelSpec {
+  return EmbeddingModelSpecSchema.parse({
+    ...modelSpec,
+    inputCapabilities: modelSpec.inputCapabilities ?? {},
+  }) as EmbeddingModelSpec;
+}
 
 /**
  * Client for generating embeddings using the Vercel AI SDK.

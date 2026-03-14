@@ -77,10 +77,6 @@ async function init(
       generateModelSpec("deepseek-v3-0324", {
         costPerMillionInputTokens: 0.0,
         costPerMillionOutputTokens: 0.0,
-        reasoningText: 6,
-        intelligence: 5,
-        tools: 4,
-        speed: 3,
         maxContextLength: 65536,
       }),
     ]);

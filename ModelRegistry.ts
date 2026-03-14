@@ -1,11 +1,11 @@
 import {TokenRingService} from "@tokenring-ai/app/types";
-import AIChatClient, {ChatModelSpec} from "./client/AIChatClient.js";
-import AIEmbeddingClient, {EmbeddingModelSpec} from "./client/AIEmbeddingClient.js";
-import AIImageGenerationClient, {ImageModelSpec} from "./client/AIImageGenerationClient.js";
-import AIRerankingClient, {RerankingModelSpec} from "./client/AIRerankingClient.js";
-import AISpeechClient, {SpeechModelSpec} from "./client/AISpeechClient.js";
-import AITranscriptionClient, {TranscriptionModelSpec} from "./client/AITranscriptionClient.js";
-import AIVideoGenerationClient, {type VideoModelSpec} from "./client/AIVideoGenerationClient.ts";
+import AIChatClient, {ChatModelSpec, normalizeChatModelSpec} from "./client/AIChatClient.js";
+import AIEmbeddingClient, {EmbeddingModelSpec, normalizeEmbeddingModelSpec} from "./client/AIEmbeddingClient.js";
+import AIImageGenerationClient, {ImageModelSpec, normalizeImageModelSpec} from "./client/AIImageGenerationClient.js";
+import AIRerankingClient, {normalizeRerankingModelSpec, RerankingModelSpec} from "./client/AIRerankingClient.js";
+import AISpeechClient, {normalizeSpeechModelSpec, SpeechModelSpec} from "./client/AISpeechClient.js";
+import AITranscriptionClient, {normalizeTranscriptionModelSpec, TranscriptionModelSpec} from "./client/AITranscriptionClient.js";
+import AIVideoGenerationClient, {normalizeVideoModelSpec, type VideoModelSpec} from "./client/AIVideoGenerationClient.ts";
 import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
 import {
   ChatModelRequirements,
@@ -23,6 +23,10 @@ export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatCl
 
   constructor() {
     super(AIChatClient);
+  }
+
+  override registerAllModelSpecs(modelSpecs: ChatModelSpec[]): void {
+    super.registerAllModelSpecs(modelSpecs.map(normalizeChatModelSpec));
   }
 
   getCheapestModelByRequirements(requirements: string, estimatedContextLength = 10000): string | null {
@@ -50,6 +54,10 @@ export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec
   constructor() {
     super(AIEmbeddingClient);
   }
+
+  override registerAllModelSpecs(modelSpecs: EmbeddingModelSpec[]): void {
+    super.registerAllModelSpecs(modelSpecs.map(normalizeEmbeddingModelSpec));
+  }
 }
 
 export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSpec, AIImageGenerationClient, ImageModelRequirements> implements TokenRingService {
@@ -58,6 +66,10 @@ export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSp
 
   constructor() {
     super(AIImageGenerationClient);
+  }
+
+  override registerAllModelSpecs(modelSpecs: ImageModelSpec[]): void {
+    super.registerAllModelSpecs(modelSpecs.map(normalizeImageModelSpec));
   }
 }
 
@@ -68,6 +80,10 @@ export class VideoGenerationModelRegistry extends ModelTypeRegistry<VideoModelSp
   constructor() {
     super(AIVideoGenerationClient);
   }
+
+  override registerAllModelSpecs(modelSpecs: VideoModelSpec[]): void {
+    super.registerAllModelSpecs(modelSpecs.map(normalizeVideoModelSpec));
+  }
 }
 
 export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISpeechClient, SpeechModelRequirements> implements TokenRingService {
@@ -76,6 +92,10 @@ export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISp
 
   constructor() {
     super(AISpeechClient);
+  }
+
+  override registerAllModelSpecs(modelSpecs: SpeechModelSpec[]): void {
+    super.registerAllModelSpecs(modelSpecs.map(normalizeSpeechModelSpec));
   }
 }
 
@@ -86,6 +106,10 @@ export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionM
   constructor() {
     super(AITranscriptionClient);
   }
+
+  override registerAllModelSpecs(modelSpecs: TranscriptionModelSpec[]): void {
+    super.registerAllModelSpecs(modelSpecs.map(normalizeTranscriptionModelSpec));
+  }
 }
 
 export class RerankingModelRegistry extends ModelTypeRegistry<RerankingModelSpec, AIRerankingClient, RerankingModelRequirements> implements TokenRingService {
@@ -94,5 +118,9 @@ export class RerankingModelRegistry extends ModelTypeRegistry<RerankingModelSpec
 
   constructor() {
     super(AIRerankingClient);
+  }
+
+  override registerAllModelSpecs(modelSpecs: RerankingModelSpec[]): void {
+    super.registerAllModelSpecs(modelSpecs.map(normalizeRerankingModelSpec));
   }
 }

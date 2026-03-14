@@ -114,6 +114,12 @@ async function fetchAndRegisterOpenRouterModels(
           model.topProvider?.max_completion_tokens ?? undefined,
         costPerMillionInputTokens: parsePricing(model.pricing?.prompt),
         costPerMillionOutputTokens: parsePricing(model.pricing?.completion),
+        inputCapabilities: {
+          image: model.architecture?.input_modalities?.includes("image"),
+          video: model.architecture?.input_modalities?.includes("video"),
+          audio: model.architecture?.input_modalities?.includes("audio"),
+          file: model.architecture?.input_modalities?.includes("file"),
+        },
         mangleRequest(req, settings) {
           const supported = model.supported_parameters || [];
           

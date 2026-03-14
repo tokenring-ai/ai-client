@@ -6,8 +6,14 @@ import {
   type GeneratedFile,
 } from "ai";
 import { Experimental_VideoModelV3 } from '@ai-sdk/provider';
+import {z} from "zod";
 
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
+import {
+  createModelSpecSchema,
+  type ModelInputCapabilities,
+  ModelInputCapabilitiesSchema,
+} from "./modelCapabilities.ts";
 
 export type VideoModel = Experimental_VideoModelV3;
 export type VideoRequest = {
@@ -25,6 +31,7 @@ export type VideoModelSpec = ModelSpec & {
    * - The AI SDK video generation model implementation.
    */
   impl: VideoModel;
+  inputCapabilities?: Partial<ModelInputCapabilities>;
 
   /**
    * - Provider-specific options for the video generation model.
@@ -44,6 +51,17 @@ export type VideoModelSpec = ModelSpec & {
     settings?: ChatModelSettings,
   ) => void;
 };
+
+export const VideoModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+  calculateVideoCost: z.function({input: z.tuple([z.any(), z.any()]), output: z.number()}),
+});
+
+export function normalizeVideoModelSpec(modelSpec: VideoModelSpec): VideoModelSpec {
+  return VideoModelSpecSchema.parse({
+    ...modelSpec,
+    inputCapabilities: modelSpec.inputCapabilities ?? {},
+  }) as VideoModelSpec;
+}
 
 /**
  * Client for generating videos using the Vercel AI SDK's experimental video generation functions.

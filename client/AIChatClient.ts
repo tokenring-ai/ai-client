@@ -18,6 +18,12 @@ import {
 } from "ai";
 import {z, ZodObject} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
+import {
+  createModelSpecSchema,
+  type ModelInputCapabilities,
+  ModelInputCapabilitiesSchema,
+  type ModelInputCapability,
+} from "./modelCapabilities.ts";
 
 export type ChatInputMessage =
   | SystemModelMessage
@@ -44,11 +50,10 @@ export type ChatModelSpec = ModelSpec & {
     req: ChatRequest,
     settings: ChatModelSettings,
   ) => void;
-  speed?: number;
-  research?: number;
-  reasoningText?: number;
-  tools?: number;
-  intelligence?: number;
+  inputCapabilities?: Partial<ChatModelInputCapabilities>;
+  tools?: boolean;
+  structuredOutput?: boolean;
+  webSearch?: boolean;
   maxCompletionTokens?: number;
   maxContextLength: number;
   costPerMillionInputTokens: number;
@@ -56,6 +61,27 @@ export type ChatModelSpec = ModelSpec & {
   costPerMillionCachedInputTokens?: number;
   costPerMillionReasoningTokens?: number;
 };
+
+export type ChatModelInputCapabilities = ModelInputCapabilities;
+
+export const ChatModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+  tools: z.boolean().default(true),
+  structuredOutput: z.boolean().default(true),
+  webSearch: z.boolean().optional(),
+  maxCompletionTokens: z.number().optional(),
+  maxContextLength: z.number(),
+  costPerMillionInputTokens: z.number(),
+  costPerMillionOutputTokens: z.number(),
+  costPerMillionCachedInputTokens: z.number().optional(),
+  costPerMillionReasoningTokens: z.number().optional(),
+});
+
+export function normalizeChatModelSpec(modelSpec: ChatModelSpec): ChatModelSpec {
+  return ChatModelSpecSchema.parse({
+    ...modelSpec,
+    inputCapabilities: modelSpec.inputCapabilities ?? {},
+  }) as ChatModelSpec;
+}
 
 export type AIResponse = {
   providerMetadata: any;
