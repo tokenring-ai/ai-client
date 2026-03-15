@@ -8,7 +8,7 @@ The AI Client package acts as a unified interface to multiple AI providers, abst
 
 ### Key Features
 
-- **17+ AI Providers**: Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama.cpp, and more
+- **15+ AI Providers**: Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama, and more
 - **Seven AI Capabilities**: Chat, Embeddings, Image Generation, Video Generation, Reranking, Speech, and Transcription
 - **Seven Model Registries**: Dedicated service registries for managing model specifications and capabilities
 - **Dynamic Model Registration**: Register custom models with availability checks
@@ -33,24 +33,21 @@ The package supports the following AI providers through dedicated integrations:
 
 | Provider | SDK/Model Support | Key Features |
 |----------|-------------------|--------------|
-| Anthropic | Claude models | Reasoning, analysis, web search, context caching |
-| OpenAI | GPT models, Whisper, TTS, Image Generation | Reasoning, multimodal, real-time audio, image generation |
-| Google | Gemini, Imagen | Thinking, multimodal, image generation, web search |
-| Groq | LLaMA-based models | High-speed inference |
-| Cerebras | LLaMA-based models | High performance |
-| DeepSeek | DeepSeek models | Reasoning capabilities |
-| ElevenLabs | Speech synthesis | Multilingual voice generation |
-| Fal | Image generation | Fast image generation |
-| xAI | xAI models | Reasoning and analysis |
-| OpenRouter | Aggregated access | Multiple provider access |
-| Perplexity | Perplexity models | Web search integration |
+| Anthropic | Claude models | Reasoning, analysis, web search, context caching, image input, file input |
+| OpenAI | GPT models, Whisper, TTS, Image Generation | Reasoning, multimodal, real-time audio, image generation, web search |
+| Google | Gemini, Imagen | Thinking, multimodal, image generation, web search, video input, audio input |
+| Groq | LLaMA-based models | High-speed inference, Llama, Qwen, Kimi models |
+| Cerebras | LLaMA-based models | High performance, Llama, Qwen, GLM models |
+| DeepSeek | DeepSeek models | Reasoning capabilities, chat and reasoner |
+| ElevenLabs | Speech synthesis and transcription | Multilingual voice generation, speaker diarization |
+| Fal | Image generation | Fast image generation, Flux models |
+| xAI | xAI models | Reasoning and analysis, image generation, video generation |
+| OpenRouter | Aggregated access | Multiple provider access, dynamic model discovery |
+| Perplexity | Perplexity models | Web search integration, deep research |
 | Azure | Azure OpenAI | Enterprise deployment |
-| Ollama | Self-hosted models | Local inference |
-| llama.cpp | Self-hosted models | Local inference |
-| Chutes | OpenAI-compatible | Local/remote inference |
-| Nvidia NIM | OpenAI-compatible | GPU-accelerated inference |
-| Qwen (DashScope) | OpenAI-compatible | Alibaba models |
-| zAI | OpenAI-compatible | Z.ai models |
+| Ollama | Self-hosted models | Local inference, chat and embedding models |
+| Llama | Meta Llama models | Local/remote inference via llama.com |
+| OpenAI Compatible | Any OpenAI-compatible API | Flexible provider configuration |
 
 Additional providers can be configured using the `openaiCompatible` provider for OpenAI-compatible APIs.
 
@@ -80,7 +77,6 @@ The package provides seven model registry services, each implementing the `Token
 
 ### Utilities
 
-- **cachedDataRetriever**: Caches API responses to reduce redundant requests
 - **modelSettings**: Parses and serializes model names with feature settings
 - **resequenceMessages**: Resequences chat messages to maintain proper alternation
 
@@ -106,11 +102,13 @@ Manages chat model specifications and provides access to chat completion capabil
 - `nameLike`: Filter models by name pattern
 - `contextLength`: Maximum context length in tokens
 - `maxCompletionTokens`: Maximum output tokens
-- `research`: Research ability (0-infinity)
-- `reasoningText`: Reasoning capability score (0-infinity)
-- `intelligence`: Intelligence capability score (0-infinity)
-- `speed`: Speed capability score (0-infinity)
-- `webSearch`: Web search capability score (0-infinity)
+- `webSearch`: Web search capability
+- `image`: Image input capability
+- `video`: Video input capability
+- `audio`: Audio input capability
+- `file`: File input capability
+- `tools`: Tool use capability
+- `structuredOutput`: Structured output capability
 
 **Model Specification:**
 
@@ -119,8 +117,8 @@ Each model specification includes:
 - `modelId`: Unique identifier for the model
 - `providerDisplayName`: Display name of the provider
 - `impl`: Model implementation interface
-- `costPerMillionInputTokens`: Cost per million input token (default: 600)
-- `costPerMillionOutputTokens`: Cost per million output tokens (default: 600)
+- `costPerMillionInputTokens`: Cost per million input tokens
+- `costPerMillionOutputTokens`: Cost per million output tokens
 - `costPerMillionCachedInputTokens`: Cost per million cached input tokens (optional)
 - `costPerMillionReasoningTokens`: Cost per million reasoning tokens (optional)
 - `maxContextLength`: Maximum context length in tokens
@@ -128,12 +126,7 @@ Each model specification includes:
 - `isHot()`: Async function to check if model is warmed up
 - `mangleRequest()`: Optional function to modify the request before sending
 - `settings`: Optional feature specifications for query parameters
-- `speed`: Speed capability score (0-infinity)
-- `research`: Research ability (0-infinity)
-- `reasoningText`: Reasoning capability score (0-infinity)
-- `tools`: Tools capability score (0-infinity)
-- `intelligence`: Intelligence capability score (0-infinity)
-- `maxCompletionTokens`: Maximum output tokens (optional)
+- `inputCapabilities`: Input capability specifications
 
 **Example:**
 
@@ -165,9 +158,14 @@ Manages image generation model specifications.
 - `getAllModelsWithOnlineStatus()`: Get all models with their online status
 - `getClient(name)`: Get a client instance matching the model name
 
-**Model Requirements:**
+**Model Specification:**
 
-- `nameLike`: Filter models by name pattern
+- `modelId`: Unique identifier for the model
+- `providerDisplayName`: Display name of the provider
+- `impl`: Image model implementation
+- `calculateImageCost(request, result)`: Function to calculate image generation cost
+- `providerOptions`: Provider-specific options
+- `isAvailable()`: Async function to check model availability
 
 ### VideoGenerationModelRegistry
 
@@ -181,9 +179,14 @@ Manages video generation model specifications.
 - `getAllModelsWithOnlineStatus()`: Get all models with their online status
 - `getClient(name)`: Get a client instance matching the model name
 
-**Model Requirements:**
+**Model Specification:**
 
-- `nameLike`: Filter models by name pattern
+- `modelId`: Unique identifier for the model
+- `providerDisplayName`: Display name of the provider
+- `impl`: Video model implementation
+- `calculateVideoCost(request, result)`: Function to calculate video generation cost
+- `providerOptions`: Provider-specific options
+- `inputCapabilities`: Input capability specifications
 
 ### EmbeddingModelRegistry
 
@@ -197,9 +200,14 @@ Manages embedding model specifications for text vectorization.
 - `getAllModelsWithOnlineStatus()`: Get all models with their online status
 - `getClient(name)`: Get a client instance matching the model name
 
-**Model Requirements:**
+**Model Specification:**
 
-- `nameLike`: Filter models by name pattern
+- `modelId`: Unique identifier for the model
+- `providerDisplayName`: Display name of the provider
+- `impl`: Embedding model implementation
+- `contextLength`: Maximum context length
+- `costPerMillionInputTokens`: Cost per million input tokens
+- `isAvailable()`: Async function to check model availability
 
 ### SpeechModelRegistry
 
@@ -213,9 +221,14 @@ Manages speech synthesis model specifications.
 - `getAllModelsWithOnlineStatus()`: Get all models with their online status
 - `getClient(name)`: Get a client instance matching the model name
 
-**Model Requirements:**
+**Model Specification:**
 
-- `nameLike`: Filter models by name pattern
+- `modelId`: Unique identifier for the model
+- `providerDisplayName`: Display name of the provider
+- `impl`: Speech model implementation
+- `costPerMillionCharacters`: Cost per million characters
+- `providerOptions`: Provider-specific options
+- `settings`: Feature specifications
 
 ### TranscriptionModelRegistry
 
@@ -229,9 +242,14 @@ Manages speech-to-text transcription model specifications.
 - `getAllModelsWithOnlineStatus()`: Get all models with their online status
 - `getClient(name)`: Get a client instance matching the model name
 
-**Model Requirements:**
+**Model Specification:**
 
-- `nameLike`: Filter models by name pattern
+- `modelId`: Unique identifier for the model
+- `providerDisplayName`: Display name of the provider
+- `impl`: Transcription model implementation
+- `costPerMinute`: Cost per minute of audio
+- `providerOptions`: Provider-specific options
+- `settings`: Feature specifications
 
 ### RerankingModelRegistry
 
@@ -245,9 +263,13 @@ Manages document reranking model specifications.
 - `getAllModelsWithOnlineStatus()`: Get all models with their online status
 - `getClient(name)`: Get a client instance matching the model name
 
-**Model Requirements:**
+**Model Specification:**
 
-- `nameLike`: Filter models by name pattern
+- `modelId`: Unique identifier for the model
+- `providerDisplayName`: Display name of the provider
+- `impl`: Reranking model implementation
+- `costPerMillionInputTokens`: Cost per million input tokens (optional)
+- `isAvailable()`: Async function to check model availability
 
 ## Configuration
 
@@ -328,7 +350,6 @@ AZURE_API_KEY=<key>
 
 # Ollama
 OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
-OLLAMA_API_KEY=...
 ```
 
 ### Manual Configuration
@@ -893,6 +914,49 @@ Different providers support different features:
 - `thinkingLevel`: Thinking depth (for Gemini 3)
 - `includeThoughts`: Include thought summaries
 
+**Perplexity:**
+- `websearch`: Enable web search (default: true)
+- `searchContextSize`: Search context size (low, medium, high)
+
+**xAI:**
+- `websearch`: Enable web search
+- `webImageUnderstanding`: Enable image understanding in web search
+- `XSearch`: Enable X search
+- `XFromDate`: From date for X search
+- `XToDate`: To date for X search
+- `XAllowedHandles`: Allowed handles for X search
+- `XImageUnderstanding`: Enable image understanding in X search
+- `XVideoUnderstanding`: Enable video understanding in X search
+
+**OpenRouter:**
+- `websearch`: Enable web search plugin
+- `searchEngine`: Search engine (native, exa)
+- `maxResults`: Maximum number of search results
+- `searchContextSize`: Search context size for native search
+- `frequencyPenalty`: Frequency penalty
+- `maxTokens`: Max tokens
+- `minP`: Min P sampling
+- `presencePenalty`: Presence penalty
+- `repetitionPenalty`: Repetition penalty
+- `temperature`: Temperature
+- `topK`: Top K sampling
+- `topP`: Top P sampling
+- `includeReasoning`: Include reasoning
+- `reasoning`: Reasoning mode
+
+**OpenAI Compatible:**
+- `temperature`: Sampling temperature (0-2)
+- `top_p`: Nucleus sampling (0-1)
+- `frequency_penalty`: Frequency penalty (-2 to 2)
+- `presence_penalty`: Presence penalty (-2 to 2)
+- `seed`: Random seed for reproducible output
+- `top_k`: Top K sampling (if supported)
+- `min_p`: Min P sampling (if supported)
+- `repetition_penalty`: Repetition penalty (if supported)
+- `length_penalty`: Length penalty (if supported)
+- `min_tokens`: Minimum tokens to generate (if supported)
+- `enable_thinking`: Enable thinking mode (for VLLM)
+
 ## Best Practices
 
 1. **Auto-Configure**: Use `autoConfigure: true` for convenience and automatic environment variable detection
@@ -976,27 +1040,6 @@ The actual client classes (`AIChatClient`, `AIEmbeddingClient`, etc.) are intern
 ### Utility Functions
 
 The package includes several utility functions in the `util/` directory:
-
-#### cachedDataRetriever
-
-Caches API responses to reduce redundant requests. Useful for checking model availability without making excessive API calls.
-
-**Usage:**
-
-```typescript
-import cachedDataRetriever from "./util/cachedDataRetriever";
-
-const getModels = cachedDataRetriever("https://api.example.com/models", {
-  headers: {
-    Authorization: "Bearer token"
-  },
-  cacheTime: 30000,  // Cache for 30 seconds
-  timeout: 1000      // 1 second timeout
-});
-
-// Returns cached data if within cacheTime, otherwise fetches fresh data
-const models = await getModels();
-```
 
 #### modelSettings
 
