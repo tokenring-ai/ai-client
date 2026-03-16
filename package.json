@@ -4,7 +4,7 @@
   "description": "AI client for the Token Ring ecosystem",
   "dependencies": {
     "@tokenring-ai/app": "0.2.0",
-    "@ai-sdk/anthropic": "^3.0.60",
+    "@ai-sdk/anthropic": "^3.0.61",
     "@ai-sdk/azure": "^3.0.46",
     "@ai-sdk/cerebras": "^2.0.40",
     "@ai-sdk/deepseek": "^2.0.25",
@@ -22,7 +22,7 @@
     "@tokenring-ai/rpc": "0.2.0",
     "@tokenring-ai/utility": "0.2.0",
     "@tokenring-ai/metrics": "0.2.0",
-    "ai": "^6.0.127",
+    "ai": "^6.0.128",
     "axios": "^1.13.6",
     "ollama-ai-provider-v2": "^3.4.0",
     "zod": "^4.3.6"
