@@ -1,10 +1,10 @@
 import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
+import type {ModelInputCapability} from "./client/modelCapabilities.ts";
 import {type AIProviderConfig, AIProviderConfigSchema} from "./providers.ts";
 
 export type {TextPart, ImagePart, FilePart, UserModelMessage} from "ai";
 export type {ModelInputCapability} from "./client/modelCapabilities.ts";
-import type {ModelInputCapability} from "./client/modelCapabilities.ts";
 
 export type ModelRequirements = {
   /**
@@ -157,13 +157,25 @@ export const AIClientConfigSchema = z.object({
         };
       }
 
-      if (process.env.LLAMA_BASE_URL || process.env.LLAMA_API_KEY) {
-        config.LLamaCPP = {
+    for (const key in process.env) {
+      const match = key.match(/^LLAMA_(BASE_URL|API_KEY)(\d*)$/);
+      if (match) {
+        const n = match[2];
+        const name = process.env[`LLAMA_NAME${n}`] ?? `LlamaCPP${n}`
+        const baseURL = process.env[`LLAMA_BASE_URL${n}`] ?? "http://127.0.0.1:11434/v1"
+        const apiKey = process.env[`LLAMA_API_KEY${n}`] ?? undefined;
+        const defaultContextLength = parseInt(process.env[`LLAMA_CONTEXT_LENGTH${n}`] ?? '128000');
+        if (isNaN(defaultContextLength)) {
+          throw new Error(`Invalid context length for LlamaCPP${n}: ${process.env[`LLAMA_CONTEXT_LENGTH${n}`]}`);
+        }
+
+        config[name] = {
           provider: "openaiCompatible",
-          baseURL: process.env.LLAMA_BASE_URL ?? "http://127.0.0.1:11434/v1",
-          ...(process.env.LLAMA_API_KEY && {apiKey: process.env.LLAMA_API_KEY}),
-          defaultContextLength: 128000
+          baseURL,
+          ...(apiKey && {apiKey}),
+          defaultContextLength
         };
+      }
       }
 
       if (process.env.OPENROUTER_API_KEY) {
