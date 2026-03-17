@@ -18,12 +18,7 @@ import {
 } from "ai";
 import {z, ZodObject} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
-import {
-  createModelSpecSchema,
-  type ModelInputCapabilities,
-  ModelInputCapabilitiesSchema,
-  type ModelInputCapability,
-} from "./modelCapabilities.ts";
+import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
 
 export type ChatInputMessage =
   | SystemModelMessage
@@ -103,7 +98,6 @@ export type AIResponse = {
   timing: AIResponseTiming;
   sources?: LanguageModelV3Source[];
   warnings?: SharedV3Warning[];
-  //[key: string]: any;
 };
 
 export type AIResponseCost = {
@@ -253,31 +247,34 @@ export default class AIChatClient {
 
     const stream = result.fullStream;
 
-    // Buffers for chat and reasoning output
-    let chatBuffer = "";
-    let reasoningBuffer = "";
-    let flushTimer: ReturnType<typeof setInterval> | null = null;
+    let chunkType: 'chat' | 'reasoning' | null = null;
+    let chunkText = "";
 
     // Function to flush buffers
-    const flushBuffers = () => {
-      if (chatBuffer) {
-        agent.chatOutput(chatBuffer);
-        chatBuffer = "";
+    const flushBuffer = (finalMessage: true | undefined) => {
+      if (chunkType && chunkText) {
+        if (chunkType === "chat") {
+          agent.chatOutput(chunkText);
+        } else {
+          agent.reasoningOutput(chunkText);
+        }
+        chunkText = "";
       }
-      if (reasoningBuffer) {
-        agent.reasoningOutput(reasoningBuffer);
-        reasoningBuffer = "";
+
+      if (finalMessage) {
+        chunkType = null;
+        chunkText = "";
       }
     };
 
     // Start the flush timer (flush every 50ms)
-    flushTimer = setInterval(flushBuffers, 100);
+    const flushTimer = setInterval(flushBuffer, 100);
 
     try {
       for await (const part of stream) {
         switch (part.type) {
           case "file":
-            flushBuffers();
+            flushBuffer(true);
             agent.artifactOutput({
               name: "Generated File",
               encoding: "base64",
@@ -285,26 +282,36 @@ export default class AIChatClient {
               body: part.file.base64
             });
             break;
+          case "text-end":
+          case "reasoning-end": {
+            flushBuffer(true);
+          } break;
           case "text-delta": {
-            if (reasoningBuffer) {
-              flushBuffers()
+            if (chunkType === "chat") {
+              chunkText += part.text;
+            } else {
+              flushBuffer(true);
+              chunkType = "chat";
+              chunkText = part.text;
             }
-            chatBuffer += part.text;
             break;
           }
           case "reasoning-delta": {
-            if (chatBuffer) {
-              flushBuffers()
+            if (chunkType === "reasoning") {
+              chunkText += part.text;
+            } else {
+              flushBuffer(true);
+              chunkType = "reasoning";
+              chunkText = part.text;
             }
-            reasoningBuffer += part.text;
             break;
           }
           case "finish": {
-            //agent.chatOutput("\n");
+            flushBuffer(true);
             break;
           }
           case "error": {
-            flushBuffers();
+            flushBuffer(true);
             if (part.error) {
               agent.errorMessage("Error while handling request:\n", part.error as Error);
             } else {
@@ -318,7 +325,7 @@ export default class AIChatClient {
       if (flushTimer) {
         clearInterval(flushTimer);
       }
-      flushBuffers();
+      flushBuffer(true);
     }
 
     const elapsedMs = Date.now() - start;
