@@ -1,6 +1,7 @@
 import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
 import TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
+import {setTimeout as delay} from "node:timers/promises";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {EmbeddingModelSpec as EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
@@ -346,80 +347,72 @@ async function init(
    * Runs every 60 seconds (60000ms)
    */
   const checkForNewModels = async () => {
-    try {
-      const freshModelList = await getModelList();
-      if (!freshModelList?.data) {
-        return;
+    const freshModelList = await getModelList();
+    if (!freshModelList?.data) {
+      return;
+    }
+
+    // Refresh props response for any new configuration data
+    const freshPropsResponse = await getProps().catch(() => undefined);
+
+    let newModelsRegistered = 0;
+
+    for (const modelInfo of freshModelList.data) {
+      const modelKey = createModelRegistryKey(providerDisplayName, modelInfo.id);
+
+      // Skip if already registered
+      if (registeredChatModels.has(modelKey) || registeredEmbeddingModels.has(modelKey)) {
+        continue;
       }
 
-      // Refresh props response for any new configuration data
-      const freshPropsResponse = await getProps().catch(() => undefined);
+      const chatSpec = buildChatModelSpec(
+        modelInfo,
+        providerDisplayName,
+        openai,
+        getModelList,
+        freshPropsResponse,
+        config,
+        generateModelSpec
+      );
 
-      let newModelsRegistered = 0;
-
-      for (const modelInfo of freshModelList.data) {
-        const modelKey = createModelRegistryKey(providerDisplayName, modelInfo.id);
-
-        // Skip if already registered
-        if (registeredChatModels.has(modelKey) || registeredEmbeddingModels.has(modelKey)) {
-          continue;
-        }
-
-        const chatSpec = buildChatModelSpec(
-          modelInfo,
-          providerDisplayName,
-          openai,
-          getModelList,
-          freshPropsResponse,
-          config,
-          generateModelSpec
-        );
-
-        if (chatSpec) {
-          registeredChatModels.add(modelKey);
-          app.waitForService(ChatModelRegistry, chatModelRegistry => {
-            chatModelRegistry.registerModelSpec(modelKey, chatSpec);
-            console.log(`[AI Client] Registered new chat model: ${providerDisplayName}/${modelInfo.id}`);
-          });
-          newModelsRegistered++;
-        }
-
-        const embeddingSpec = buildEmbeddingModelSpec(
-          modelInfo,
-          providerDisplayName,
-          openai,
-          getModelList,
-          generateModelSpec
-        );
-
-        if (embeddingSpec) {
-          registeredEmbeddingModels.add(modelKey);
-          app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
-            embeddingModelRegistry.registerModelSpec(modelKey, embeddingSpec);
-            console.log(`[AI Client] Registered new embedding model: ${providerDisplayName}/${modelInfo.id}`);
-          });
-          newModelsRegistered++;
-        }
+      if (chatSpec) {
+        registeredChatModels.add(modelKey);
+        app.waitForService(ChatModelRegistry, chatModelRegistry => {
+          chatModelRegistry.registerModelSpec(modelKey, chatSpec);
+        });
+        newModelsRegistered++;
       }
 
-      if (newModelsRegistered > 0) {
-        console.log(`[AI Client] ${providerDisplayName}: Registered ${newModelsRegistered} new model(s)`);
+      const embeddingSpec = buildEmbeddingModelSpec(
+        modelInfo,
+        providerDisplayName,
+        openai,
+        getModelList,
+        generateModelSpec
+      );
+
+      if (embeddingSpec) {
+        registeredEmbeddingModels.add(modelKey);
+        app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
+          embeddingModelRegistry.registerModelSpec(modelKey, embeddingSpec);
+        });
+        newModelsRegistered++;
       }
-    } catch (error) {
-      console.error(`[AI Client] ${providerDisplayName}: Error checking for new models:`, error);
     }
   };
 
-  // Start periodic model checking (every 60 seconds)
-  const modelCheckInterval = setInterval(checkForNewModels, 60000);
+  const modelRegistry = app.requireService(ChatModelRegistry);
+  app.runBackgroundTask(modelRegistry, async (signal) => {
+    while (!signal.aborted) {
+      try {
+        await checkForNewModels();
+      } catch (err) {
+        app.serviceError(modelRegistry, `Error while checking for new chat models: `, err as Error);
+      }
 
-  // Ensure the interval doesn't block Node.js from exiting (unref is available on Timer objects in Node.js)
-  if (typeof modelCheckInterval.unref === 'function') {
-    modelCheckInterval.unref();
-  }
-
-  // Log initial status
-  console.log(`[AI Client] ${providerDisplayName}: Initial model check complete. ${chatModelSpecs.length} chat models, ${embeddingModelSpecs.length} embedding models registered. Periodic checking enabled (60s interval).`);
+      await delay(60000, null, {signal});
+    }
+  });
 }
 
 export default {
