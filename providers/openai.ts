@@ -204,6 +204,20 @@ async function init(
         maxContextLength: 272000,
       }),
 
+      generateModelSpec("gpt-5.4-mini", {
+        costPerMillionInputTokens: 0.75,
+        costPerMillionOutputTokens: 4.50,
+        costPerMillionCachedInputTokens: 0.075,
+        maxContextLength: 400000,
+      }),
+
+      generateModelSpec("gpt-5.4-nano", {
+        costPerMillionInputTokens: 0.20,
+        costPerMillionOutputTokens: 1.25,
+        costPerMillionCachedInputTokens: 0.02,
+        maxContextLength: 400000,
+      }),
+
       generateModelSpec("gpt-5.4-long-context", {
         providerModelId: "gpt-5.4", // Assuming it uses the same base model ID
         costPerMillionInputTokens: 5.00,
