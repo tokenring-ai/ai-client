@@ -2,6 +2,7 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ModelInputCapability} from "./client/modelCapabilities.ts";
 import {type AIProviderConfig, AIProviderConfigSchema} from "./providers.ts";
+import type {OAICompatibleModelConfigResults, OAICompatibleModelListData, OAICompatibleModelListResponse} from "./providers/openaiCompatible.ts";
 
 export type {TextPart, ImagePart, FilePart, UserModelMessage} from "ai";
 export type {ModelInputCapability} from "./client/modelCapabilities.ts";
@@ -222,8 +223,55 @@ export const AIClientConfigSchema = z.object({
           provider: "openaiCompatible",
           apiKey: process.env.MINIMAX_API_KEY,
           baseURL: "https://api.minimax.io/v1",
-          defaultContextLength: 204800
-        }
+          defaultContextLength: 204800,
+          staticModelList: {
+            object: "list",
+            data: [
+              {
+                id: "MiniMax-M2.7",
+                object: "model",
+                owned_by: "organization",
+                created: Date.now(),
+              },
+              {
+                id: "MiniMax-M2.7-highspeed",
+                object: "model",
+                owned_by: "organization",
+                created: Date.now(),
+              },
+              {
+                id: "MiniMax-M2.5",
+                object: "model",
+                owned_by: "organization",
+                created: Date.now(),
+              },
+              {
+                id: "MiniMax-M2.5-highspeed",
+                object: "model",
+                owned_by: "organization",
+                created: Date.now(),
+              },
+              {
+                id: "MiniMax-M2.1",
+                object: "model",
+                owned_by: "organization",
+                created: Date.now(),
+              },
+              {
+                id: "MiniMax-M2.1-highspeed",
+                object: "model",
+                owned_by: "organization",
+                created: Date.now(),
+              },
+              {
+                id: "MiniMax-M2",
+                object: "model",
+                owned_by: "organization",
+                created: Date.now(),
+              },
+            ]
+          } satisfies OAICompatibleModelListResponse
+        };
       }
 
       return config;

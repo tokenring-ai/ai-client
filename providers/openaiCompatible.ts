@@ -25,9 +25,10 @@ const OAICompatibleModelConfigSchema = z.object({
       capabilities: z.record(z.string(), z.any()).optional(),
     })
   }).optional(),
+  staticModelList: z.any().optional(),
 });
 
-function defaultModelSpecGenerator(modelInfo: ModelListData): ModelConfigResults {
+function defaultModelSpecGenerator(modelInfo: OAICompatibleModelListData): OAICompatibleModelConfigResults {
   let {id} = modelInfo;
   let type = "chat";
   if (id.match(/embed/i)) {
@@ -36,11 +37,11 @@ function defaultModelSpecGenerator(modelInfo: ModelListData): ModelConfigResults
   return {type};
 }
 
-type ModelConfigResults = {
+export type OAICompatibleModelConfigResults = {
   type: string;
   capabilities?: Record<string, any>;
 };
-type ModelListData = {
+export type OAICompatibleModelListData = {
   id: string;
   object: "model";
   owned_by: "organization" | "openai" | "vllm";
@@ -52,9 +53,9 @@ type ModelListData = {
   };
 };
 
-type ModelListResponse = {
+export type OAICompatibleModelListResponse = {
   object: "list";
-  data: ModelListData[];
+  data: OAICompatibleModelListData[];
 };
 
 type PropsResponse = {
@@ -81,13 +82,13 @@ function createModelRegistryKey(providerDisplayName: string, modelId: string): s
  * Builds a chat model spec for registration
  */
 function buildChatModelSpec(
-  modelInfo: ModelListData,
+  modelInfo: OAICompatibleModelListData,
   providerDisplayName: string,
   openai: any,
-  getModelList: () => Promise<ModelListResponse>,
+  getModelList: () => Promise<OAICompatibleModelListResponse>,
   propsResponse: PropsResponse | undefined,
   config: z.output<typeof OAICompatibleModelConfigSchema>,
-  generateModelSpec: (modelInfo: ModelListData) => ModelConfigResults
+  generateModelSpec: (modelInfo: OAICompatibleModelListData) => OAICompatibleModelConfigResults
 ): ChatModelSpec | null {
   const {type, capabilities = {}} = generateModelSpec(modelInfo);
 
@@ -217,11 +218,11 @@ function buildChatModelSpec(
  * Builds an embedding model spec for registration
  */
 function buildEmbeddingModelSpec(
-  modelInfo: ModelListData,
+  modelInfo: OAICompatibleModelListData,
   providerDisplayName: string,
   openai: any,
-  getModelList: () => Promise<ModelListResponse>,
-  generateModelSpec: (modelInfo: ModelListData) => ModelConfigResults
+  getModelList: () => Promise<OAICompatibleModelListResponse>,
+  generateModelSpec: (modelInfo: OAICompatibleModelListData) => OAICompatibleModelConfigResults
 ): EmbeddingModelSpec | null {
   const {type, capabilities = {}} = generateModelSpec(modelInfo);
 
@@ -252,7 +253,8 @@ async function init(
     supportsStructuredOutputs = true,
     queryParams,
     includeUsage = true,
-    headers
+    headers,
+    staticModelList,
   } = config;
   if (!baseURL) {
     throw new Error(
@@ -274,15 +276,17 @@ async function init(
     headers,
   });
 
-  const getModelList = cachedDataRetriever(`${baseURL}/models`, {
-    headers: {
-      ...(apiKey && {Authorization: `Bearer ${apiKey}`}),
-      ...headers,
-      "Content-Type": "application/json",
-    },
-    cacheTime: 60000,
-    timeout: 5000,
-  }) as () => Promise<ModelListResponse>;
+  const getModelList = staticModelList
+    ? async () => staticModelList
+    : cachedDataRetriever(`${baseURL}/models`, {
+      headers: {
+        ...(apiKey && {Authorization: `Bearer ${apiKey}`}),
+        ...headers,
+        "Content-Type": "application/json",
+      },
+      cacheTime: 60000,
+      timeout: 5000,
+    }) as () => Promise<OAICompatibleModelListResponse>;
 
   const getProps = cachedDataRetriever(`${baseURL.replace("/v1", "")}/props`, {
     headers: {
