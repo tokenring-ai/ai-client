@@ -216,6 +216,16 @@ export const AIClientConfigSchema = z.object({
           defaultContextLength: 200000
         };
       }
+
+      if (process.env.MINIMAX_API_KEY) {
+        config.Minimax = {
+          provider: "openaiCompatible",
+          apiKey: process.env.MINIMAX_API_KEY,
+          baseURL: "https://api.minimax.io/v1",
+          defaultContextLength: 204800
+        }
+      }
+
       return config;
     }
   ),
