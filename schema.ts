@@ -218,6 +218,15 @@ export const AIClientConfigSchema = z.object({
         };
       }
 
+      if (process.env.MIMO_API_KEY) {
+        config.MiMo = {
+          provider: "openaiCompatible",
+          apiKey: process.env.MIMO_API_KEY,
+          baseURL: "https://api.xiaomimimo.com/v1",
+          defaultContextLength: 1000000,
+        }
+      }
+
       if (process.env.MINIMAX_API_KEY) {
         config.Minimax = {
           provider: "openaiCompatible",
