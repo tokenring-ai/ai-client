@@ -74,12 +74,6 @@ async function init(
       costPerMillionInputTokens: 0.59,
       costPerMillionOutputTokens: 0.79,
     }),
-    generateModelSpec("meta-llama/llama-guard-4-12b", {
-      maxContextLength: 131072,
-      maxCompletionTokens: 1024,
-      costPerMillionInputTokens: 0.2,
-      costPerMillionOutputTokens: 0.2,
-    }),
     generateModelSpec("openai/gpt-oss-120b", {
       maxContextLength: 131072,
       maxCompletionTokens: 65536,
@@ -93,12 +87,6 @@ async function init(
       costPerMillionOutputTokens: 0.3,
     }),
     // Preview Models
-    generateModelSpec("meta-llama/llama-4-maverick-17b-128e-instruct", {
-      maxContextLength: 131072,
-      maxCompletionTokens: 8192,
-      costPerMillionInputTokens: 0.2,
-      costPerMillionOutputTokens: 0.6,
-    }),
     generateModelSpec("meta-llama/llama-4-scout-17b-16e-instruct", {
       maxContextLength: 131072,
       maxCompletionTokens: 8192,

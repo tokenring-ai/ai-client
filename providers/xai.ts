@@ -129,11 +129,6 @@ export async function init(
         costPerMillionOutputTokens: 1.5,
         maxContextLength: 256000,
       }),
-      generateModelSpec("grok-4-0709", {
-        costPerMillionInputTokens: 3,
-        costPerMillionOutputTokens: 15.0,
-        maxContextLength: 256000,
-      }),
       generateModelSpec("grok-4-1-fast-reasoning", {
         costPerMillionInputTokens: 0.2,
         costPerMillionCachedInputTokens: 0.05,
@@ -146,32 +141,20 @@ export async function init(
         costPerMillionOutputTokens: 0.5,
         maxContextLength: 2000000,
       }),
-      generateModelSpec("grok-4-fast-reasoning", {
-        costPerMillionInputTokens: 0.2,
-        costPerMillionCachedInputTokens: 0.05,
-        costPerMillionOutputTokens: 0.5,
+      generateModelSpec("grok-4.20-0309-reasoning", {
+        costPerMillionInputTokens: 2.0,
+        costPerMillionOutputTokens: 6.0,
         maxContextLength: 2000000,
       }),
-      generateModelSpec("grok-4-fast-non-reasoning", {
-        costPerMillionInputTokens: 0.2,
-        costPerMillionCachedInputTokens: 0.05,
-        costPerMillionOutputTokens: 0.5,
+      generateModelSpec("grok-4.20-0309-non-reasoning", {
+        costPerMillionInputTokens: 2.0,
+        costPerMillionOutputTokens: 6.0,
         maxContextLength: 2000000,
       }),
-      generateModelSpec("grok-3", {
-        costPerMillionInputTokens: 3,
-        costPerMillionOutputTokens: 15.0,
-        maxContextLength: 131072,
-      }),
-      generateModelSpec("grok-3-mini", {
-        costPerMillionInputTokens: 0.3,
-        costPerMillionOutputTokens: 0.5,
-        maxContextLength: 131072,
-      }),
-      generateModelSpec("grok-4-0709", {
-        costPerMillionInputTokens: 3,
-        costPerMillionOutputTokens: 15.0,
-        maxContextLength: 256000,
+      generateModelSpec("grok-4.20-multi-agent-0309", {
+        costPerMillionInputTokens: 2.0,
+        costPerMillionOutputTokens: 6.0,
+        maxContextLength: 2000000,
       }),
     ]);
   });
