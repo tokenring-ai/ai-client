@@ -7,12 +7,12 @@ import cerebras from "./providers/cerebras.ts";
 import deepseek from "./providers/deepseek.ts";
 import elevenlabs from "./providers/elevenlabs.ts";
 import fal from "./providers/fal.ts";
+import genericProvider from "./providers/generic.ts";
 import google from "./providers/google.ts";
 import groq from "./providers/groq.ts";
 import llama from "./providers/llama.ts";
 import ollama from "./providers/ollama.ts";
 import openai from "./providers/openai.ts";
-import openaiCompatible from "./providers/openaiCompatible.ts";
 import openrouter from "./providers/openrouter.ts";
 import perplexity from "./providers/perplexity.ts";
 import xai from "./providers/xai.ts";
@@ -24,12 +24,12 @@ const providers = {
   deepseek,
   elevenlabs,
   fal,
+  generic: genericProvider,
   google,
   groq,
   llama,
   ollama,
   openai,
-  openaiCompatible,
   openrouter,
   perplexity,
   xai
@@ -56,12 +56,12 @@ export const AIProviderConfigSchema = z.discriminatedUnion("provider", [
   deepseek.configSchema,
   elevenlabs.configSchema,
   fal.configSchema,
+  genericProvider.configSchema,
   google.configSchema,
   groq.configSchema,
   llama.configSchema,
   ollama.configSchema,
   openai.configSchema,
-  openaiCompatible.configSchema,
   openrouter.configSchema,
   perplexity.configSchema,
   xai.configSchema

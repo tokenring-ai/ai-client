@@ -2,7 +2,7 @@ import TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ModelInputCapability} from "./client/modelCapabilities.ts";
 import {type AIProviderConfig, AIProviderConfigSchema} from "./providers.ts";
-import type {OAICompatibleModelConfigResults, OAICompatibleModelListData, OAICompatibleModelListResponse} from "./providers/openaiCompatible.ts";
+import type {GenericModelListResponse} from "./providers/generic.ts";
 
 export type {TextPart, ImagePart, FilePart, UserModelMessage} from "ai";
 export type {ModelInputCapability} from "./client/modelCapabilities.ts";
@@ -105,7 +105,8 @@ export const AIClientConfigSchema = z.object({
 
       if (process.env.CHUTES_API_KEY) {
         config.Chutes = {
-          provider: "openaiCompatible",
+          provider: "generic",
+          endpointType: "openai",
           apiKey: process.env.CHUTES_API_KEY,
           baseURL: 'https://llm.chutes.ai/v1',
           defaultContextLength: 128000
@@ -135,7 +136,8 @@ export const AIClientConfigSchema = z.object({
 
       if (process.env.META_LLAMA_API_KEY) {
         config.LLama = {
-          provider: "openaiCompatible",
+          provider: "generic",
+          endpointType: "openai",
           apiKey: process.env.META_LLAMA_API_KEY,
           baseURL: 'https://api.llama.com/compat/v1',
           defaultContextLength: 128000
@@ -144,7 +146,8 @@ export const AIClientConfigSchema = z.object({
 
       if (process.env.NVIDIA_NIM_API_KEY) {
         config.Nvidia = {
-          provider: "openaiCompatible",
+          provider: "generic",
+          endpointType: "openai",
           apiKey: process.env.NVIDIA_NIM_API_KEY,
           baseURL: 'https://integrate.api.nvidia.com/v1',
           defaultContextLength: 32000
@@ -158,26 +161,58 @@ export const AIClientConfigSchema = z.object({
         };
       }
 
-    for (const key in process.env) {
-      const match = key.match(/^LLAMA_(BASE_URL|API_KEY)(\d*)$/);
-      if (match) {
-        const n = match[2];
-        const name = process.env[`LLAMA_NAME${n}`] ?? `LlamaCPP${n}`
-        const baseURL = process.env[`LLAMA_BASE_URL${n}`] ?? "http://127.0.0.1:11434/v1"
-        const apiKey = process.env[`LLAMA_API_KEY${n}`] ?? undefined;
-        const defaultContextLength = parseInt(process.env[`LLAMA_CONTEXT_LENGTH${n}`] ?? '128000');
-        if (isNaN(defaultContextLength)) {
-          throw new Error(`Invalid context length for LlamaCPP${n}: ${process.env[`LLAMA_CONTEXT_LENGTH${n}`]}`);
-        }
+      for (const key in process.env) {
+        const match = key.match(/^LLAMA_(BASE_URL|API_KEY)(\d*)$/);
+        if (match) {
+          const n = match[2];
+          const name = process.env[`LLAMA_NAME${n}`] ?? `LlamaCPP${n}`
+          const baseURL = process.env[`LLAMA_BASE_URL${n}`] ?? "http://127.0.0.1:11434/v1"
+          const apiKey = process.env[`LLAMA_API_KEY${n}`] ?? undefined;
+          const endpointType = process.env[`LLAMA_ENDPOINT_TYPE${n}`] ?? "openai";
+          switch (endpointType) {
+            case 'openai':
+            case 'anthropic':
+            case 'responses':
+              break;
+            default:
+              throw new Error(`Invalid endpoint type for LlamaCPP${n}: ${endpointType}`)
+          }
+          const defaultContextLength = parseInt(process.env[`LLAMA_CONTEXT_LENGTH${n}`] ?? '128000');
+          if (isNaN(defaultContextLength)) {
+            throw new Error(`Invalid context length for LlamaCPP${n}: ${process.env[`LLAMA_CONTEXT_LENGTH${n}`]}`);
+          }
 
-        config[name] = {
-          provider: "openaiCompatible",
-          baseURL,
-          ...(apiKey && {apiKey}),
-          defaultContextLength
-        };
+          config[name] = {
+            provider: "generic",
+            endpointType,
+            baseURL,
+            ...(apiKey && {apiKey}),
+            defaultContextLength
+          };
+        }
       }
-      }
+
+/*
+      for (const key in process.env) {
+        const match = key.match(/^RESPONSES_(URL|API_KEY)(\d*)$/);
+        if (match) {
+          const n = match[2];
+          const name = process.env[`RESPONSES_NAME${n}`] ?? `Responses${n}`
+          const url = process.env[`RESPONSES_URL${n}`] ?? "http://127.0.0.1:11434/v1"
+          const apiKey = process.env[`RESPONSES_API_KEY${n}`] ?? undefined;
+          const defaultContextLength = parseInt(process.env[`RESPONSES_CONTEXT_LENGTH${n}`] ?? '128000');
+          if (isNaN(defaultContextLength)) {
+            throw new Error(`Invalid context length for Responses${n}: ${process.env[`RESPONSES_CONTEXT_LENGTH${n}`]}`);
+          }
+
+          config[name] = {
+            provider: "openResponses",
+            url,
+            ...(apiKey && {apiKey}),
+            defaultContextLength
+          };
+        }
+      }*/
 
       if (process.env.OPENROUTER_API_KEY) {
         config.OpenRouter = {
@@ -195,7 +230,8 @@ export const AIClientConfigSchema = z.object({
 
       if (process.env.DASHSCOPE_API_KEY) {
         config.Qwen = {
-          provider: "openaiCompatible",
+          provider: "generic",
+          endpointType: "openai",
           apiKey: process.env.DASHSCOPE_API_KEY,
           baseURL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
           defaultContextLength: 262144
@@ -211,16 +247,19 @@ export const AIClientConfigSchema = z.object({
 
       if (process.env.ZAI_API_KEY) {
         config.zAi = {
-          provider: "openaiCompatible",
+          provider: "generic",
+          endpointType: "openai",
           apiKey: process.env.ZAI_API_KEY,
           baseURL: "https://api.z.ai/api/coding/paas/v4",
+          modelListUrl: "https://api.z.ai/api/coding/paas/v4/models",
           defaultContextLength: 200000
         };
       }
 
       if (process.env.MIMO_API_KEY) {
         config.MiMo = {
-          provider: "openaiCompatible",
+          provider: "generic",
+          endpointType: "openai",
           apiKey: process.env.MIMO_API_KEY,
           baseURL: "https://api.xiaomimimo.com/v1",
           defaultContextLength: 1000000,
@@ -229,9 +268,10 @@ export const AIClientConfigSchema = z.object({
 
       if (process.env.MINIMAX_API_KEY) {
         config.Minimax = {
-          provider: "openaiCompatible",
+          provider: "generic",
+          endpointType: "anthropic",
           apiKey: process.env.MINIMAX_API_KEY,
-          baseURL: "https://api.minimax.io/v1",
+          baseURL: "https://api.minimax.io/anthropic/v1",
           defaultContextLength: 204800,
           staticModelList: {
             object: "list",
@@ -279,7 +319,7 @@ export const AIClientConfigSchema = z.object({
                 created: Date.now(),
               },
             ]
-          } satisfies OAICompatibleModelListResponse
+          } satisfies GenericModelListResponse
         };
       }
 
