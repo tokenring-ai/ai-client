@@ -8,7 +8,7 @@ The AI Client package acts as a unified interface to multiple AI providers, abst
 
 ### Key Features
 
-- **15+ AI Providers**: Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, llama, and more
+- **20+ AI Providers**: Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, Llama, Qwen, Minimax, MiMo, Z.ai, NVIDIA NIM, Chutes, and more
 - **Seven AI Capabilities**: Chat, Embeddings, Image Generation, Video Generation, Reranking, Speech, and Transcription
 - **Seven Model Registries**: Dedicated service registries for managing model specifications and capabilities
 - **Dynamic Model Registration**: Register custom models with availability checks
@@ -34,7 +34,7 @@ The package supports the following AI providers through dedicated integrations:
 | Provider | SDK/Model Support | Key Features |
 |----------|-------------------|--------------|
 | Anthropic | Claude models | Reasoning, analysis, web search, context caching, image input, file input |
-| OpenAI | GPT models, Whisper, TTS, Image Generation | Reasoning, multimodal, real-time audio, image generation, web search |
+| OpenAI | GPT models, Whisper, TTS, Image Generation | Reasoning, multimodal, real-time audio, image generation, web search, deep research |
 | Google | Gemini, Imagen | Thinking, multimodal, image generation, web search, video input, audio input |
 | Groq | LLaMA-based models | High-speed inference, Llama, Qwen, Kimi models |
 | Cerebras | LLaMA-based models | High performance, Llama, Qwen, GLM models |
@@ -48,8 +48,14 @@ The package supports the following AI providers through dedicated integrations:
 | Ollama | Self-hosted models | Local inference, chat and embedding models |
 | Llama | Meta Llama models | Local/remote inference via llama.com |
 | OpenAI Compatible | Any OpenAI-compatible API | Flexible provider configuration |
+| Qwen (DashScope) | Alibaba Cloud models | High context length models |
+| Minimax | Minimax models | High context length, multiple model variants |
+| MiMo | XiaoMi MiMo models | Ultra-long context support |
+| Z.ai | Z.ai models | High context length support |
+| NVIDIA NIM | NVIDIA models | Enterprise AI inference |
+| Chutes | Chutes models | GPU-accelerated inference |
 
-Additional providers can be configured using the `openaiCompatible` provider for OpenAI-compatible APIs.
+Additional providers can be configured using the `generic` provider with OpenAI-compatible or Anthropic-compatible endpoints.
 
 ## Core Components
 
@@ -82,7 +88,7 @@ The package provides seven model registry services, each implementing the `Token
 
 ## Services
 
-The package registers seven service registries for different AI capabilities. Each registry implements the `TokenRingService` interface and provides methods for managing model specifications and retrieving clients.
+The package registers seven service instances (registries) during plugin installation and initializes providers during the start phase. Each registry implements the `TokenRingService` interface and provides methods for managing model specifications and retrieving clients.
 
 ### ChatModelRegistry
 
@@ -339,6 +345,12 @@ CHUTES_API_KEY=...
 
 # NVIDIA NIM
 NVIDIA_NIM_API_KEY=...
+
+# Minimax
+MINIMAX_API_KEY=...
+
+# MiMo
+MIMO_API_KEY=...
 
 # llama.cpp
 LLAMA_BASE_URL=http://127.0.0.1:11434/v1
