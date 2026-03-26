@@ -8,7 +8,8 @@ The AI Client package acts as a unified interface to multiple AI providers, abst
 
 ### Key Features
 
-- **20+ AI Providers**: Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, Llama, Qwen, Minimax, MiMo, Z.ai, NVIDIA NIM, Chutes, and more
+- **19+ Native AI Providers**: Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, Llama (via Meta API), NVIDIA NIM, Chutes, Minimax, MiMo, and zAI
+- **Generic Provider Support**: Configure custom providers via OpenAI-compatible or Anthropic-compatible endpoints (supports Qwen/DashScope and any other OpenAI/Anthropic-compatible API)
 - **Seven AI Capabilities**: Chat, Embeddings, Image Generation, Video Generation, Reranking, Speech, and Transcription
 - **Seven Model Registries**: Dedicated service registries for managing model specifications and capabilities
 - **Dynamic Model Registration**: Register custom models with availability checks
@@ -37,25 +38,25 @@ The package supports the following AI providers through dedicated integrations:
 | OpenAI | GPT models, Whisper, TTS, Image Generation | Reasoning, multimodal, real-time audio, image generation, web search, deep research |
 | Google | Gemini, Imagen | Thinking, multimodal, image generation, web search, video input, audio input |
 | Groq | LLaMA-based models | High-speed inference, Llama, Qwen, Kimi models |
-| Cerebras | LLaMA-based models | High performance, Llama, Qwen, GLM models |
+| Cerebras | Cerebras models | High performance inference |
 | DeepSeek | DeepSeek models | Reasoning capabilities, chat and reasoner |
 | ElevenLabs | Speech synthesis and transcription | Multilingual voice generation, speaker diarization |
 | Fal | Image generation | Fast image generation, Flux models |
-| xAI | xAI models | Reasoning and analysis, image generation, video generation |
+| xAI | Grok models | Reasoning and analysis |
 | OpenRouter | Aggregated access | Multiple provider access, dynamic model discovery |
 | Perplexity | Perplexity models | Web search integration, deep research |
 | Azure | Azure OpenAI | Enterprise deployment |
 | Ollama | Self-hosted models | Local inference, chat and embedding models |
-| Llama | Meta Llama models | Local/remote inference via llama.com |
-| OpenAI Compatible | Any OpenAI-compatible API | Flexible provider configuration |
+| Llama | Meta Llama models (via Meta API) | Remote inference via Meta API |
+| NVIDIA NIM | NVIDIA models | Enterprise AI models via NIM |
 | Qwen (DashScope) | Alibaba Cloud models | High context length models |
-| Minimax | Minimax models | High context length, multiple model variants |
-| MiMo | XiaoMi MiMo models | Ultra-long context support |
-| Z.ai | Z.ai models | High context length support |
-| NVIDIA NIM | NVIDIA models | Enterprise AI inference |
-| Chutes | Chutes models | GPU-accelerated inference |
+| Chutes | Various models | Custom model hosting |
+| Minimax | Minimax models | Chinese language models |
+| MiMo | MiMo models | Custom models |
+| zAI | Z.ai models | Chinese AI models |
+| Generic | OpenAI/Anthropic-compatible | Custom providers, Qwen/DashScope, any OpenAI/Anthropic-compatible API |
 
-Additional providers can be configured using the `generic` provider with OpenAI-compatible or Anthropic-compatible endpoints.
+Additional providers can be configured using the `generic` provider with OpenAI-compatible or Anthropic-compatible endpoints. This supports providers like Qwen (DashScope), and any other OpenAI/Anthropic-compatible API.
 
 ## Core Components
 
@@ -352,9 +353,13 @@ MINIMAX_API_KEY=...
 # MiMo
 MIMO_API_KEY=...
 
-# llama.cpp
+# llama.cpp (multiple instances supported)
 LLAMA_BASE_URL=http://127.0.0.1:11434/v1
 LLAMA_API_KEY=...
+
+# llama.cpp (other instances can be registered)
+LLAMA_BASE_URL2=http://127.0.0.1:11434/v1
+LLAMA_API_KEY2=...
 
 # Azure
 AZURE_API_ENDPOINT=https://...
@@ -939,6 +944,22 @@ Different providers support different features:
 - `XAllowedHandles`: Allowed handles for X search
 - `XImageUnderstanding`: Enable image understanding in X search
 - `XVideoUnderstanding`: Enable video understanding in X search
+
+**ElevenLabs (Speech):**
+- `voice`: Voice ID to use for speech synthesis
+- `language_code`: Language code (ISO 639-1) for the voice
+- `stability`: Voice stability (0-1, lower = more variation)
+- `similarity_boost`: Similarity boost (0-1, controls adherence to voice)
+- `style`: Style amplification (0-1)
+- `use_speaker_boost`: Boost similarity to original speaker
+
+**ElevenLabs (Transcription):**
+- `languageCode`: Language code (ISO 639-1 or ISO 639-3)
+- `tagAudioEvents`: Tag audio events like laughter and footsteps
+- `numSpeakers`: Maximum number of speakers (1-32)
+- `timestampsGranularity`: Timestamp granularity (none, word, character)
+- `diarize`: Annotate which speaker is talking
+- `fileFormat`: Input audio format
 
 **OpenRouter:**
 - `websearch`: Enable web search plugin

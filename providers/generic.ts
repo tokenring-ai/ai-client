@@ -1,6 +1,7 @@
-import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
-import {createOpenResponses} from "@ai-sdk/open-responses";
 import {createAnthropic} from "@ai-sdk/anthropic";
+import {createOpenResponses} from "@ai-sdk/open-responses";
+import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
+import type {EmbeddingModelV3, LanguageModelV3} from "@ai-sdk/provider";
 import TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {setTimeout as delay} from "node:timers/promises";
@@ -38,8 +39,8 @@ type EndpointType = 'openai' | 'anthropic' | 'responses';
 
 interface UnderlyingProvider {
   type: EndpointType;
-  getLanguageModel(modelId: string): any;
-  getEmbeddingModel(modelId: string): any;
+  getLanguageModel(modelId: string): LanguageModelV3;
+  getEmbeddingModel(modelId: string): EmbeddingModelV3 | null;
   buildSettings(modelInfo: GenericModelListData, propsResponse: PropsResponse | undefined): Record<string, SettingDefinition>;
   mangleRequest(req: any, settings: Map<string, unknown>): void;
   inputCapabilities?: { image?: boolean; file?: boolean };
@@ -439,9 +440,8 @@ async function init(
         const base = baseURL.replace(/\/+$/, '');
         modelListUrl = `${base}/models`;
       } else {
-        let match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*)\//);
-        if (!match) throw new Error(`Could not determine model list URL from ${baseURL}`);
-        modelListUrl = `${match[1]}/models`;
+        let match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*)\/$/);
+        modelListUrl = `${match ? match[1] : baseURL}/models`;
       }
     }
 

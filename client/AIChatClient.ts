@@ -243,6 +243,9 @@ export default class AIChatClient {
       model: this.modelSpec.impl,
       abortSignal: signal,
       experimental_context: {agent},
+      onError: () => {
+        //TODO: If we don't have this here, errors get stupidly barfed out as unhandled rejections in the main event loop
+      }
     });
 
     const stream = result.fullStream;
@@ -313,9 +316,9 @@ export default class AIChatClient {
           case "error": {
             flushBuffer(true);
             if (part.error) {
-              agent.errorMessage("Error while handling request:\n", part.error as Error);
+              throw part.error;
             } else {
-              agent.errorMessage("Unknown error while handling request");
+              throw new Error("Unknown error while handling request");
             }
           }
         }
@@ -326,6 +329,10 @@ export default class AIChatClient {
         clearInterval(flushTimer);
       }
       flushBuffer(true);
+
+      // TODO: I don't know if we need to consume the stream after we've iterated it, but it might possibly move some promise rejections
+      // to this call site, which might be better for error handling
+      await result.consumeStream();
     }
 
     const elapsedMs = Date.now() - start;

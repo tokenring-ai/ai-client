@@ -251,7 +251,6 @@ export const AIClientConfigSchema = z.object({
           endpointType: "openai",
           apiKey: process.env.ZAI_API_KEY,
           baseURL: "https://api.z.ai/api/coding/paas/v4",
-          modelListUrl: "https://api.z.ai/api/coding/paas/v4/models",
           defaultContextLength: 200000
         };
       }
