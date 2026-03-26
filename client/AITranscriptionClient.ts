@@ -1,12 +1,8 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {type DataContent, experimental_transcribe as transcribe, type TranscriptionModel,} from "ai";
-import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 import {z} from "zod";
-import {
-  createModelSpecSchema,
-  type ModelInputCapabilities,
-  TranscriptionModelInputCapabilitiesSchema,
-} from "./modelCapabilities.ts";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
+import {createModelSpecSchema, type ModelInputCapabilities, TranscriptionModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
 
 export interface TranscriptionResult {
   text: string;
@@ -78,7 +74,7 @@ export default class AITranscriptionClient {
         ...request,
         model: this.modelSpec.impl,
         providerOptions: {
-          ...this.modelSpec.providerOptions,
+          ...this.modelSpec.providerOptions ?? {},
           ...(request.language && {language: request.language}),
           ...(request.prompt && {prompt: request.prompt})
         },

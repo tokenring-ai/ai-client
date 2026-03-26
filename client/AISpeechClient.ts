@@ -1,12 +1,8 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {experimental_generateSpeech as generateSpeech, Experimental_SpeechResult, type SpeechModel,} from "ai";
-import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
 import {z} from "zod";
-import {
-  createModelSpecSchema,
-  type ModelInputCapabilities,
-  ModelInputCapabilitiesSchema,
-} from "./modelCapabilities.ts";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
+import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
 
 export type SpeechRequest = {
   text: string;

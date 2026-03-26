@@ -1,12 +1,12 @@
 import TokenRingApp from "@tokenring-ai/app";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {abandon} from "@tokenring-ai/utility/promise/abandon";
 import {createOllama} from "ollama-ai-provider-v2";
 import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.js";
-import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.js";
+import type {ChatModelSpec} from "../client/AIChatClient.ts";
+import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
 import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
-import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 
 const OllamaModelProviderConfigSchema = z.object({
   provider: z.literal('ollama'),
@@ -112,10 +112,11 @@ async function init(
         impl: ollama.chat(modelInfo.model),
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () =>
-          capabilities.alwaysHot ||
-          getRunningModels().then((result) =>
-            result?.models?.find?.((row) => modelInfo.model === row.model),
-          ),
+          capabilities.alwaysHot
+            ? Promise.resolve(true)
+            : getRunningModels().then((result) =>
+              !!result?.models?.find((row) => modelInfo.model === row.model),
+            ),
         ...capabilities,
       });
     } else if (type === "embedding") {
@@ -127,10 +128,11 @@ async function init(
         costPerMillionInputTokens: 0,
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () =>
-          capabilities.alwaysHot ||
-          getRunningModels().then((result) =>
-            result?.models?.find?.((row) => modelInfo.model === row.model),
-          ),
+          capabilities.alwaysHot
+            ? Promise.resolve(true)
+            : getRunningModels().then((result) =>
+              !!result?.models?.find((row) => modelInfo.model === row.model),
+            ),
       });
     }
   }

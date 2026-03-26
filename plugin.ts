@@ -11,7 +11,7 @@ import {
   VideoGenerationModelRegistry
 } from "./ModelRegistry.ts";
 import packageJSON from "./package.json" with {type: "json"};
-import {registerProviders} from "./providers.js";
+import {registerProviders} from "./providers.ts";
 import aiClientRPC from "./rpc/ai-client.ts";
 import {AIClientConfigSchema} from "./schema.ts";
 

@@ -1,20 +1,20 @@
 import {TokenRingService} from "@tokenring-ai/app/types";
-import AIChatClient, {ChatModelSpec, normalizeChatModelSpec} from "./client/AIChatClient.js";
-import AIEmbeddingClient, {EmbeddingModelSpec, normalizeEmbeddingModelSpec} from "./client/AIEmbeddingClient.js";
-import AIImageGenerationClient, {ImageModelSpec, normalizeImageModelSpec} from "./client/AIImageGenerationClient.js";
-import AIRerankingClient, {normalizeRerankingModelSpec, RerankingModelSpec} from "./client/AIRerankingClient.js";
-import AISpeechClient, {normalizeSpeechModelSpec, SpeechModelSpec} from "./client/AISpeechClient.js";
-import AITranscriptionClient, {normalizeTranscriptionModelSpec, TranscriptionModelSpec} from "./client/AITranscriptionClient.js";
+import AIChatClient, {ChatModelSpec, normalizeChatModelSpec} from "./client/AIChatClient.ts";
+import AIEmbeddingClient, {EmbeddingModelSpec, normalizeEmbeddingModelSpec} from "./client/AIEmbeddingClient.ts";
+import AIImageGenerationClient, {ImageModelSpec, normalizeImageModelSpec} from "./client/AIImageGenerationClient.ts";
+import AIRerankingClient, {normalizeRerankingModelSpec, RerankingModelSpec} from "./client/AIRerankingClient.ts";
+import AISpeechClient, {normalizeSpeechModelSpec, SpeechModelSpec} from "./client/AISpeechClient.ts";
+import AITranscriptionClient, {normalizeTranscriptionModelSpec, TranscriptionModelSpec} from "./client/AITranscriptionClient.ts";
 import AIVideoGenerationClient, {normalizeVideoModelSpec, type VideoModelSpec} from "./client/AIVideoGenerationClient.ts";
-import {ModelTypeRegistry} from "./ModelTypeRegistry.js";
+import {ModelTypeRegistry} from "./ModelTypeRegistry.ts";
 import {
   ChatModelRequirements,
   EmbeddingModelRequirements,
   ImageModelRequirements,
-  VideoModelRequirements,
   RerankingModelRequirements,
   SpeechModelRequirements,
-  TranscriptionModelRequirements
+  TranscriptionModelRequirements,
+  VideoModelRequirements
 } from "./schema.ts";
 
 export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatClient, ChatModelRequirements> implements TokenRingService {

@@ -17,7 +17,7 @@ import {
   type UserModelMessage,
 } from "ai";
 import {z, ZodObject} from "zod";
-import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.js";
+import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
 import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
 
 export type ChatInputMessage =
