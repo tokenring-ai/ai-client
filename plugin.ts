@@ -13,7 +13,7 @@ import {
 import packageJSON from "./package.json" with {type: "json"};
 import {registerProviders} from "./providers.ts";
 import aiClientRPC from "./rpc/ai-client.ts";
-import {AIClientConfigSchema} from "./schema.ts";
+import {addDefaultProviders, AIClientConfigSchema} from "./schema.ts";
 
 const pluginConfigSchema = z.object({
   ai: AIClientConfigSchema.prefault({})
@@ -38,9 +38,10 @@ export default {
   },
 
   async start(app, config): Promise<void> {
-    await registerProviders(config.ai.providers,
-      app
-    );
+    const providers = config.ai.providers;
+    addDefaultProviders(providers);
+
+    await registerProviders(providers, app);
   },
 
   config: pluginConfigSchema
