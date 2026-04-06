@@ -21,6 +21,7 @@ const pluginConfigSchema = z.object({
 
 export default {
   name: packageJSON.name,
+  displayName: "AI Client",
   version: packageJSON.version,
   description: packageJSON.description,
   install(app, config) {
@@ -43,6 +44,5 @@ export default {
 
     await registerProviders(providers, app);
   },
-
   config: pluginConfigSchema
 } satisfies TokenRingPlugin<typeof pluginConfigSchema>;

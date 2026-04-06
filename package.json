@@ -1,7 +1,7 @@
 {
   "name": "@tokenring-ai/ai-client",
   "version": "0.2.0",
-  "description": "AI client for the Token Ring ecosystem",
+  "description": "Unified interface for LLM interactions, supporting chat, embeddings, and image generation.",
   "dependencies": {
     "@tokenring-ai/app": "0.2.0",
     "@ai-sdk/anthropic": "^3.0.64",
