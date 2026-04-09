@@ -1,12 +1,12 @@
 import {createGoogleGenerativeAI, GoogleGenerativeAIProviderOptions} from "@ai-sdk/google";
 import TokenRingApp from "@tokenring-ai/app";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
 import {ChatModelSettings, SettingDefinition} from "../ModelTypeRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
-import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 
 const GoogleModelProviderConfigSchema = z.object({
   provider: z.literal('google'),

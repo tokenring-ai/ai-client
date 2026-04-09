@@ -1,11 +1,11 @@
 import {createOpenAI, OpenAIResponsesProviderOptions} from "@ai-sdk/openai";
 import TokenRingApp from "@tokenring-ai/app";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
-import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 
 const OpenAIModelProviderConfigSchema = z.object({
   provider: z.literal('openai'),

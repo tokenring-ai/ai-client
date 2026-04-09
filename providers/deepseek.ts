@@ -1,10 +1,10 @@
 import {createDeepSeek} from "@ai-sdk/deepseek";
 import TokenRingApp from "@tokenring-ai/app";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
 import {AIModelProvider} from "../schema.ts";
-import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 
 const DeepSeekModelProviderConfigSchema = z.object({
   provider: z.literal('deepseek'),

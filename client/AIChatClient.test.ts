@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {normalizeChatModelSpec, type ChatModelSpec} from "./AIChatClient.ts";
+import {type ChatModelSpec, normalizeChatModelSpec} from "./AIChatClient.ts";
 import {normalizeEmbeddingModelSpec} from "./AIEmbeddingClient.ts";
 import {normalizeTranscriptionModelSpec} from "./AITranscriptionClient.ts";
 
