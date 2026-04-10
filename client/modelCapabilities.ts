@@ -1,6 +1,9 @@
 import {z} from "zod";
 
-export const ModelInputCapabilitySchema = z.union([z.boolean(), z.array(z.string())]);
+export const ModelInputCapabilitySchema = z.union([
+  z.boolean(),
+  z.array(z.string()),
+]);
 export type ModelInputCapability = z.infer<typeof ModelInputCapabilitySchema>;
 
 export const ModelInputCapabilitiesSchema = z.object({
@@ -10,18 +13,25 @@ export const ModelInputCapabilitiesSchema = z.object({
   audio: ModelInputCapabilitySchema.default(false),
   file: ModelInputCapabilitySchema.default(false),
 });
-export type ModelInputCapabilities = z.infer<typeof ModelInputCapabilitiesSchema>;
+export type ModelInputCapabilities = z.infer<
+  typeof ModelInputCapabilitiesSchema
+>;
 
-export const TranscriptionModelInputCapabilitiesSchema = ModelInputCapabilitiesSchema.extend({
-  text: z.boolean().default(false),
-  audio: ModelInputCapabilitySchema.default(true),
-});
+export const TranscriptionModelInputCapabilitiesSchema =
+  ModelInputCapabilitiesSchema.extend({
+    text: z.boolean().default(false),
+    audio: ModelInputCapabilitySchema.default(true),
+  });
 
 export const BaseModelSpecSchema = z.object({
   modelId: z.string(),
   providerDisplayName: z.string(),
-  isAvailable: z.function({input: z.tuple([]), output: z.promise(z.boolean())}).optional(),
-  isHot: z.function({input: z.tuple([]), output: z.promise(z.boolean())}).optional(),
+  isAvailable: z
+    .function({input: z.tuple([]), output: z.promise(z.boolean())})
+    .optional(),
+  isHot: z
+    .function({input: z.tuple([]), output: z.promise(z.boolean())})
+    .optional(),
   settings: z.record(z.string(), z.any()).optional(),
 });
 

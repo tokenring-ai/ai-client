@@ -1,15 +1,15 @@
-import {createGoogleGenerativeAI, GoogleGenerativeAIProviderOptions} from "@ai-sdk/google";
-import TokenRingApp from "@tokenring-ai/app";
+import {createGoogleGenerativeAI, type GoogleGenerativeAIProviderOptions,} from "@ai-sdk/google";
+import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
-import {ChatModelSettings, SettingDefinition} from "../ModelTypeRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry,} from "../ModelRegistry.ts";
+import type {ChatModelSettings, SettingDefinition} from "../ModelTypeRegistry.ts";
+import type {AIModelProvider} from "../schema.ts";
 
 const GoogleModelProviderConfigSchema = z.object({
-  provider: z.literal('google'),
+  provider: z.literal("google"),
   apiKey: z.string(),
 });
 
@@ -23,7 +23,7 @@ interface ModelList {
   models: Model[];
 }
 
-async function init(
+function init(
   providerDisplayName: string,
   config: z.output<typeof GoogleModelProviderConfigSchema>,
   app: TokenRingApp,
@@ -60,8 +60,8 @@ async function init(
       responseModalities: {
         description: "Response modalities (TEXT, IMAGE)",
         defaultValue: ["TEXT"],
-        type: "array"
-      }
+        type: "array",
+      },
     };
 
     if (isGemini3) {
@@ -69,12 +69,12 @@ async function init(
         description: "Thinking depth (low, high)",
         defaultValue: undefined,
         type: "enum",
-        values: ["low", "high"]
+        values: ["low", "high"],
       };
       baseSettings.includeThoughts = {
         description: "Include thought summaries",
         defaultValue: false,
-        type: "boolean"
+        type: "boolean",
       };
     } else if (isGemini25) {
       baseSettings.thinkingBudget = {
@@ -82,12 +82,12 @@ async function init(
         defaultValue: undefined,
         type: "number",
         min: 0,
-        max: 32768
+        max: 32768,
       };
       baseSettings.includeThoughts = {
         description: "Include thought summaries",
         defaultValue: false,
-        type: "boolean"
+        type: "boolean",
       };
     }
 
@@ -108,17 +108,27 @@ async function init(
           );
         }
 
-        const googleOptions: GoogleGenerativeAIProviderOptions = (req.providerOptions ??= {}).google ??= {};
+        const googleOptions: GoogleGenerativeAIProviderOptions =
+          ((req.providerOptions ??= {}).google ??= {});
 
         if (settings.has("responseModalities")) {
-          googleOptions.responseModalities = (settings.get("responseModalities") as any)?.map((s: string) => s.toUpperCase());
+          googleOptions.responseModalities = (
+            settings.get("responseModalities") as any
+          )?.map((s: string) => s.toUpperCase());
         }
 
-        if (settings.has("thinkingLevel") || settings.has("thinkingBudget") || settings.has("includeThoughts")) {
+        if (
+          settings.has("thinkingLevel") ||
+          settings.has("thinkingBudget") ||
+          settings.has("includeThoughts")
+        ) {
           const thinkingConfig: any = {};
-          if (settings.has("thinkingLevel")) thinkingConfig.thinkingLevel = settings.get("thinkingLevel");
-          if (settings.has("thinkingBudget")) thinkingConfig.thinkingBudget = settings.get("thinkingBudget");
-          if (settings.has("includeThoughts")) thinkingConfig.includeThoughts = settings.get("includeThoughts");
+          if (settings.has("thinkingLevel"))
+            thinkingConfig.thinkingLevel = settings.get("thinkingLevel");
+          if (settings.has("thinkingBudget"))
+            thinkingConfig.thinkingBudget = settings.get("thinkingBudget");
+          if (settings.has("includeThoughts"))
+            thinkingConfig.includeThoughts = settings.get("includeThoughts");
           googleOptions.thinkingConfig = thinkingConfig;
         }
       },
@@ -141,7 +151,7 @@ async function init(
       modelId,
       providerDisplayName: providerDisplayName,
       impl: googleProvider.image(modelId),
-      async isAvailable() {
+      isAvailable() {
         // TODO: figure out how to get this working
         return true;
 
@@ -149,15 +159,15 @@ async function init(
         //return !!modelList?.models.some((model) => model.name.includes(modelId));
       },
       calculateImageCost() {
-        return costPerImage
+        return costPerImage;
       },
     };
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
     chatModelRegistry.registerAllModelSpecs([
       generateModelSpec("gemini-3.1-pro-long-context", {
-        providerModelId: 'gemini-3.1-pro-preview',
+        providerModelId: "gemini-3.1-pro-preview",
         costPerMillionInputTokens: 4.0,
         costPerMillionOutputTokens: 18.0,
         settings: {
@@ -165,12 +175,12 @@ async function init(
             description: "Enables web search",
             defaultValue: false,
             type: "boolean",
-          }
+          },
         },
         maxContextLength: 2000000,
       }),
       generateModelSpec("gemini-3.1-pro", {
-        providerModelId: 'gemini-3.1-pro-preview',
+        providerModelId: "gemini-3.1-pro-preview",
         costPerMillionInputTokens: 2.0,
         costPerMillionOutputTokens: 12.0,
         settings: {
@@ -178,12 +188,12 @@ async function init(
             description: "Enables web search",
             defaultValue: false,
             type: "boolean",
-          }
+          },
         },
         maxContextLength: 200000,
       }),
       generateModelSpec("gemini-3-pro", {
-        providerModelId: 'gemini-3-pro-preview',
+        providerModelId: "gemini-3-pro-preview",
         costPerMillionInputTokens: 4.0,
         costPerMillionOutputTokens: 18.0,
         settings: {
@@ -191,7 +201,7 @@ async function init(
             description: "Enables web search",
             defaultValue: false,
             type: "boolean",
-          }
+          },
         },
         maxContextLength: 1000000,
       }),
@@ -204,7 +214,7 @@ async function init(
             description: "Enables web search",
             defaultValue: false,
             type: "boolean",
-          }
+          },
         },
         maxContextLength: 1000000,
       }),
@@ -216,20 +226,20 @@ async function init(
             description: "Enables web search",
             defaultValue: false,
             type: "boolean",
-          }
+          },
         },
         maxContextLength: 1000000,
       }),
       generateModelSpec("gemini-3-flash", {
-        providerModelId: 'gemini-3-flash-preview',
-        costPerMillionInputTokens: 0.50,
+        providerModelId: "gemini-3-flash-preview",
+        costPerMillionInputTokens: 0.5,
         costPerMillionOutputTokens: 3,
         settings: {
           websearch: {
             description: "Enables web search",
             defaultValue: false,
             type: "boolean",
-          }
+          },
         },
         maxContextLength: 1000000,
       }),
@@ -241,18 +251,21 @@ async function init(
     ]);
   });
 
-  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
-    imageGenerationModelRegistry.registerAllModelSpecs([
-      generateImageModelSpec("gemini-3-pro-image-preview", 0.135),
-      generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
-      generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
-      generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
-    ]);
-  });
+  app.waitForService(
+    ImageGenerationModelRegistry,
+    (imageGenerationModelRegistry) => {
+      imageGenerationModelRegistry.registerAllModelSpecs([
+        generateImageModelSpec("gemini-3-pro-image-preview", 0.135),
+        generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
+        generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
+        generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
+      ]);
+    },
+  );
 }
 
 export default {
-  providerCode: 'google',
+  providerCode: "google",
   configSchema: GoogleModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof GoogleModelProviderConfigSchema>;

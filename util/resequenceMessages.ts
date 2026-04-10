@@ -22,10 +22,12 @@ export function resequenceMessages(request: ChatRequest) {
 
   // Handle system messages separately as they can appear at the beginning
   const systemMessages = combinedMessages.filter(
-    (msg): msg is Extract<ChatInputMessage, { role: "system" }> => msg.role === "system",
+    (msg): msg is Extract<ChatInputMessage, { role: "system" }> =>
+      msg.role === "system",
   );
   const nonSystemMessages = combinedMessages.filter(
-    (msg): msg is Exclude<ChatInputMessage, { role: "system" }> => msg.role !== "system",
+    (msg): msg is Exclude<ChatInputMessage, { role: "system" }> =>
+      msg.role !== "system",
   );
 
   // If there are no non-system messages, just return what we have

@@ -1,37 +1,43 @@
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
-import {PrimitiveType} from "@tokenring-ai/utility/types";
-import {ModelRequirements} from "./schema.ts";
+import type {PrimitiveType} from "@tokenring-ai/utility/types";
+import type {MaybePromise} from "bun";
 import {parseModelAndSettings} from "./util/modelSettings.ts";
 
 export type SettingDefinition = {
   description: string;
-} & ({
+} & (
+  | {
   type: "boolean";
   defaultValue?: boolean | undefined;
-} | {
+}
+  | {
   type: "number";
   defaultValue?: number | undefined;
   min?: number;
   max?: number;
-} | {
+}
+  | {
   type: "string";
   defaultValue?: string | undefined;
-} | {
+}
+  | {
   type: "enum";
   defaultValue?: PrimitiveType;
-  values: (PrimitiveType)[];
-} | {
+  values: PrimitiveType[];
+}
+  | {
   type: "array";
-  defaultValue?: (PrimitiveType)[] | undefined;
-});
+  defaultValue?: PrimitiveType[] | undefined;
+}
+  );
 
-export type ChatModelSettings = Map<string, PrimitiveType | PrimitiveType[]>
+export type ChatModelSettings = Map<string, PrimitiveType | PrimitiveType[]>;
 
 export type ModelSpec = {
   modelId: string;
   providerDisplayName: string;
-  isAvailable?: () => Promise<boolean>;
-  isHot?: () => Promise<boolean>;
+  isAvailable?: () => MaybePromise<boolean>;
+  isHot?: () => MaybePromise<boolean>;
   settings?: Record<string, SettingDefinition>;
 };
 
@@ -54,9 +60,7 @@ export interface GenericAIClient {
 export class ModelTypeRegistry<
   T extends ModelSpec,
   C extends GenericAIClient,
-  R extends ModelRequirements
 > {
-
   modelSpecs = new KeyedRegistry<T>();
   /**
    * Registers a model with its metadata
@@ -66,10 +70,10 @@ export class ModelTypeRegistry<
   /**
    * Creates a new ModelTypeRegistry instance
    */
-  constructor(private AIClient: new (
-    modelSpec: T,
-    settings: ChatModelSettings
-  ) => C ) {}
+  constructor(
+    private AIClient: new (modelSpec: T, settings: ChatModelSettings) => C,
+  ) {
+  }
 
   /**
    * Registers a key: value object of model specs
@@ -137,8 +141,7 @@ export class ModelTypeRegistry<
 
     for (const modelName in allModels) {
       const model = allModels[modelName];
-      const leaf = (modelsByProvider[model.modelSpec.providerDisplayName] ??=
-        {});
+      const leaf = (modelsByProvider[model.modelSpec.providerDisplayName] ??= {});
       leaf[modelName] = model;
     }
 
@@ -146,9 +149,9 @@ export class ModelTypeRegistry<
   }
 
   /**
-   * Gets the first chat client that matches the name and is online
+   * Gets the first chat client that matches the name
    */
-  async getClient(name: string): Promise<C> {
+  getClient(name: string): C {
     const {base, settings} = parseModelAndSettings(name.toLowerCase());
     let lookupName = base;
 
@@ -176,12 +179,19 @@ export class ModelTypeRegistry<
         }
         if (featureSpec.type === "number" && typeof value === "number") {
           if (featureSpec.min !== undefined && value < featureSpec.min) {
-            throw new Error(`Invalid value for feature "${k}" for model ${lookupName}: ${value} is lower than the minimum allowed value of ${featureSpec.min}`);
+            throw new Error(
+              `Invalid value for feature "${k}" for model ${lookupName}: ${value} is lower than the minimum allowed value of ${featureSpec.min}`,
+            );
           }
           if (featureSpec.max !== undefined && value > featureSpec.max) {
-            throw new Error(`Invalid value for feature "${k}" for model ${lookupName}: ${value} is higher than the maximum allowed value of ${featureSpec.max}`);
+            throw new Error(
+              `Invalid value for feature "${k}" for model ${lookupName}: ${value} is higher than the maximum allowed value of ${featureSpec.max}`,
+            );
           }
-        } else if (featureSpec.type === "enum" && !featureSpec.values.includes(value as PrimitiveType)) {
+        } else if (
+          featureSpec.type === "enum" &&
+          !featureSpec.values.includes(value as PrimitiveType)
+        ) {
           settings.set(k, featureSpec.defaultValue);
         }
       }
@@ -190,25 +200,33 @@ export class ModelTypeRegistry<
     return new this.AIClient(modelSpec, settings);
   }
 
-
-  getModelSpecsByRequirements(nameLike: string) : Record<string,T> {
-    const {base: modelSpec, settings: parsedSettings} = parseModelAndSettings(nameLike);
-    const featureString = nameLike.includes("?") ? nameLike.substring(nameLike.indexOf("?") + 1) : undefined;
+  getModelSpecsByRequirements(nameLike: string): Record<string, T> {
+    const {base: modelSpec, settings: parsedSettings} =
+      parseModelAndSettings(nameLike);
+    const featureString = nameLike.includes("?")
+      ? nameLike.substring(nameLike.indexOf("?") + 1)
+      : undefined;
     const settings = new Set(parsedSettings.keys());
 
     const modelSpecs = this.modelSpecs.getItemNamesLike(modelSpec);
 
     return Object.fromEntries(
-      modelSpecs.filter(modelName => {
-        const spec = this.modelSpecs.getItemByName(modelName)
-        for (const feature of settings) {
-          if (!spec?.settings?.[feature]) {
-            return false;
+      modelSpecs
+        .filter((modelName) => {
+          const spec = this.modelSpecs.getItemByName(modelName);
+          for (const feature of settings) {
+            if (!spec?.settings?.[feature]) {
+              return false;
+            }
           }
-        }
-        return true;
-      })
-      .map(modelName => [modelName + (featureString ? `?${featureString}` : "")], modelSpec)
+          return true;
+        })
+        .map(
+          (modelName) => [
+            modelName + (featureString ? `?${featureString}` : ""),
+          ],
+          modelSpec,
+        ),
     );
   }
 }

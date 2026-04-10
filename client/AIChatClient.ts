@@ -1,10 +1,10 @@
 import type {LanguageModelV2Usage, LanguageModelV3Source, SharedV3Warning,} from "@ai-sdk/provider";
-import Agent from "@tokenring-ai/agent/Agent";
+import type Agent from "@tokenring-ai/agent/Agent";
 import {MetricsService} from "@tokenring-ai/metrics";
 
 import {
   type AssistantModelMessage,
-  GenerateObjectResult,
+  type GenerateObjectResult,
   generateText,
   type GenerateTextResult,
   type LanguageModel,
@@ -16,7 +16,7 @@ import {
   type ToolModelMessage,
   type UserModelMessage,
 } from "ai";
-import {z, ZodObject} from "zod";
+import {z, type ZodObject} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
 import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
 
@@ -26,7 +26,16 @@ export type ChatInputMessage =
   | AssistantModelMessage
   | ToolModelMessage;
 
-export type ChatRequest = Pick<Parameters<typeof streamText>[0],"temperature" | "seed" | "topP" | "topK" | "frequencyPenalty" | "presencePenalty" | "providerOptions"> & {
+export type ChatRequest = Pick<
+  Parameters<typeof streamText>[0],
+  | "temperature"
+  | "seed"
+  | "topP"
+  | "topK"
+  | "frequencyPenalty"
+  | "presencePenalty"
+  | "providerOptions"
+> & {
   tools: Record<string, Tool>;
   messages: ChatInputMessage[];
   parallelTools?: boolean;
@@ -37,14 +46,11 @@ export type RerankRequest = {
   query: string;
   documents: string[];
   topN?: number;
-}
+};
 
 export type ChatModelSpec = ModelSpec & {
   impl: Exclude<LanguageModel, string>;
-  mangleRequest?: (
-    req: ChatRequest,
-    settings: ChatModelSettings,
-  ) => void;
+  mangleRequest?: (req: ChatRequest, settings: ChatModelSettings) => void;
   inputCapabilities?: Partial<ChatModelInputCapabilities>;
   tools?: boolean;
   structuredOutput?: boolean;
@@ -59,7 +65,9 @@ export type ChatModelSpec = ModelSpec & {
 
 export type ChatModelInputCapabilities = ModelInputCapabilities;
 
-export const ChatModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+export const ChatModelSpecSchema = createModelSpecSchema(
+  ModelInputCapabilitiesSchema,
+).extend({
   tools: z.boolean().default(true),
   structuredOutput: z.boolean().default(true),
   webSearch: z.boolean().optional(),
@@ -71,7 +79,9 @@ export const ChatModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesS
   costPerMillionReasoningTokens: z.number().optional(),
 });
 
-export function normalizeChatModelSpec(modelSpec: ChatModelSpec): ChatModelSpec {
+export function normalizeChatModelSpec(
+  modelSpec: ChatModelSpec,
+): ChatModelSpec {
   return ChatModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -114,16 +124,26 @@ export type AIResponseTiming = {
   totalTokens?: number;
 };
 
-
 const rerankSchema = z.object({
-  rankings: z.array(
-    z.object({
-      index: z.number().int().describe("Original index of the document"),
-      score: z.number().min(0).max(1).describe("Relevance score between 0 and 1"),
-      reasoning: z.string().optional().describe("Brief explanation of the relevance score"),
-    })
-  ).describe("Ranked list of documents ordered by relevance (most relevant first)"),
-})
+  rankings: z
+    .array(
+      z.object({
+        index: z.number().int().describe("Original index of the document"),
+        score: z
+          .number()
+          .min(0)
+          .max(1)
+          .describe("Relevance score between 0 and 1"),
+        reasoning: z
+          .string()
+          .optional()
+          .describe("Brief explanation of the relevance score"),
+      }),
+    )
+    .describe(
+      "Ranked list of documents ordered by relevance (most relevant first)",
+    ),
+});
 
 /**
  * Chat client that relies on the Vercel AI SDK instead of the OpenAI SDK.
@@ -131,7 +151,10 @@ const rerankSchema = z.object({
  * replacement for `OpenAIChatCompletionClient`.
  */
 export default class AIChatClient {
-  constructor(private readonly modelSpec: ChatModelSpec, private settings: ChatModelSettings) {
+  constructor(
+    private readonly modelSpec: ChatModelSpec,
+    private settings: ChatModelSettings,
+  ) {
   }
 
   /**
@@ -217,7 +240,11 @@ export default class AIChatClient {
    * back to the `ChatService`.
    */
   async streamChat(
-    request: ChatRequest & Pick<Parameters<typeof streamText>[0],"prepareStep" | "stopWhen" | "onStepFinish">,
+    request: ChatRequest &
+      Pick<
+        Parameters<typeof streamText>[0],
+        "prepareStep" | "stopWhen" | "onStepFinish"
+      >,
     agent: Agent,
   ): Promise<AIResponse> {
     const signal = agent.getAbortSignal();
@@ -245,12 +272,12 @@ export default class AIChatClient {
       experimental_context: {agent},
       onError: () => {
         //TODO: If we don't have this here, errors get stupidly barfed out as unhandled rejections in the main event loop
-      }
+      },
     });
 
     const stream = result.fullStream;
 
-    let chunkType: 'chat' | 'reasoning' | null = null;
+    let chunkType: "chat" | "reasoning" | null = null;
     let chunkText = "";
 
     // Function to flush buffers
@@ -282,13 +309,14 @@ export default class AIChatClient {
               name: "Generated File",
               encoding: "base64",
               mimeType: part.file.mediaType,
-              body: part.file.base64
+              body: part.file.base64,
             });
             break;
           case "text-end":
           case "reasoning-end": {
             flushBuffer(true);
-          } break;
+          }
+            break;
           case "text-delta": {
             if (chunkType === "chat") {
               chunkText += part.text;
@@ -338,7 +366,13 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
+    agent
+      .getServiceByType(MetricsService)
+      ?.addCost(
+        `Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
+        response.cost.total ?? 0,
+        agent,
+      );
 
     return response;
   }
@@ -347,7 +381,11 @@ export default class AIChatClient {
    * Sends a chat completion request and returns the full text response.
    */
   async textChat(
-    request: ChatRequest & Pick<Parameters<typeof generateText>[0],"prepareStep" | "stopWhen" | "onStepFinish">,
+    request: ChatRequest &
+      Pick<
+        Parameters<typeof generateText>[0],
+        "prepareStep" | "stopWhen" | "onStepFinish"
+      >,
     agent: Agent,
   ): Promise<[string, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
@@ -366,7 +404,13 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
+    agent
+      .getServiceByType(MetricsService)
+      ?.addCost(
+        `Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
+        response.cost.total ?? 0,
+        agent,
+      );
 
     return [response.text ?? "", response];
   }
@@ -375,7 +419,7 @@ export default class AIChatClient {
    * Sends a chat completion request and returns the generated object response.
    */
   async generateObject<T extends ZodObject>(
-    request: ChatRequest & { schema: T},
+    request: ChatRequest & { schema: T },
     agent: Agent,
   ): Promise<[z.infer<typeof request.schema>, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
@@ -383,7 +427,7 @@ export default class AIChatClient {
       this.modelSpec.mangleRequest(request, this.settings);
     }
 
-    const { schema, ...generateRequest } = request;
+    const {schema, ...generateRequest} = request;
 
     const signal = agent.getAbortSignal();
 
@@ -393,14 +437,20 @@ export default class AIChatClient {
       abortSignal: signal,
       ...generateRequest,
       output: Output.object({
-        schema: request.schema
-      })
+        schema: request.schema,
+      }),
     });
 
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent.getServiceByType(MetricsService)?.addCost(`GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
+    agent
+      .getServiceByType(MetricsService)
+      ?.addCost(
+        `GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
+        response.cost.total ?? 0,
+        agent,
+      );
 
     return [result.output as z.infer<typeof request.schema>, response];
   }
@@ -417,8 +467,9 @@ export default class AIChatClient {
   ): Promise<AIResponse> {
     const responseData = await result.response;
 
-    const totalUsage = "totalUsage" in result ? await result.totalUsage : result.usage;
-    const lastStepUsage =  await result.usage;
+    const totalUsage =
+      "totalUsage" in result ? await result.totalUsage : result.usage;
+    const lastStepUsage = await result.usage;
 
     return {
       timestamp: responseData.timestamp.getTime(),
@@ -440,13 +491,9 @@ export default class AIChatClient {
     return this.modelSpec;
   }
 
-
-  async rerank({
-                 query,
-                 documents,
-                 topN,
-               }: RerankRequest,
-    agent: Agent
+  async rerank(
+    {query, documents, topN}: RerankRequest,
+    agent: Agent,
   ): Promise<z.infer<typeof rerankSchema>> {
     // Format documents with indices
     const documentsText = documents
@@ -462,9 +509,10 @@ Please rank these documents by their relevance to the query.`;
 
     const req = {
       tools: {},
-      messages: [{
-        role: 'system',
-        content: `
+      messages: [
+        {
+          role: "system",
+          content: `
 You are a relevance scoring system. Your task is to evaluate how relevant each document is to the given query and rank them accordingly.
 
 For each document:
@@ -472,22 +520,24 @@ For each document:
 2. Consider semantic similarity, topic alignment, and how well the document answers or relates to the query
 3. Return the documents sorted by relevance (highest score first)
 
-Be objective and precise in your scoring.`.trim()
-      },
+Be objective and precise in your scoring.`.trim(),
+        },
         {
-          role: 'user',
-          content: userPrompt
-        }
+          role: "user",
+          content: userPrompt,
+        },
       ],
       // Create a schema for the reranking output
-      schema: rerankSchema
+      schema: rerankSchema,
     } satisfies ChatRequest & { schema: typeof rerankSchema };
 
     // Use generateObject to get structured reranking results
     const [result] = await this.generateObject(req, agent);
 
     // Sort rankings by score (descending)
-    const sortedRankings = result.rankings.sort((a: any, b: any) => b.score - a.score);
+    const sortedRankings = result.rankings.sort(
+      (a: any, b: any) => b.score - a.score,
+    );
 
     // Apply topK if specified
     const finalRankings = topN ? sortedRankings.slice(0, topN) : sortedRankings;
@@ -500,5 +550,4 @@ Be objective and precise in your scoring.`.trim()
       })),
     };
   }
-
 }

@@ -1,4 +1,4 @@
-import Agent from "@tokenring-ai/agent/Agent";
+import type Agent from "@tokenring-ai/agent/Agent";
 import {type DataContent, experimental_transcribe as transcribe, type TranscriptionModel,} from "ai";
 import {z} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
@@ -42,7 +42,10 @@ export function normalizeTranscriptionModelSpec(
 }
 
 export default class AITranscriptionClient {
-  constructor(private readonly modelSpec: TranscriptionModelSpec, private settings: ChatModelSettings) {
+  constructor(
+    private readonly modelSpec: TranscriptionModelSpec,
+    private settings: ChatModelSettings,
+  ) {
   }
 
   /**
@@ -74,9 +77,9 @@ export default class AITranscriptionClient {
         ...request,
         model: this.modelSpec.impl,
         providerOptions: {
-          ...this.modelSpec.providerOptions ?? {},
+          ...(this.modelSpec.providerOptions ?? {}),
           ...(request.language && {language: request.language}),
-          ...(request.prompt && {prompt: request.prompt})
+          ...(request.prompt && {prompt: request.prompt}),
         },
         abortSignal: signal,
       });

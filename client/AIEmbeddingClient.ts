@@ -19,13 +19,17 @@ export type EmbeddingModelSpec = ModelSpec & {
   ) => void;
 };
 
-export const EmbeddingModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+export const EmbeddingModelSpecSchema = createModelSpecSchema(
+  ModelInputCapabilitiesSchema,
+).extend({
   contextLength: z.number(),
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number().optional(),
 });
 
-export function normalizeEmbeddingModelSpec(modelSpec: EmbeddingModelSpec): EmbeddingModelSpec {
+export function normalizeEmbeddingModelSpec(
+  modelSpec: EmbeddingModelSpec,
+): EmbeddingModelSpec {
   return EmbeddingModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -36,7 +40,10 @@ export function normalizeEmbeddingModelSpec(modelSpec: EmbeddingModelSpec): Embe
  * Client for generating embeddings using the Vercel AI SDK.
  */
 export default class AIEmbeddingClient {
-  constructor(private readonly modelSpec: EmbeddingModelSpec, private settings: ChatModelSettings) {
+  constructor(
+    private readonly modelSpec: EmbeddingModelSpec,
+    private settings: ChatModelSettings,
+  ) {
   }
 
   /**
@@ -64,28 +71,26 @@ export default class AIEmbeddingClient {
    * Generates embeddings for an array of input strings.
    * Each result includes the embedding vector and usage statistics for that input.
    */
-  async getEmbeddings({
-                        input,
-                      }: {
-    input: string[];
-  }): Promise<Array<EmbedResult>> {
+  getEmbeddings({input}: { input: string[] }): Promise<Array<EmbedResult>> {
     if (!Array.isArray(input)) {
       throw new Error("Input must be an array of strings.");
     }
     return Promise.all(
       input.map((value) =>
-        embed((() => {
-          // Allow providers to mangle per-item request
-          if (this.modelSpec.mangleRequest) {
-            const req = {value};
-            this.modelSpec.mangleRequest(req, this.settings);
-            value = req.value;
-          }
-          return {
-            model: this.modelSpec.impl,
-            value,
-          };
-        })()),
+        embed(
+          (() => {
+            // Allow providers to mangle per-item request
+            if (this.modelSpec.mangleRequest) {
+              const req = {value};
+              this.modelSpec.mangleRequest(req, this.settings);
+              value = req.value;
+            }
+            return {
+              model: this.modelSpec.impl,
+              value,
+            };
+          })(),
+        ),
       ),
     );
   }

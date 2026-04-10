@@ -1,13 +1,13 @@
 import {xai} from "@ai-sdk/xai";
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry} from "../ModelRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry,} from "../ModelRegistry.ts";
+import type {AIModelProvider} from "../schema.ts";
 
 export const XAIModelProviderConfigSchema = z.object({
-  provider: z.literal('xai'),
+  provider: z.literal("xai"),
   apiKey: z.string(),
 });
 interface Model {
@@ -22,7 +22,7 @@ interface ModelList {
   data: Model[];
 }
 
-export async function init(
+export function init(
   providerDisplayName: string,
   config: z.output<typeof XAIModelProviderConfigSchema>,
   app: TokenRingApp,
@@ -41,7 +41,13 @@ export async function init(
     modelId: string,
     modelSpec: Omit<
       ChatModelSpec,
-      "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId" | "settings" | "mangleRequest"
+      | "isAvailable"
+      | "provider"
+      | "providerDisplayName"
+      | "impl"
+      | "modelId"
+      | "settings"
+      | "mangleRequest"
     >,
   ): ChatModelSpec {
     return {
@@ -56,17 +62,25 @@ export async function init(
       mangleRequest(req, settings) {
         if (settings.has("websearch")) {
           req.tools.web_search = xai.tools.webSearch({
-            enableImageUnderstanding: settings.get("webImageUnderstanding") as boolean,
+            enableImageUnderstanding: settings.get(
+              "webImageUnderstanding",
+            ) as boolean,
           });
         }
 
         if (settings.has("XSearch")) {
           req.tools.x_search = xai.tools.xSearch({
-            allowedXHandles: (settings.get("XAllowedHandles") as string | undefined)?.split(','),
+            allowedXHandles: (
+              settings.get("XAllowedHandles") as string | undefined
+            )?.split(","),
             fromDate: settings.get("XFromDate") as string | undefined,
             toDate: settings.get("XToDate") as string | undefined,
-            enableImageUnderstanding: settings.get("XImageUnderstanding") as boolean,
-            enableVideoUnderstanding: settings.get("XVideoUnderstanding") as boolean,
+            enableImageUnderstanding: settings.get(
+              "XImageUnderstanding",
+            ) as boolean,
+            enableVideoUnderstanding: settings.get(
+              "XVideoUnderstanding",
+            ) as boolean,
           });
         }
       },
@@ -115,13 +129,12 @@ export async function init(
     };
   }
 
-
   /**
    * A collection of xAI chat model specifications.
    * Each key is a model ID, and the value is a `ChatModelSpec` object.
    * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
    */
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
     chatModelRegistry.registerAllModelSpecs([
       generateModelSpec("grok-code-fast-1", {
         costPerMillionInputTokens: 0.2,
@@ -163,76 +176,88 @@ export async function init(
    * A collection of xAI image generation model specifications.
    * Each key is a model ID, and the value is an `ImageModelSpec` object.
    */
-  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
-    imageGenerationModelRegistry.registerAllModelSpecs([
-      {
-        modelId: "grok-imagine-image-pro",
-        providerDisplayName: providerDisplayName,
-        impl: xai.imageModel("grok-imagine-image-pro"),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some((model) => model.id === "grok-imagine-image-pro");
-        },
-        calculateImageCost() {
-          return 0.07;
-        },
-      },
-      {
-        modelId: "grok-imagine-image",
-        providerDisplayName: providerDisplayName,
-        impl: xai.imageModel("grok-imagine-image"),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some((model) => model.id === "grok-imagine-image");
-        },
-        calculateImageCost() {
-          return 0.02;
-        },
-      },
-      {
-        modelId: "grok-2-image-1212",
-        providerDisplayName: providerDisplayName,
-        impl: xai.imageModel("grok-2-image-1212"),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some(
-            (model) => model.id === "grok-2-image-1212",
-          );
-        },
-        calculateImageCost(req, result) {
-          return 0.07;
-        },
-      },
-    ]);
-
-    /**
-     * A collection of xAI video generation model specifications.
-     * Each key is a model ID, and the value is an `VideoModelSpec` object.
-     */
-    app.waitForService(VideoGenerationModelRegistry, videoGenerationModelRegistry => {
-      videoGenerationModelRegistry.registerAllModelSpecs([
+  app.waitForService(
+    ImageGenerationModelRegistry,
+    (imageGenerationModelRegistry) => {
+      imageGenerationModelRegistry.registerAllModelSpecs([
         {
-          modelId: "grok-imagine-video",
+          modelId: "grok-imagine-image-pro",
           providerDisplayName: providerDisplayName,
-          impl: xai.videoModel("grok-imagine-video"),
-          inputCapabilities: {
-            image: true,
-          },
+          impl: xai.imageModel("grok-imagine-image-pro"),
           async isAvailable() {
             const modelList = await getModels();
-            return !!modelList?.data.some((model) => model.id === "grok-imagine-video");
+            return !!modelList?.data.some(
+              (model) => model.id === "grok-imagine-image-pro",
+            );
           },
-          calculateVideoCost(request) {
-            return request.duration ? request.duration * 0.05 : NaN;
+          calculateImageCost() {
+            return 0.07;
+          },
+        },
+        {
+          modelId: "grok-imagine-image",
+          providerDisplayName: providerDisplayName,
+          impl: xai.imageModel("grok-imagine-image"),
+          async isAvailable() {
+            const modelList = await getModels();
+            return !!modelList?.data.some(
+              (model) => model.id === "grok-imagine-image",
+            );
+          },
+          calculateImageCost() {
+            return 0.02;
+          },
+        },
+        {
+          modelId: "grok-2-image-1212",
+          providerDisplayName: providerDisplayName,
+          impl: xai.imageModel("grok-2-image-1212"),
+          async isAvailable() {
+            const modelList = await getModels();
+            return !!modelList?.data.some(
+              (model) => model.id === "grok-2-image-1212",
+            );
+          },
+          calculateImageCost(_req, _result) {
+            return 0.07;
           },
         },
       ]);
-    });
-  });
+
+      /**
+       * A collection of xAI video generation model specifications.
+       * Each key is a model ID, and the value is an `VideoModelSpec` object.
+       */
+      app.waitForService(
+        VideoGenerationModelRegistry,
+        (videoGenerationModelRegistry) => {
+          videoGenerationModelRegistry.registerAllModelSpecs([
+            {
+              modelId: "grok-imagine-video",
+              providerDisplayName: providerDisplayName,
+              impl: xai.videoModel("grok-imagine-video"),
+              inputCapabilities: {
+                image: true,
+              },
+              async isAvailable() {
+                const modelList = await getModels();
+                return !!modelList?.data.some(
+                  (model) => model.id === "grok-imagine-video",
+                );
+              },
+              calculateVideoCost(request) {
+                return request.duration ? request.duration * 0.05 : NaN;
+              },
+            },
+          ]);
+        },
+      );
+    },
+  );
 }
 
 export default {
-  providerCode: 'xai',
+  providerCode: "xai",
   configSchema: XAIModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof XAIModelProviderConfigSchema>;

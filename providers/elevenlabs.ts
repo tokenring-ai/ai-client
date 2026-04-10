@@ -1,33 +1,33 @@
 import {createElevenLabs} from "@ai-sdk/elevenlabs";
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
-import {SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import {SpeechModelRegistry, TranscriptionModelRegistry,} from "../ModelRegistry.ts";
+import type {AIModelProvider} from "../schema.ts";
 
 const ElevenLabsModelProviderConfigSchema = z.object({
-  provider: z.literal('elevenlabs'),
+  provider: z.literal("elevenlabs"),
   apiKey: z.string(),
 });
 
-async function init(
+function init(
   providerDisplayName: string,
   config: z.output<typeof ElevenLabsModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
-  let {apiKey} = config;
+  const {apiKey} = config;
   if (!apiKey) {
     throw new Error("No config.apiKey provided for ElevenLabs provider.");
   }
 
   const elevenlabs = createElevenLabs({apiKey});
 
-  app.waitForService(SpeechModelRegistry, speechModelRegistry => {
+  app.waitForService(SpeechModelRegistry, (speechModelRegistry) => {
     speechModelRegistry.registerAllModelSpecs([
       {
         modelId: "eleven_v3",
         providerDisplayName: providerDisplayName,
         impl: elevenlabs.speech("eleven_v3"),
-        async isAvailable() {
+        isAvailable() {
           return true;
         },
         costPerMillionCharacters: 100,
@@ -68,7 +68,7 @@ async function init(
         modelId: "eleven_multilingual_v2",
         providerDisplayName: providerDisplayName,
         impl: elevenlabs.speech("eleven_multilingual_v2"),
-        async isAvailable() {
+        isAvailable() {
           return true;
         },
         costPerMillionCharacters: 60,
@@ -109,7 +109,7 @@ async function init(
         modelId: "eleven_flash_v2_5",
         providerDisplayName: providerDisplayName,
         impl: elevenlabs.speech("eleven_flash_v2_5"),
-        async isAvailable() {
+        isAvailable() {
           return true;
         },
         costPerMillionCharacters: 30,
@@ -150,7 +150,7 @@ async function init(
         modelId: "eleven_flash_v2",
         providerDisplayName: providerDisplayName,
         impl: elevenlabs.speech("eleven_flash_v2"),
-        async isAvailable() {
+        isAvailable() {
           return true;
         },
         costPerMillionCharacters: 30,
@@ -191,7 +191,7 @@ async function init(
         modelId: "eleven_turbo_v2_5",
         providerDisplayName: providerDisplayName,
         impl: elevenlabs.speech("eleven_turbo_v2_5"),
-        async isAvailable() {
+        isAvailable() {
           return true;
         },
         costPerMillionCharacters: 45,
@@ -232,7 +232,7 @@ async function init(
         modelId: "eleven_turbo_v2",
         providerDisplayName: providerDisplayName,
         impl: elevenlabs.speech("eleven_turbo_v2"),
-        async isAvailable() {
+        isAvailable() {
           return true;
         },
         costPerMillionCharacters: 45,
@@ -273,7 +273,7 @@ async function init(
         modelId: "eleven_monolingual_v1",
         providerDisplayName: providerDisplayName,
         impl: elevenlabs.speech("eleven_monolingual_v1"),
-        async isAvailable() {
+        isAvailable() {
           return true;
         },
         costPerMillionCharacters: 50,
@@ -299,7 +299,7 @@ async function init(
         modelId: "eleven_multilingual_v1",
         providerDisplayName: providerDisplayName,
         impl: elevenlabs.speech("eleven_multilingual_v1"),
-        async isAvailable() {
+        isAvailable() {
           return true;
         },
         costPerMillionCharacters: 50,
@@ -329,100 +329,103 @@ async function init(
     ]);
   });
 
-  app.waitForService(TranscriptionModelRegistry, transcriptionModelRegistry => {
-    transcriptionModelRegistry.registerAllModelSpecs([
-      {
-        modelId: "scribe_v1",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.transcription("scribe_v1"),
-        async isAvailable() {
-          return true;
-        },
-        costPerMinute: 0.034,
-        settings: {
-          languageCode: {
-            description: "Language code (ISO 639-1 or ISO 639-3)",
-            defaultValue: undefined,
-            type: "string",
+  app.waitForService(
+    TranscriptionModelRegistry,
+    (transcriptionModelRegistry) => {
+      transcriptionModelRegistry.registerAllModelSpecs([
+        {
+          modelId: "scribe_v1",
+          providerDisplayName: providerDisplayName,
+          impl: elevenlabs.transcription("scribe_v1"),
+          isAvailable() {
+            return true;
           },
-          tagAudioEvents: {
-            description: "Tag audio events like laughter and footsteps",
-            defaultValue: true,
-            type: "boolean",
-          },
-          numSpeakers: {
-            description: "Maximum number of speakers (1-32)",
-            defaultValue: undefined,
-            type: "number",
-          },
-          timestampsGranularity: {
-            description: "Timestamp granularity",
-            defaultValue: "word",
-            type: "enum",
-            values: ["none", "word", "character"],
-          },
-          diarize: {
-            description: "Annotate which speaker is talking",
-            defaultValue: true,
-            type: "boolean",
-          },
-          fileFormat: {
-            description: "Input audio format",
-            defaultValue: "other",
-            type: "enum",
-            values: ["pcm_s16le_16", "other"],
-          },
-        },
-      },
-      {
-        modelId: "scribe_v1_experimental",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.transcription("scribe_v1_experimental"),
-        async isAvailable() {
-          return true;
-        },
-        costPerMinute: 0.034,
-        settings: {
-          languageCode: {
-            description: "Language code (ISO 639-1 or ISO 639-3)",
-            defaultValue: undefined,
-            type: "string",
-          },
-          tagAudioEvents: {
-            description: "Tag audio events like laughter and footsteps",
-            defaultValue: true,
-            type: "boolean",
-          },
-          numSpeakers: {
-            description: "Maximum number of speakers (1-32)",
-            defaultValue: undefined,
-            type: "number",
-          },
-          timestampsGranularity: {
-            description: "Timestamp granularity",
-            defaultValue: "word",
-            type: "enum",
-            values: ["none", "word", "character"],
-          },
-          diarize: {
-            description: "Annotate which speaker is talking",
-            defaultValue: true,
-            type: "boolean",
-          },
-          fileFormat: {
-            description: "Input audio format",
-            defaultValue: "other",
-            type: "enum",
-            values: ["pcm_s16le_16", "other"],
+          costPerMinute: 0.034,
+          settings: {
+            languageCode: {
+              description: "Language code (ISO 639-1 or ISO 639-3)",
+              defaultValue: undefined,
+              type: "string",
+            },
+            tagAudioEvents: {
+              description: "Tag audio events like laughter and footsteps",
+              defaultValue: true,
+              type: "boolean",
+            },
+            numSpeakers: {
+              description: "Maximum number of speakers (1-32)",
+              defaultValue: undefined,
+              type: "number",
+            },
+            timestampsGranularity: {
+              description: "Timestamp granularity",
+              defaultValue: "word",
+              type: "enum",
+              values: ["none", "word", "character"],
+            },
+            diarize: {
+              description: "Annotate which speaker is talking",
+              defaultValue: true,
+              type: "boolean",
+            },
+            fileFormat: {
+              description: "Input audio format",
+              defaultValue: "other",
+              type: "enum",
+              values: ["pcm_s16le_16", "other"],
+            },
           },
         },
-      },
-    ]);
-  });
+        {
+          modelId: "scribe_v1_experimental",
+          providerDisplayName: providerDisplayName,
+          impl: elevenlabs.transcription("scribe_v1_experimental"),
+          isAvailable() {
+            return true;
+          },
+          costPerMinute: 0.034,
+          settings: {
+            languageCode: {
+              description: "Language code (ISO 639-1 or ISO 639-3)",
+              defaultValue: undefined,
+              type: "string",
+            },
+            tagAudioEvents: {
+              description: "Tag audio events like laughter and footsteps",
+              defaultValue: true,
+              type: "boolean",
+            },
+            numSpeakers: {
+              description: "Maximum number of speakers (1-32)",
+              defaultValue: undefined,
+              type: "number",
+            },
+            timestampsGranularity: {
+              description: "Timestamp granularity",
+              defaultValue: "word",
+              type: "enum",
+              values: ["none", "word", "character"],
+            },
+            diarize: {
+              description: "Annotate which speaker is talking",
+              defaultValue: true,
+              type: "boolean",
+            },
+            fileFormat: {
+              description: "Input audio format",
+              defaultValue: "other",
+              type: "enum",
+              values: ["pcm_s16le_16", "other"],
+            },
+          },
+        },
+      ]);
+    },
+  );
 }
 
 export default {
-  providerCode: 'elevenlabs',
+  providerCode: "elevenlabs",
   configSchema: ElevenLabsModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof ElevenLabsModelProviderConfigSchema>;

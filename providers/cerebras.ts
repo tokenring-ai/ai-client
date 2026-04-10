@@ -1,13 +1,13 @@
 import {createCerebras} from "@ai-sdk/cerebras";
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import type {AIModelProvider} from "../schema.ts";
 
 const CerebrasModelProviderConfigSchema = z.object({
-  provider: z.literal('cerebras'),
+  provider: z.literal("cerebras"),
   apiKey: z.string(),
 });
 interface Model {
@@ -22,7 +22,7 @@ interface ModelList {
   data: Model[];
 }
 
-async function init(
+function init(
   providerDisplayName: string,
   config: z.output<typeof CerebrasModelProviderConfigSchema>,
   app: TokenRingApp,
@@ -61,35 +61,35 @@ async function init(
     } satisfies ChatModelSpec;
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
     chatModelRegistry.registerAllModelSpecs([
-    generateModelSpec("llama3.1-8b", {
-      costPerMillionInputTokens: 0.10,
-      costPerMillionOutputTokens: 0.10,
-      maxContextLength: 32000,
-    }),
-    generateModelSpec("qwen-3-235b-a22b-instruct-2507", {
-      costPerMillionInputTokens: 0.6,
-      costPerMillionOutputTokens: 1.2,
-      maxContextLength: 131000,
-    }),
+      generateModelSpec("llama3.1-8b", {
+        costPerMillionInputTokens: 0.1,
+        costPerMillionOutputTokens: 0.1,
+        maxContextLength: 32000,
+      }),
+      generateModelSpec("qwen-3-235b-a22b-instruct-2507", {
+        costPerMillionInputTokens: 0.6,
+        costPerMillionOutputTokens: 1.2,
+        maxContextLength: 131000,
+      }),
 
-    generateModelSpec("zai-glm-4.7", {
-      costPerMillionInputTokens: 2.25,
-      costPerMillionOutputTokens: 2.75,
-      maxContextLength: 131000,
-    }),
-    generateModelSpec("gpt-oss-120b", {
-      costPerMillionInputTokens: 0.35,
-      costPerMillionOutputTokens: 0.75,
-      maxContextLength: 131000,
-    }),
+      generateModelSpec("zai-glm-4.7", {
+        costPerMillionInputTokens: 2.25,
+        costPerMillionOutputTokens: 2.75,
+        maxContextLength: 131000,
+      }),
+      generateModelSpec("gpt-oss-120b", {
+        costPerMillionInputTokens: 0.35,
+        costPerMillionOutputTokens: 0.75,
+        maxContextLength: 131000,
+      }),
     ]);
   });
 }
 
 export default {
-  providerCode: 'cerebras',
+  providerCode: "cerebras",
   configSchema: CerebrasModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof CerebrasModelProviderConfigSchema>;

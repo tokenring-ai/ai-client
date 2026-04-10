@@ -1,14 +1,14 @@
-import {createOpenAI, OpenAIResponsesProviderOptions} from "@ai-sdk/openai";
-import TokenRingApp from "@tokenring-ai/app";
+import {createOpenAI, type OpenAIResponsesProviderOptions} from "@ai-sdk/openai";
+import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry,} from "../ModelRegistry.ts";
+import type {AIModelProvider} from "../schema.ts";
 
 const OpenAIModelProviderConfigSchema = z.object({
-  provider: z.literal('openai'),
+  provider: z.literal("openai"),
   apiKey: z.string(),
 });
 
@@ -24,12 +24,12 @@ type ModelList = {
   data: ModelListData[];
 };
 
-async function init(
+function init(
   providerDisplayName: string,
   config: z.output<typeof OpenAIModelProviderConfigSchema>,
   app: TokenRingApp,
 ) {
-  let {apiKey} = config;
+  const {apiKey} = config;
   if (!apiKey) {
     throw new Error("No config.apiKey provided for OpenAI provider.");
   }
@@ -50,8 +50,10 @@ async function init(
     > & { providerModelId?: string },
   ): ChatModelSpec {
     const providerModelId = modelSpec.providerModelId ?? modelId;
-    const isReasoningModel = providerModelId.startsWith("gpt-5") || providerModelId.startsWith("o");
-    const isGpt51 = providerModelId === "gpt-5.1" || providerModelId.startsWith("gpt-5.1-");
+    const isReasoningModel =
+      providerModelId.startsWith("gpt-5") || providerModelId.startsWith("o");
+    const isGpt51 =
+      providerModelId === "gpt-5.1" || providerModelId.startsWith("gpt-5.1-");
     const supportsImageInput =
       /^(gpt-(4\.1|4o|5)|o[134])/.test(providerModelId) ||
       providerModelId === "computer-use-preview";
@@ -59,30 +61,54 @@ async function init(
       providerModelId.includes("audio") || providerModelId.includes("realtime");
 
     const baseSettings: any = {
-      websearch: { description: "Enables web search", defaultValue: false, type: "boolean" },
-      serviceTier: { description: "Service tier (auto, flex, priority, default)", defaultValue: "auto", type: "enum", values: ["auto", "flex", "priority", "default"] },
-      textVerbosity: { description: "Text verbosity (low, medium, high)", defaultValue: "medium", type: "enum", values: ["low", "medium", "high"] },
-      strictJsonSchema: {description: "Use strict JSON schema validation", defaultValue: false, type: "boolean"},
-
+      websearch: {
+        description: "Enables web search",
+        defaultValue: false,
+        type: "boolean",
+      },
+      serviceTier: {
+        description: "Service tier (auto, flex, priority, default)",
+        defaultValue: "auto",
+        type: "enum",
+        values: ["auto", "flex", "priority", "default"],
+      },
+      textVerbosity: {
+        description: "Text verbosity (low, medium, high)",
+        defaultValue: "medium",
+        type: "enum",
+        values: ["low", "medium", "high"],
+      },
+      strictJsonSchema: {
+        description: "Use strict JSON schema validation",
+        defaultValue: false,
+        type: "boolean",
+      },
     };
-    
+
     if (isReasoningModel) {
       if (isGpt51) {
         baseSettings.promptCacheRetention = {
           description: "The retention policy for the prompt cache",
-            defaultValue: "in_memory",
-            type: "enum",
-            values: ["in_memory", "24h"]
+          defaultValue: "in_memory",
+          type: "enum",
+          values: ["in_memory", "24h"],
         };
       }
 
-      baseSettings.reasoningEffort = { 
-        description: `Reasoning effort (${isGpt51 ? "none, " : ""}minimal, low, medium, high)`, 
-        defaultValue: "medium", 
-        type: "enum", 
-        values: isGpt51 ? ["none", "minimal", "low", "medium", "high"] : ["minimal", "low", "medium", "high"] 
+      baseSettings.reasoningEffort = {
+        description: `Reasoning effort (${isGpt51 ? "none, " : ""}minimal, low, medium, high)`,
+        defaultValue: "medium",
+        type: "enum",
+        values: isGpt51
+          ? ["none", "minimal", "low", "medium", "high"]
+          : ["minimal", "low", "medium", "high"],
       };
-      baseSettings.reasoningSummary = { description: "Reasoning summary mode (auto, detailed)", defaultValue: undefined, type: "enum", values: ["auto", "detailed"] };
+      baseSettings.reasoningSummary = {
+        description: "Reasoning summary mode (auto, detailed)",
+        defaultValue: undefined,
+        type: "enum",
+        values: ["auto", "detailed"],
+      };
     }
 
     return {
@@ -97,17 +123,24 @@ async function init(
         if (settings.has("websearch")) {
           (req.tools ??= {}).web_search = openai.tools.webSearch({});
         }
-        
-        const openaiOptions: OpenAIResponsesProviderOptions = (req.providerOptions ??= {}).openai ??= {};
-        
+
+        const openaiOptions: OpenAIResponsesProviderOptions =
+          ((req.providerOptions ??= {}).openai ??= {});
+
         if (settings.has("reasoningEffort")) {
-          openaiOptions.reasoningEffort = settings.get("reasoningEffort") as string;
+          openaiOptions.reasoningEffort = settings.get(
+            "reasoningEffort",
+          ) as string;
         }
         if (settings.has("reasoningSummary")) {
-          openaiOptions.reasoningSummary = settings.get("reasoningSummary") as string;
+          openaiOptions.reasoningSummary = settings.get(
+            "reasoningSummary",
+          ) as string;
         }
         if (settings.has("strictJsonSchema")) {
-          openaiOptions.strictJsonSchema = settings.get("strictJsonSchema") as boolean;
+          openaiOptions.strictJsonSchema = settings.get(
+            "strictJsonSchema",
+          ) as boolean;
         }
         if (settings.has("serviceTier")) {
           openaiOptions.serviceTier = settings.get("serviceTier") as any;
@@ -116,7 +149,9 @@ async function init(
           openaiOptions.textVerbosity = settings.get("textVerbosity") as any;
         }
         if (settings.has("promptCacheRetention")) {
-          openaiOptions.promptCacheRetention = settings.get("promptCacheRetention") as any;
+          openaiOptions.promptCacheRetention = settings.get(
+            "promptCacheRetention",
+          ) as any;
         }
 
         return undefined;
@@ -126,7 +161,7 @@ async function init(
         audio: supportsAudioInput,
         file: supportsImageInput || supportsAudioInput,
       },
-      settings: { ...baseSettings, ...modelSpec.settings },
+      settings: {...baseSettings, ...modelSpec.settings},
       ...modelSpec,
     } satisfies ChatModelSpec;
   }
@@ -136,10 +171,15 @@ async function init(
     variantId: string,
     modelSpec: Omit<
       ImageModelSpec,
-      "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId" | "calculateImageCost"
+      | "isAvailable"
+      | "provider"
+      | "providerDisplayName"
+      | "impl"
+      | "modelId"
+      | "calculateImageCost"
     >,
     costPerMegapixel: number,
-   ): ImageModelSpec {
+  ): ImageModelSpec {
     return {
       modelId: variantId,
       providerDisplayName: providerDisplayName,
@@ -149,15 +189,15 @@ async function init(
         return !!modelList?.data.some((model) => model.id === modelId);
       },
       calculateImageCost(req) {
-        const size = req.size.split("x").map(Number)
-        return costPerMegapixel * size[0] * size[1] / 1000000;
+        const size = req.size.split("x").map(Number);
+        return (costPerMegapixel * size[0] * size[1]) / 1000000;
       },
       ...modelSpec,
     };
   }
 
   const chatModelRegistry = app.requireService(ChatModelRegistry);
-    chatModelRegistry.registerAllModelSpecs([
+  chatModelRegistry.registerAllModelSpecs([
     generateModelSpec("gpt-4.1", {
       costPerMillionInputTokens: 2.0,
       costPerMillionOutputTokens: 8.0,
@@ -189,57 +229,56 @@ async function init(
       costPerMillionOutputTokens: 10,
       maxContextLength: 400000,
     }),
-      generateModelSpec("gpt-5.2", {
-        costPerMillionInputTokens: 1.75,
-        costPerMillionCachedInputTokens: 0.175,
-        costPerMillionOutputTokens: 14,
-        maxContextLength: 400000,
-      }),
+    generateModelSpec("gpt-5.2", {
+      costPerMillionInputTokens: 1.75,
+      costPerMillionCachedInputTokens: 0.175,
+      costPerMillionOutputTokens: 14,
+      maxContextLength: 400000,
+    }),
 
+    generateModelSpec("gpt-5.4", {
+      costPerMillionInputTokens: 2.5,
+      costPerMillionCachedInputTokens: 0.25,
+      costPerMillionOutputTokens: 15.0,
+      maxContextLength: 272000,
+    }),
 
-      generateModelSpec("gpt-5.4", {
-        costPerMillionInputTokens: 2.50,
-        costPerMillionCachedInputTokens: 0.25,
-        costPerMillionOutputTokens: 15.00,
-        maxContextLength: 272000,
-      }),
+    generateModelSpec("gpt-5.4-mini", {
+      costPerMillionInputTokens: 0.75,
+      costPerMillionOutputTokens: 4.5,
+      costPerMillionCachedInputTokens: 0.075,
+      maxContextLength: 400000,
+    }),
 
-      generateModelSpec("gpt-5.4-mini", {
-        costPerMillionInputTokens: 0.75,
-        costPerMillionOutputTokens: 4.50,
-        costPerMillionCachedInputTokens: 0.075,
-        maxContextLength: 400000,
-      }),
+    generateModelSpec("gpt-5.4-nano", {
+      costPerMillionInputTokens: 0.2,
+      costPerMillionOutputTokens: 1.25,
+      costPerMillionCachedInputTokens: 0.02,
+      maxContextLength: 400000,
+    }),
 
-      generateModelSpec("gpt-5.4-nano", {
-        costPerMillionInputTokens: 0.20,
-        costPerMillionOutputTokens: 1.25,
-        costPerMillionCachedInputTokens: 0.02,
-        maxContextLength: 400000,
-      }),
+    generateModelSpec("gpt-5.4-long-context", {
+      providerModelId: "gpt-5.4", // Assuming it uses the same base model ID
+      costPerMillionInputTokens: 5.0,
+      costPerMillionCachedInputTokens: 0.5,
+      costPerMillionOutputTokens: 22.5,
+      maxContextLength: 1000000,
+    }),
 
-      generateModelSpec("gpt-5.4-long-context", {
-        providerModelId: "gpt-5.4", // Assuming it uses the same base model ID
-        costPerMillionInputTokens: 5.00,
-        costPerMillionCachedInputTokens: 0.50,
-        costPerMillionOutputTokens: 22.50,
-        maxContextLength: 1000000,
-      }),
+    generateModelSpec("gpt-5.4-pro", {
+      costPerMillionInputTokens: 30.0,
+      costPerMillionOutputTokens: 180.0,
+      maxContextLength: 272000,
+    }),
 
-      generateModelSpec("gpt-5.4-pro", {
-        costPerMillionInputTokens: 30.00,
-        costPerMillionOutputTokens: 180.00,
-        maxContextLength: 272000,
-      }),
+    generateModelSpec("gpt-5.4-pro-long-context", {
+      providerModelId: "gpt-5.4-pro", // Assuming it uses the same base model ID
+      costPerMillionInputTokens: 60.0,
+      costPerMillionOutputTokens: 270.0,
+      maxContextLength: 1000000,
+    }),
 
-      generateModelSpec("gpt-5.4-pro-long-context", {
-        providerModelId: "gpt-5.4-pro", // Assuming it uses the same base model ID
-        costPerMillionInputTokens: 60.00,
-        costPerMillionOutputTokens: 270.00,
-        maxContextLength: 1000000,
-      }),
-
-      generateModelSpec("gpt-5-codex", {
+    generateModelSpec("gpt-5-codex", {
       costPerMillionInputTokens: 1.25,
       costPerMillionCachedInputTokens: 0.125,
       costPerMillionOutputTokens: 10,
@@ -248,7 +287,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 400000,
     }),
@@ -262,7 +301,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 400000,
     }),
@@ -276,7 +315,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 400000,
     }),
@@ -289,7 +328,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 400000,
     }),
@@ -302,7 +341,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 200000,
     }),
@@ -315,7 +354,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 200000,
     }),
@@ -328,7 +367,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 200000,
     }),
@@ -340,7 +379,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 200000,
     }),
@@ -353,7 +392,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 200000,
     }),
@@ -366,7 +405,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 200000,
     }),
@@ -379,7 +418,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 200000,
     }),
@@ -391,7 +430,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 200000,
     }),
@@ -403,7 +442,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 400000,
     }),
@@ -416,7 +455,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 400000,
     }),
@@ -429,7 +468,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 400000,
     }),
@@ -442,7 +481,7 @@ async function init(
           description: "Enables web search",
           defaultValue: false,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 400000,
     }),
@@ -455,7 +494,7 @@ async function init(
           description: "Enables web search",
           defaultValue: true,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 400000,
     }),
@@ -484,7 +523,7 @@ async function init(
           description: "Enables web search",
           defaultValue: true,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 128000,
     }),
@@ -496,7 +535,7 @@ async function init(
           description: "Enables web search",
           defaultValue: true,
           type: "boolean",
-        }
+        },
       },
       maxContextLength: 128000,
     }),
@@ -551,66 +590,113 @@ async function init(
     }),
   ]);
 
-  const imageGenerationModelRegistry = app.requireService(ImageGenerationModelRegistry);
+  const imageGenerationModelRegistry = app.requireService(
+    ImageGenerationModelRegistry,
+  );
   imageGenerationModelRegistry.registerAllModelSpecs([
-    generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-high", {
-      providerOptions: {
-        openai: {quality: "high"},
+    generateImageModelSpec(
+      "gpt-image-1-mini",
+      "gpt-image-1-mini-high",
+      {
+        providerOptions: {
+          openai: {quality: "high"},
+        },
+        //costPerMillionInputTokens: 10,
+        //costPerMegapixel: 0.067,
       },
-      //costPerMillionInputTokens: 10,
-      //costPerMegapixel: 0.067,
-    }, 0.036),
-    generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-medium", {
-      providerOptions: {
-        openai: {quality: "medium"},
+      0.036,
+    ),
+    generateImageModelSpec(
+      "gpt-image-1-mini",
+      "gpt-image-1-mini-medium",
+      {
+        providerOptions: {
+          openai: {quality: "medium"},
+        },
+        //costPerMillionInputTokens: 10,
+        //costPerMegapixel: 0.042,
       },
-      //costPerMillionInputTokens: 10,
-      //costPerMegapixel: 0.042,
-    }, 0.011),
-    generateImageModelSpec("gpt-image-1-mini", "gpt-image-1-mini-low", {
-      providerOptions: {
-        openai: {quality: "low"},
+      0.011,
+    ),
+    generateImageModelSpec(
+      "gpt-image-1-mini",
+      "gpt-image-1-mini-low",
+      {
+        providerOptions: {
+          openai: {quality: "low"},
+        },
+        //costPerMillionInputTokens: 10,
+        //costPerMegapixel: 0.011,
       },
-      //costPerMillionInputTokens: 10,
-      //costPerMegapixel: 0.011,
-    }, 0.005),
-    generateImageModelSpec("gpt-image-1", "gpt-image-1-high", {
-      providerOptions: {
-        openai: {quality: "high"},
+      0.005,
+    ),
+    generateImageModelSpec(
+      "gpt-image-1",
+      "gpt-image-1-high",
+      {
+        providerOptions: {
+          openai: {quality: "high"},
+        },
+        //costPerMillionInputTokens: 10,
+        //costPerMegapixel: 0.067,
       },
-      //costPerMillionInputTokens: 10,
-      //costPerMegapixel: 0.067,
-    }, 0.167),
-    generateImageModelSpec("gpt-image-1", "gpt-image-1-medium", {
-      providerOptions: {
-        openai: {quality: "medium"},
+      0.167,
+    ),
+    generateImageModelSpec(
+      "gpt-image-1",
+      "gpt-image-1-medium",
+      {
+        providerOptions: {
+          openai: {quality: "medium"},
+        },
+        //costPerMillionInputTokens: 10,
+        //costPerMegapixel: 0.042,
       },
-      //costPerMillionInputTokens: 10,
-      //costPerMegapixel: 0.042,
-    }, 0.042),
-    generateImageModelSpec("gpt-image-1", "gpt-image-1-low", {
-      providerOptions: {
-        openai: {quality: "low"},
+      0.042,
+    ),
+    generateImageModelSpec(
+      "gpt-image-1",
+      "gpt-image-1-low",
+      {
+        providerOptions: {
+          openai: {quality: "low"},
+        },
+        //costPerMillionInputTokens: 10,
+        //costPerMegapixel: 0.011,
       },
-      //costPerMillionInputTokens: 10,
-      //costPerMegapixel: 0.011,
-    }, 0.011),
-    generateImageModelSpec("gpt-image-1.5", "gpt-image-1.5-high", {
-      providerOptions: {
-        openai: {quality: "high"},
+      0.011,
+    ),
+    generateImageModelSpec(
+      "gpt-image-1.5",
+      "gpt-image-1.5-high",
+      {
+        providerOptions: {
+          openai: {quality: "high"},
+        },
       },
-    }, 0.133),
-    generateImageModelSpec("gpt-image-1.5", "gpt-image-1.5-medium", {
-      providerOptions: {
-        openai: {quality: "medium"},
+      0.133,
+    ),
+    generateImageModelSpec(
+      "gpt-image-1.5",
+      "gpt-image-1.5-medium",
+      {
+        providerOptions: {
+          openai: {quality: "medium"},
+        },
       },
-    }, 0.034),
-    generateImageModelSpec("gpt-image-1.5", "gpt-image-1.5-low", {
-      providerOptions: {
-        openai: {quality: "low"},
+      0.034,
+    ),
+    generateImageModelSpec(
+      "gpt-image-1.5",
+      "gpt-image-1.5-low",
+      {
+        providerOptions: {
+          openai: {quality: "low"},
+        },
       },
-    }, 0.009),
-    ]);
+      0.009,
+    ),
+  ]);
 
   const speechModelRegistry = app.requireService(SpeechModelRegistry);
   speechModelRegistry.registerAllModelSpecs([
@@ -618,7 +704,7 @@ async function init(
       modelId: "tts-1",
       providerDisplayName: providerDisplayName,
       impl: openai.speech("tts-1"),
-      async isAvailable() {
+      isAvailable() {
         return true;
       },
       costPerMillionCharacters: 15,
@@ -627,20 +713,22 @@ async function init(
       modelId: "tts-1-hd",
       providerDisplayName: providerDisplayName,
       impl: openai.speech("tts-1-hd"),
-      async isAvailable() {
+      isAvailable() {
         return true;
       },
       costPerMillionCharacters: 30,
     },
   ]);
 
-  const transcriptionModelRegistry = app.requireService(TranscriptionModelRegistry);
+  const transcriptionModelRegistry = app.requireService(
+    TranscriptionModelRegistry,
+  );
   transcriptionModelRegistry.registerAllModelSpecs([
     {
       modelId: "whisper-1",
       providerDisplayName: providerDisplayName,
       impl: openai.transcription("whisper-1"),
-      async isAvailable() {
+      isAvailable() {
         return true;
       },
       costPerMinute: 0.006,
@@ -649,7 +737,7 @@ async function init(
 }
 
 export default {
-  providerCode: 'openai',
+  providerCode: "openai",
   configSchema: OpenAIModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof OpenAIModelProviderConfigSchema>;

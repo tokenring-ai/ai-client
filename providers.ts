@@ -1,4 +1,4 @@
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 
 import anthropic from "./providers/anthropic.ts";
@@ -32,8 +32,8 @@ const providers = {
   openai,
   openrouter,
   perplexity,
-  xai
-}
+  xai,
+};
 
 /**
  * Registers a key: value object of model specs
@@ -44,8 +44,17 @@ export async function registerProviders(
 ): Promise<void> {
   await Promise.all(
     Object.entries(config)
-      .filter(([providerDisplayName, providerConfig]) => providerConfig.provider in providers)
-      .map(([providerDisplayName, providerConfig]) => providers[providerConfig.provider].init(providerDisplayName, { ...providerConfig } as any, app))
+      .filter(
+        ([_providerDisplayName, providerConfig]) =>
+          providerConfig.provider in providers,
+      )
+      .map(([providerDisplayName, providerConfig]) =>
+        providers[providerConfig.provider].init(
+          providerDisplayName,
+          {...providerConfig} as any,
+          app,
+        ),
+      ),
   );
 }
 
@@ -64,6 +73,6 @@ export const AIProviderConfigSchema = z.discriminatedUnion("provider", [
   openai.configSchema,
   openrouter.configSchema,
   perplexity.configSchema,
-  xai.configSchema
+  xai.configSchema,
 ]);
 export type AIProviderConfig = z.infer<typeof AIProviderConfigSchema>;

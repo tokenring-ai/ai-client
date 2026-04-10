@@ -1,14 +1,14 @@
 import type {JSONArray} from "@ai-sdk/provider";
 import {openrouter} from "@openrouter/ai-sdk-provider";
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
-import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
+import type {AIModelProvider} from "../schema.ts";
 
 const OpenRouterModelProviderConfigSchema = z.object({
-  provider: z.literal('openrouter'),
+  provider: z.literal("openrouter"),
   apiKey: z.string(),
   modelFilter: z
     .function({
@@ -82,7 +82,6 @@ async function fetchAndRegisterOpenRouterModels(
   const modelsData = await getModels();
   if (modelsData == null) return;
 
-
   const isAvailable = async () => true; // Models are available if we got data
 
   const chatModelsSpec: ChatModelSpec[] = [];
@@ -122,11 +121,12 @@ async function fetchAndRegisterOpenRouterModels(
         },
         mangleRequest(req, settings) {
           const supported = model.supported_parameters || [];
-          
+
           if (settings.has("websearch")) {
-            const plugins = (((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= []) as JSONArray;
-            const webPlugin: any = { id: "web" };
-            
+            const plugins = (((req.providerOptions ??= {}).openrouter ??=
+              {}).plugins ??= []) as JSONArray;
+            const webPlugin: any = {id: "web"};
+
             if (settings.has("searchEngine")) {
               webPlugin.engine = settings.get("searchEngine");
             }
@@ -134,48 +134,149 @@ async function fetchAndRegisterOpenRouterModels(
               webPlugin.max_results = settings.get("maxResults");
             }
             if (settings.has("searchPrompt")) {
-              webPlugin.search_prompt = settings.get("searchPrompt")  ;
+              webPlugin.search_prompt = settings.get("searchPrompt");
             }
-            
+
             plugins.push(webPlugin);
           }
-          
+
           if (settings.has("searchContextSize")) {
-            const webSearchOptions = (req.providerOptions ??= {}).web_search_options ??= {};
-            webSearchOptions.search_context_size = settings.get("searchContextSize") as number;
+            const webSearchOptions = ((req.providerOptions ??=
+              {}).web_search_options ??= {});
+            webSearchOptions.search_context_size = settings.get(
+              "searchContextSize",
+            ) as number;
           }
 
           const params: Record<string, any> = {};
-          if (supported.includes('frequency_penalty') && settings.has("frequencyPenalty")) params.frequency_penalty = settings.get("frequencyPenalty");
-          if (supported.includes('max_tokens') && settings.has("maxTokens")) params.max_tokens = settings.get("maxTokens");
-          if (supported.includes('min_p') && settings.has("minP")) params.min_p = settings.get("minP");
-          if (supported.includes('presence_penalty') && settings.has("presencePenalty")) params.presence_penalty = settings.get("presencePenalty");
-          if (supported.includes('repetition_penalty') && settings.has("repetitionPenalty")) params.repetition_penalty = settings.get("repetitionPenalty");
-          if (supported.includes('temperature') && settings.has("temperature")) params.temperature = settings.get("temperature");
-          if (supported.includes('top_k') && settings.has("topK")) params.top_k = settings.get("topK");
-          if (supported.includes('top_p') && settings.has("topP")) params.top_p = settings.get("topP");
-          if (supported.includes('include_reasoning') && settings.has("includeReasoning")) params.include_reasoning = settings.get("includeReasoning");
-          if (supported.includes('reasoning') && settings.has("reasoning")) params.reasoning = settings.get("reasoning");
+          if (
+            supported.includes("frequency_penalty") &&
+            settings.has("frequencyPenalty")
+          )
+            params.frequency_penalty = settings.get("frequencyPenalty");
+          if (supported.includes("max_tokens") && settings.has("maxTokens"))
+            params.max_tokens = settings.get("maxTokens");
+          if (supported.includes("min_p") && settings.has("minP"))
+            params.min_p = settings.get("minP");
+          if (
+            supported.includes("presence_penalty") &&
+            settings.has("presencePenalty")
+          )
+            params.presence_penalty = settings.get("presencePenalty");
+          if (
+            supported.includes("repetition_penalty") &&
+            settings.has("repetitionPenalty")
+          )
+            params.repetition_penalty = settings.get("repetitionPenalty");
+          if (supported.includes("temperature") && settings.has("temperature"))
+            params.temperature = settings.get("temperature");
+          if (supported.includes("top_k") && settings.has("topK"))
+            params.top_k = settings.get("topK");
+          if (supported.includes("top_p") && settings.has("topP"))
+            params.top_p = settings.get("topP");
+          if (
+            supported.includes("include_reasoning") &&
+            settings.has("includeReasoning")
+          )
+            params.include_reasoning = settings.get("includeReasoning");
+          if (supported.includes("reasoning") && settings.has("reasoning"))
+            params.reasoning = settings.get("reasoning");
 
           if (Object.keys(params).length > 0) {
-            Object.assign((req.providerOptions ??= {}).openrouter ??= {}, params);
+            Object.assign(
+              ((req.providerOptions ??= {}).openrouter ??= {}),
+              params,
+            );
           }
         },
         settings: {
-          websearch: { description: "Enables web search plugin", defaultValue: false, type: "boolean" },
-          searchEngine: { description: "Search engine (native, exa, or undefined for auto)", defaultValue: undefined, type: "enum", values: ["native", "exa"] },
-          maxResults: { description: "Maximum number of search results (default 5)", defaultValue: 5, type: "number", min: 0, max: 100 }, // TODO: The upper bound is not described in the docs
-          searchContextSize: { description: "Search context size for native search", defaultValue: "low", type: "enum", values: ["low", "medium", "high"] },
-          ...(model.supported_parameters?.includes('frequency_penalty') && { frequencyPenalty: { description: "Frequency penalty", type: "number", min: -2.0, max: 2.0 } }),
-          ...(model.supported_parameters?.includes('max_tokens') && { maxTokens: { description: "Max tokens", type: "number", min: 1 } }),
-          ...(model.supported_parameters?.includes('min_p') && { minP: { description: "Min P sampling", type: "number", min: 0, max: 1.0 } }),
-          ...(model.supported_parameters?.includes('presence_penalty') && { presencePenalty: { description: "Presence penalty", type: "number", min: -2.0, max: 2.0 } }),
-          ...(model.supported_parameters?.includes('repetition_penalty') && { repetitionPenalty: { description: "Repetition penalty", type: "number", min: 0, max: 2.0 } }),
-          ...(model.supported_parameters?.includes('temperature') && { temperature: { description: "Temperature", type: "number", min: 0, max: 2.0 } }),
-          ...(model.supported_parameters?.includes('top_k') && { topK: { description: "Top K sampling", type: "number", min: 0 } }),
-          ...(model.supported_parameters?.includes('top_p') && { topP: { description: "Top P sampling", type: "number", min: 0, max: 1.0 } }),
-          ...(model.supported_parameters?.includes('include_reasoning') && { includeReasoning: { description: "Include reasoning", type: "boolean" } }),
-          ...(model.supported_parameters?.includes('reasoning') && { reasoning: { description: "Reasoning mode", type: "string" } }),
+          websearch: {
+            description: "Enables web search plugin",
+            defaultValue: false,
+            type: "boolean",
+          },
+          searchEngine: {
+            description: "Search engine (native, exa, or undefined for auto)",
+            defaultValue: undefined,
+            type: "enum",
+            values: ["native", "exa"],
+          },
+          maxResults: {
+            description: "Maximum number of search results (default 5)",
+            defaultValue: 5,
+            type: "number",
+            min: 0,
+            max: 100,
+          }, // TODO: The upper bound is not described in the docs
+          searchContextSize: {
+            description: "Search context size for native search",
+            defaultValue: "low",
+            type: "enum",
+            values: ["low", "medium", "high"],
+          },
+          ...(model.supported_parameters?.includes("frequency_penalty") && {
+            frequencyPenalty: {
+              description: "Frequency penalty",
+              type: "number",
+              min: -2.0,
+              max: 2.0,
+            },
+          }),
+          ...(model.supported_parameters?.includes("max_tokens") && {
+            maxTokens: {description: "Max tokens", type: "number", min: 1},
+          }),
+          ...(model.supported_parameters?.includes("min_p") && {
+            minP: {
+              description: "Min P sampling",
+              type: "number",
+              min: 0,
+              max: 1.0,
+            },
+          }),
+          ...(model.supported_parameters?.includes("presence_penalty") && {
+            presencePenalty: {
+              description: "Presence penalty",
+              type: "number",
+              min: -2.0,
+              max: 2.0,
+            },
+          }),
+          ...(model.supported_parameters?.includes("repetition_penalty") && {
+            repetitionPenalty: {
+              description: "Repetition penalty",
+              type: "number",
+              min: 0,
+              max: 2.0,
+            },
+          }),
+          ...(model.supported_parameters?.includes("temperature") && {
+            temperature: {
+              description: "Temperature",
+              type: "number",
+              min: 0,
+              max: 2.0,
+            },
+          }),
+          ...(model.supported_parameters?.includes("top_k") && {
+            topK: {description: "Top K sampling", type: "number", min: 0},
+          }),
+          ...(model.supported_parameters?.includes("top_p") && {
+            topP: {
+              description: "Top P sampling",
+              type: "number",
+              min: 0,
+              max: 1.0,
+            },
+          }),
+          ...(model.supported_parameters?.includes("include_reasoning") && {
+            includeReasoning: {
+              description: "Include reasoning",
+              type: "boolean",
+            },
+          }),
+          ...(model.supported_parameters?.includes("reasoning") && {
+            reasoning: {description: "Reasoning mode", type: "string"},
+          }),
         },
         //reasoning: model.supported_parameters?.includes('include_reasoning') ? 2 : 0,
         //tools: model.supported_parameters?.includes('tools') ? 2 : 0,
@@ -185,7 +286,7 @@ async function fetchAndRegisterOpenRouterModels(
   }
 
   if (chatModelsSpec.length > 0) {
-    app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
       chatModelRegistry.registerAllModelSpecs(chatModelsSpec);
     });
   }
@@ -200,15 +301,11 @@ async function init(
     throw new Error("No config.apiKey provided for OpenRouter provider.");
   }
 
-  await fetchAndRegisterOpenRouterModels(
-    providerDisplayName,
-    config,
-    app,
-  );
+  await fetchAndRegisterOpenRouterModels(providerDisplayName, config, app);
 }
 
 export default {
-  providerCode: 'openrouter',
+  providerCode: "openrouter",
   configSchema: OpenRouterModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof OpenRouterModelProviderConfigSchema>;

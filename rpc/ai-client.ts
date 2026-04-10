@@ -1,4 +1,4 @@
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import {createRPCEndpoint} from "@tokenring-ai/rpc/createRPCEndpoint";
 import {
   ChatModelRegistry,
@@ -6,80 +6,80 @@ import {
   ImageGenerationModelRegistry,
   RerankingModelRegistry,
   SpeechModelRegistry,
-  TranscriptionModelRegistry
+  TranscriptionModelRegistry,
 } from "../ModelRegistry.ts";
 import AIClientRpcSchema from "./schema.ts";
 
 export default createRPCEndpoint(AIClientRpcSchema, {
-  async listChatModels(args, app: TokenRingApp) {
+  async listChatModels(_args, app: TokenRingApp) {
     const registry = app.requireService(ChatModelRegistry);
     const models = await registry.getAllModelsWithOnlineStatus();
-    return { models };
+    return {models};
   },
 
-  async listChatModelsByProvider(args, app: TokenRingApp) {
+  async listChatModelsByProvider(_args, app: TokenRingApp) {
     const registry = app.requireService(ChatModelRegistry);
     const modelsByProvider = await registry.getModelsByProvider();
-    return { modelsByProvider };
+    return {modelsByProvider};
   },
 
-  async listEmbeddingModels(args, app: TokenRingApp) {
+  async listEmbeddingModels(_args, app: TokenRingApp) {
     const registry = app.requireService(EmbeddingModelRegistry);
     const models = await registry.getAllModelsWithOnlineStatus();
-    return { models };
+    return {models};
   },
 
-  async listEmbeddingModelsByProvider(args, app: TokenRingApp) {
+  async listEmbeddingModelsByProvider(_args, app: TokenRingApp) {
     const registry = app.requireService(EmbeddingModelRegistry);
     const modelsByProvider = await registry.getModelsByProvider();
-    return { modelsByProvider };
+    return {modelsByProvider};
   },
 
-  async listImageGenerationModels(args, app: TokenRingApp) {
+  async listImageGenerationModels(_args, app: TokenRingApp) {
     const registry = app.requireService(ImageGenerationModelRegistry);
     const models = await registry.getAllModelsWithOnlineStatus();
-    return { models };
+    return {models};
   },
 
-  async listImageGenerationModelsByProvider(args, app: TokenRingApp) {
+  async listImageGenerationModelsByProvider(_args, app: TokenRingApp) {
     const registry = app.requireService(ImageGenerationModelRegistry);
     const modelsByProvider = await registry.getModelsByProvider();
-    return { modelsByProvider };
+    return {modelsByProvider};
   },
 
-  async listSpeechModels(args, app: TokenRingApp) {
+  async listSpeechModels(_args, app: TokenRingApp) {
     const registry = app.requireService(SpeechModelRegistry);
     const models = await registry.getAllModelsWithOnlineStatus();
-    return { models };
+    return {models};
   },
 
-  async listSpeechModelsByProvider(args, app: TokenRingApp) {
+  async listSpeechModelsByProvider(_args, app: TokenRingApp) {
     const registry = app.requireService(SpeechModelRegistry);
     const modelsByProvider = await registry.getModelsByProvider();
-    return { modelsByProvider };
+    return {modelsByProvider};
   },
 
-  async listTranscriptionModels(args, app: TokenRingApp) {
+  async listTranscriptionModels(_args, app: TokenRingApp) {
     const registry = app.requireService(TranscriptionModelRegistry);
     const models = await registry.getAllModelsWithOnlineStatus();
-    return { models };
+    return {models};
   },
 
-  async listTranscriptionModelsByProvider(args, app: TokenRingApp) {
+  async listTranscriptionModelsByProvider(_args, app: TokenRingApp) {
     const registry = app.requireService(TranscriptionModelRegistry);
     const modelsByProvider = await registry.getModelsByProvider();
-    return { modelsByProvider };
+    return {modelsByProvider};
   },
 
-  async listRerankingModels(args, app: TokenRingApp) {
+  async listRerankingModels(_args, app: TokenRingApp) {
     const registry = app.requireService(RerankingModelRegistry);
     const models = await registry.getAllModelsWithOnlineStatus();
-    return { models };
+    return {models};
   },
 
-  async listRerankingModelsByProvider(args, app: TokenRingApp) {
+  async listRerankingModelsByProvider(_args, app: TokenRingApp) {
     const registry = app.requireService(RerankingModelRegistry);
     const modelsByProvider = await registry.getModelsByProvider();
-    return { modelsByProvider };
-  }
+    return {modelsByProvider};
+  },
 });

@@ -1,13 +1,13 @@
 import {createAzure} from "@ai-sdk/azure";
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import type {AIModelProvider} from "../schema.ts";
 
 const AzureModelProviderConfigSchema = z.object({
-  provider: z.literal('azure'),
+  provider: z.literal("azure"),
   apiKey: z.string(),
   baseURL: z.string(),
 });
@@ -22,7 +22,7 @@ interface DeploymentList {
   data: Deployment[];
 }
 
-async function init(
+function init(
   providerDisplayName: string,
   config: z.output<typeof AzureModelProviderConfigSchema>,
   app: TokenRingApp,
@@ -72,7 +72,7 @@ async function init(
     } satisfies ChatModelSpec;
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
     chatModelRegistry.registerAllModelSpecs([
       generateModelSpec("deepseek-v3-0324", {
         costPerMillionInputTokens: 0.0,
@@ -84,7 +84,7 @@ async function init(
 }
 
 export default {
-  providerCode: 'azure',
+  providerCode: "azure",
   configSchema: AzureModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof AzureModelProviderConfigSchema>;

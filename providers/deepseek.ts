@@ -1,13 +1,13 @@
 import {createDeepSeek} from "@ai-sdk/deepseek";
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import type {AIModelProvider} from "../schema.ts";
 
 const DeepSeekModelProviderConfigSchema = z.object({
-  provider: z.literal('deepseek'),
+  provider: z.literal("deepseek"),
   apiKey: z.string(),
 });
 
@@ -22,7 +22,7 @@ interface ModelsListResponse {
   data: Model[];
 }
 
-async function init(
+function init(
   providerDisplayName: string,
   config: z.output<typeof DeepSeekModelProviderConfigSchema>,
   app: TokenRingApp,
@@ -60,26 +60,26 @@ async function init(
     } satisfies ChatModelSpec;
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
     chatModelRegistry.registerAllModelSpecs([
-    generateModelSpecs("deepseek-chat", {
-      costPerMillionInputTokens: 0.28,
-      costPerMillionCachedInputTokens: 0.028,
-      costPerMillionOutputTokens: 0.42,
-      maxContextLength: 128000,
-    }),
-    generateModelSpecs("deepseek-reasoner", {
-      costPerMillionInputTokens: 0.28,
-      costPerMillionCachedInputTokens: 0.028,
-      costPerMillionOutputTokens: 0.42,
-      maxContextLength: 128000,
-    }),
+      generateModelSpecs("deepseek-chat", {
+        costPerMillionInputTokens: 0.28,
+        costPerMillionCachedInputTokens: 0.028,
+        costPerMillionOutputTokens: 0.42,
+        maxContextLength: 128000,
+      }),
+      generateModelSpecs("deepseek-reasoner", {
+        costPerMillionInputTokens: 0.28,
+        costPerMillionCachedInputTokens: 0.028,
+        costPerMillionOutputTokens: 0.42,
+        maxContextLength: 128000,
+      }),
     ]);
   });
 }
 
 export default {
-  providerCode: 'deepseek',
+  providerCode: "deepseek",
   configSchema: DeepSeekModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof DeepSeekModelProviderConfigSchema>;

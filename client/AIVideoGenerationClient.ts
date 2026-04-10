@@ -1,5 +1,5 @@
-import {Experimental_VideoModelV3} from '@ai-sdk/provider';
-import Agent from "@tokenring-ai/agent/Agent";
+import type {Experimental_VideoModelV3} from "@ai-sdk/provider";
+import type Agent from "@tokenring-ai/agent/Agent";
 import {MetricsService} from "@tokenring-ai/metrics";
 import {experimental_generateVideo as generateVideo, type GeneratedFile, type GenerateVideoResult,} from "ai";
 import {z} from "zod";
@@ -38,17 +38,21 @@ export type VideoModelSpec = ModelSpec & {
   /**
    * - Optional hook to adjust the request prior to sending.
    */
-  mangleRequest?: (
-    req: VideoRequest,
-    settings?: ChatModelSettings,
-  ) => void;
+  mangleRequest?: (req: VideoRequest, settings?: ChatModelSettings) => void;
 };
 
-export const VideoModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
-  calculateVideoCost: z.function({input: z.tuple([z.any(), z.any()]), output: z.number()}),
+export const VideoModelSpecSchema = createModelSpecSchema(
+  ModelInputCapabilitiesSchema,
+).extend({
+  calculateVideoCost: z.function({
+    input: z.tuple([z.any(), z.any()]),
+    output: z.number(),
+  }),
 });
 
-export function normalizeVideoModelSpec(modelSpec: VideoModelSpec): VideoModelSpec {
+export function normalizeVideoModelSpec(
+  modelSpec: VideoModelSpec,
+): VideoModelSpec {
   return VideoModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -61,8 +65,9 @@ export function normalizeVideoModelSpec(modelSpec: VideoModelSpec): VideoModelSp
 export default class AIVideoGenerationClient {
   constructor(
     private modelSpec: VideoModelSpec,
-    private settings: ChatModelSettings
-  ) {}
+    private settings: ChatModelSettings,
+  ) {
+  }
 
   /**
    * Set settings for this client instance.
@@ -90,12 +95,12 @@ export default class AIVideoGenerationClient {
    */
   async generateVideo(
     request: VideoRequest,
-    agent: Agent
+    agent: Agent,
   ): Promise<[GeneratedFile, GenerateVideoResult]> {
     const signal = agent.getAbortSignal();
 
     try {
-      let finalRequest = { ...request };
+      const finalRequest = {...request};
 
       if (this.modelSpec.mangleRequest) {
         this.modelSpec.mangleRequest(finalRequest, this.settings);
@@ -110,11 +115,13 @@ export default class AIVideoGenerationClient {
 
       const cost = this.modelSpec.calculateVideoCost(finalRequest, result);
 
-      agent.getServiceByType(MetricsService)?.addCost(
-        `Video Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
-        cost,
-        agent
-      );
+      agent
+        .getServiceByType(MetricsService)
+        ?.addCost(
+          `Video Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
+          cost,
+          agent,
+        );
 
       return [result.video, result];
     } catch (error) {

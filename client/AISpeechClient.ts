@@ -1,5 +1,5 @@
-import Agent from "@tokenring-ai/agent/Agent";
-import {experimental_generateSpeech as generateSpeech, Experimental_SpeechResult, type SpeechModel,} from "ai";
+import type Agent from "@tokenring-ai/agent/Agent";
+import {experimental_generateSpeech as generateSpeech, type Experimental_SpeechResult, type SpeechModel,} from "ai";
 import {z} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
 import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
@@ -16,17 +16,18 @@ export type SpeechModelSpec = ModelSpec & {
   inputCapabilities?: Partial<ModelInputCapabilities>;
   providerOptions?: any;
   /** Optional hook to adjust the request prior to sending. */
-  mangleRequest?: (
-    req: SpeechRequest,
-    settings?: Record<string, any>,
-  ) => void;
+  mangleRequest?: (req: SpeechRequest, settings?: Record<string, any>) => void;
 };
 
-export const SpeechModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+export const SpeechModelSpecSchema = createModelSpecSchema(
+  ModelInputCapabilitiesSchema,
+).extend({
   costPerMillionCharacters: z.number().optional(),
 });
 
-export function normalizeSpeechModelSpec(modelSpec: SpeechModelSpec): SpeechModelSpec {
+export function normalizeSpeechModelSpec(
+  modelSpec: SpeechModelSpec,
+): SpeechModelSpec {
   return SpeechModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -34,8 +35,12 @@ export function normalizeSpeechModelSpec(modelSpec: SpeechModelSpec): SpeechMode
 }
 
 export default class AISpeechClient {
-  constructor(private modelSpec: SpeechModelSpec, private settings: ChatModelSettings) {
+  constructor(
+    private modelSpec: SpeechModelSpec,
+    private settings: ChatModelSettings,
+  ) {
   }
+
   /**
    * Set settings for this client instance.
    */
@@ -49,6 +54,7 @@ export default class AISpeechClient {
   getSettings(): ChatModelSettings {
     return new Map(this.settings.entries());
   }
+
   async generateSpeech(
     request: SpeechRequest,
     agent: Agent,

@@ -1,10 +1,11 @@
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
+import type {MaybePromise} from "bun";
 import {z} from "zod";
 import type {ModelInputCapability} from "./client/modelCapabilities.ts";
 import {type AIProviderConfig, AIProviderConfigSchema} from "./providers.ts";
 import type {GenericModelListResponse} from "./providers/generic.ts";
 
-export type {TextPart, ImagePart, FilePart, UserModelMessage} from "ai";
+export type {FilePart, ImagePart, TextPart, UserModelMessage} from "ai";
 export type {ModelInputCapability} from "./client/modelCapabilities.ts";
 
 export type ModelRequirements = {
@@ -12,7 +13,7 @@ export type ModelRequirements = {
    * The name of the provider and model, possibly including wildcards
    */
   nameLike?: string;
-}
+};
 
 export type ChatModelRequirements = ModelRequirements & {
   /**
@@ -40,21 +41,21 @@ export type EmbeddingModelRequirements = ModelRequirements & {
    * Maximum context length in tokens the model allows
    */
   contextLength?: number;
-}
+};
 
 export type ImageModelRequirements = ModelRequirements & {
   /**
    * Maximum context length in tokens the model allows
    */
   contextLength?: number;
-}
+};
 
 export type VideoModelRequirements = ModelRequirements & {
   /**
    * Maximum context length in tokens the model allows
    */
   contextLength?: number;
-}
+};
 
 export type RerankingModelRequirements = ModelRequirements;
 
@@ -66,9 +67,13 @@ export interface AIModelProvider<T> {
   providerCode: string;
   configSchema: T;
 
-  init(providerDisplayName: string, config: z.output<T>, app: TokenRingApp): Promise<void>;
+  autoConfigure?: () => MaybePromise<z.output<T> | null>;
 
-  autoConfigure?: () => Promise<z.output<T> | null>;
+  init(
+    providerDisplayName: string,
+    config: z.output<T>,
+    app: TokenRingApp,
+  ): MaybePromise<void>;
 }
 
 export const AIClientConfigSchema = z.object({
@@ -79,7 +84,7 @@ export const AIClientConfigSchema = z.object({
   /**
    * Configuration for AI providers
    */
-  providers: z.record(z.string(), AIProviderConfigSchema).default({})
+  providers: z.record(z.string(), AIProviderConfigSchema).default({}),
 });
 
 export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
@@ -109,8 +114,8 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
       provider: "generic",
       endpointType: "openai",
       apiKey: process.env.CHUTES_API_KEY,
-      baseURL: 'https://llm.chutes.ai/v1',
-      defaultContextLength: 128000
+      baseURL: "https://llm.chutes.ai/v1",
+      defaultContextLength: 128000,
     };
   }
 
@@ -140,8 +145,8 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
       provider: "generic",
       endpointType: "openai",
       apiKey: process.env.META_LLAMA_API_KEY,
-      baseURL: 'https://api.llama.com/compat/v1',
-      defaultContextLength: 128000
+      baseURL: "https://api.llama.com/compat/v1",
+      defaultContextLength: 128000,
     };
   }
 
@@ -150,15 +155,15 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
       provider: "generic",
       endpointType: "openai",
       apiKey: process.env.NVIDIA_NIM_API_KEY,
-      baseURL: 'https://integrate.api.nvidia.com/v1',
-      defaultContextLength: 32000
+      baseURL: "https://integrate.api.nvidia.com/v1",
+      defaultContextLength: 32000,
     };
   }
 
   if (process.env.OPENAI_API_KEY) {
     config.OpenAI ??= {
       provider: "openai",
-      apiKey: process.env.OPENAI_API_KEY
+      apiKey: process.env.OPENAI_API_KEY,
     };
   }
 
@@ -167,20 +172,25 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
     if (match) {
       const n = match[2];
       const name = process.env[`LLAMA_NAME${n}`] ?? `LlamaCPP${n}`;
-      const baseURL = process.env[`LLAMA_BASE_URL${n}`] ?? "http://127.0.0.1:11434/v1";
+      const baseURL =
+        process.env[`LLAMA_BASE_URL${n}`] ?? "http://127.0.0.1:11434/v1";
       const apiKey = process.env[`LLAMA_API_KEY${n}`] ?? undefined;
       const endpointType = process.env[`LLAMA_ENDPOINT_TYPE${n}`] ?? "openai";
       switch (endpointType) {
-        case 'openai':
-        case 'anthropic':
-        case 'responses':
+        case "openai":
+        case "anthropic":
+        case "responses":
           break;
         default:
-          throw new Error(`Invalid endpoint type for LlamaCPP${n}: ${endpointType}`);
+          throw new Error(
+            `Invalid endpoint type for LlamaCPP${n}: ${endpointType}`,
+          );
       }
-      const defaultContextLength = parseInt(process.env[`LLAMA_CONTEXT_LENGTH${n}`] ?? '128000');
-      if (isNaN(defaultContextLength)) {
-        throw new Error(`Invalid context length for LlamaCPP${n}: ${process.env[`LLAMA_CONTEXT_LENGTH${n}`]}`);
+      const defaultContextLength = parseInt(process.env[`LLAMA_CONTEXT_LENGTH${n}`] ?? "128000", 10);
+      if (Number.isNaN(defaultContextLength)) {
+        throw new Error(
+          `Invalid context length for LlamaCPP${n}: ${process.env[`LLAMA_CONTEXT_LENGTH${n}`]}`,
+        );
       }
 
       config[name] ??= {
@@ -188,7 +198,7 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
         endpointType,
         baseURL,
         ...(apiKey && {apiKey}),
-        defaultContextLength
+        defaultContextLength,
       };
     }
   }
@@ -196,7 +206,7 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
   if (process.env.OPENROUTER_API_KEY) {
     config.OpenRouter ??= {
       provider: "openrouter",
-      apiKey: process.env.OPENROUTER_API_KEY
+      apiKey: process.env.OPENROUTER_API_KEY,
     };
   }
 
@@ -212,8 +222,8 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
       provider: "generic",
       endpointType: "openai",
       apiKey: process.env.DASHSCOPE_API_KEY,
-      baseURL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
-      defaultContextLength: 262144
+      baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      defaultContextLength: 262144,
     };
   }
 
@@ -230,7 +240,7 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
       endpointType: "openai",
       apiKey: process.env.ZAI_API_KEY,
       baseURL: "https://api.z.ai/api/coding/paas/v4",
-      defaultContextLength: 200000
+      defaultContextLength: 200000,
     };
   }
 
@@ -241,7 +251,7 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
       apiKey: process.env.MIMO_API_KEY,
       baseURL: "https://api.xiaomimimo.com/v1",
       defaultContextLength: 1000000,
-    }
+    };
   }
 
   if (process.env.MINIMAX_API_KEY) {
@@ -296,8 +306,8 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
             owned_by: "organization",
             created: Date.now(),
           },
-        ]
-      } satisfies GenericModelListResponse
+        ],
+      } satisfies GenericModelListResponse,
     };
   }
 }

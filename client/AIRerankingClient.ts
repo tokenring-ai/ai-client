@@ -13,11 +13,15 @@ export type RerankingModelSpec = ModelSpec & {
   ) => void;
 };
 
-export const RerankingModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+export const RerankingModelSpecSchema = createModelSpecSchema(
+  ModelInputCapabilitiesSchema,
+).extend({
   costPerMillionInputTokens: z.number().optional(),
 });
 
-export function normalizeRerankingModelSpec(modelSpec: RerankingModelSpec): RerankingModelSpec {
+export function normalizeRerankingModelSpec(
+  modelSpec: RerankingModelSpec,
+): RerankingModelSpec {
   return RerankingModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -25,7 +29,10 @@ export function normalizeRerankingModelSpec(modelSpec: RerankingModelSpec): Rera
 }
 
 export default class AIRerankingClient {
-  constructor(private readonly modelSpec: RerankingModelSpec, private settings: ChatModelSettings) {
+  constructor(
+    private readonly modelSpec: RerankingModelSpec,
+    private settings: ChatModelSettings,
+  ) {
   }
 
   /**
@@ -46,11 +53,11 @@ export default class AIRerankingClient {
     return this.modelSpec.impl.modelId;
   }
 
-  async rerank({
-    query,
-    documents,
-    topN,
-  }: {
+  rerank({
+           query,
+           documents,
+           topN,
+         }: {
     query: string;
     documents: string[];
     topN?: number;

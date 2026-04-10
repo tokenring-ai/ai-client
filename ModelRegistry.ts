@@ -1,23 +1,16 @@
-import {TokenRingService} from "@tokenring-ai/app/types";
-import AIChatClient, {ChatModelSpec, normalizeChatModelSpec} from "./client/AIChatClient.ts";
-import AIEmbeddingClient, {EmbeddingModelSpec, normalizeEmbeddingModelSpec} from "./client/AIEmbeddingClient.ts";
-import AIImageGenerationClient, {ImageModelSpec, normalizeImageModelSpec} from "./client/AIImageGenerationClient.ts";
-import AIRerankingClient, {normalizeRerankingModelSpec, RerankingModelSpec} from "./client/AIRerankingClient.ts";
-import AISpeechClient, {normalizeSpeechModelSpec, SpeechModelSpec} from "./client/AISpeechClient.ts";
-import AITranscriptionClient, {normalizeTranscriptionModelSpec, TranscriptionModelSpec} from "./client/AITranscriptionClient.ts";
-import AIVideoGenerationClient, {normalizeVideoModelSpec, type VideoModelSpec} from "./client/AIVideoGenerationClient.ts";
+import type {TokenRingService} from "@tokenring-ai/app/types";
+import AIChatClient, {type ChatModelSpec, normalizeChatModelSpec,} from "./client/AIChatClient.ts";
+import AIEmbeddingClient, {type EmbeddingModelSpec, normalizeEmbeddingModelSpec,} from "./client/AIEmbeddingClient.ts";
+import AIImageGenerationClient, {type ImageModelSpec, normalizeImageModelSpec,} from "./client/AIImageGenerationClient.ts";
+import AIRerankingClient, {normalizeRerankingModelSpec, type RerankingModelSpec,} from "./client/AIRerankingClient.ts";
+import AISpeechClient, {normalizeSpeechModelSpec, type SpeechModelSpec,} from "./client/AISpeechClient.ts";
+import AITranscriptionClient, {normalizeTranscriptionModelSpec, type TranscriptionModelSpec,} from "./client/AITranscriptionClient.ts";
+import AIVideoGenerationClient, {normalizeVideoModelSpec, type VideoModelSpec,} from "./client/AIVideoGenerationClient.ts";
 import {ModelTypeRegistry} from "./ModelTypeRegistry.ts";
-import {
-  ChatModelRequirements,
-  EmbeddingModelRequirements,
-  ImageModelRequirements,
-  RerankingModelRequirements,
-  SpeechModelRequirements,
-  TranscriptionModelRequirements,
-  VideoModelRequirements
-} from "./schema.ts";
 
-export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatClient, ChatModelRequirements> implements TokenRingService {
+export class ChatModelRegistry
+  extends ModelTypeRegistry<ChatModelSpec, AIChatClient>
+  implements TokenRingService {
   readonly name = "ChatModelRegistry";
   description = "Model registry for chat models";
 
@@ -29,12 +22,15 @@ export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatCl
     super.registerAllModelSpecs(modelSpecs.map(normalizeChatModelSpec));
   }
 
-  getCheapestModelByRequirements(requirements: string, estimatedContextLength = 10000): string | null {
+  getCheapestModelByRequirements(
+    requirements: string,
+    estimatedContextLength = 10000,
+  ): string | null {
     const eligibleModels = this.getModelSpecsByRequirements(requirements);
 
     // Sort the matched chatModels by price, using the current context length + 1000 tokens to calculate the price
-    return Object.entries(eligibleModels)
-      .sort(([,a], [,b]) => {
+    return (
+      Object.entries(eligibleModels).sort(([, a], [, b]) => {
         const aPrice =
           estimatedContextLength * (a.costPerMillionInputTokens ?? 600) +
           1000 * (a.costPerMillionOutputTokens ?? 600);
@@ -43,11 +39,17 @@ export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatCl
           1000 * (b.costPerMillionOutputTokens ?? 600);
 
         return aPrice - bPrice;
-      })[0]?.[0] ?? null;
+      })[0]?.[0] ?? null
+    );
   }
 }
 
-export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec, AIEmbeddingClient, EmbeddingModelRequirements> implements TokenRingService {
+export class EmbeddingModelRegistry
+  extends ModelTypeRegistry<
+    EmbeddingModelSpec,
+    AIEmbeddingClient
+  >
+  implements TokenRingService {
   readonly name = "EmbeddingModelRegistry";
   description = "Model registry for embedding models";
 
@@ -60,7 +62,12 @@ export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec
   }
 }
 
-export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSpec, AIImageGenerationClient, ImageModelRequirements> implements TokenRingService {
+export class ImageGenerationModelRegistry
+  extends ModelTypeRegistry<
+    ImageModelSpec,
+    AIImageGenerationClient
+  >
+  implements TokenRingService {
   readonly name = "ImageGenerationModelRegistry";
   description = "Model registry for image generation models";
 
@@ -73,7 +80,12 @@ export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSp
   }
 }
 
-export class VideoGenerationModelRegistry extends ModelTypeRegistry<VideoModelSpec, AIVideoGenerationClient, VideoModelRequirements> implements TokenRingService {
+export class VideoGenerationModelRegistry
+  extends ModelTypeRegistry<
+    VideoModelSpec,
+    AIVideoGenerationClient
+  >
+  implements TokenRingService {
   readonly name = "VideoGenerationModelRegistry";
   description = "Model registry for video generation models";
 
@@ -86,7 +98,12 @@ export class VideoGenerationModelRegistry extends ModelTypeRegistry<VideoModelSp
   }
 }
 
-export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISpeechClient, SpeechModelRequirements> implements TokenRingService {
+export class SpeechModelRegistry
+  extends ModelTypeRegistry<
+    SpeechModelSpec,
+    AISpeechClient
+  >
+  implements TokenRingService {
   readonly name = "SpeechModelRegistry";
   description = "Model registry for speech models";
 
@@ -99,7 +116,12 @@ export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISp
   }
 }
 
-export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionModelSpec, AITranscriptionClient, TranscriptionModelRequirements> implements TokenRingService {
+export class TranscriptionModelRegistry
+  extends ModelTypeRegistry<
+    TranscriptionModelSpec,
+    AITranscriptionClient
+  >
+  implements TokenRingService {
   readonly name = "TranscriptionModelRegistry";
   description = "Model registry for transcription models";
 
@@ -108,11 +130,18 @@ export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionM
   }
 
   override registerAllModelSpecs(modelSpecs: TranscriptionModelSpec[]): void {
-    super.registerAllModelSpecs(modelSpecs.map(normalizeTranscriptionModelSpec));
+    super.registerAllModelSpecs(
+      modelSpecs.map(normalizeTranscriptionModelSpec),
+    );
   }
 }
 
-export class RerankingModelRegistry extends ModelTypeRegistry<RerankingModelSpec, AIRerankingClient, RerankingModelRequirements> implements TokenRingService {
+export class RerankingModelRegistry
+  extends ModelTypeRegistry<
+    RerankingModelSpec,
+    AIRerankingClient
+  >
+  implements TokenRingService {
   readonly name = "RerankingModelRegistry";
   description = "Model registry for reranking models";
 

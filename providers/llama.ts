@@ -1,13 +1,13 @@
 import {createOpenAI} from "@ai-sdk/openai";
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import type {AIModelProvider} from "../schema.ts";
 
 const LlamaModelProviderConfigSchema = z.object({
-  provider: z.literal('llama'),
+  provider: z.literal("llama"),
   apiKey: z.string(),
 });
 interface Model {
@@ -22,7 +22,7 @@ interface ModelList {
   data: Model[];
 }
 
-async function init(
+function init(
   providerDisplayName: string,
   config: z.output<typeof LlamaModelProviderConfigSchema>,
   app: TokenRingApp,
@@ -64,38 +64,38 @@ async function init(
     } satisfies ChatModelSpec;
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
     chatModelRegistry.registerAllModelSpecs([
-    generateModelSpec("Llama-3.3-70B-Instruct", {
-      maxContextLength: 131072,
-      maxCompletionTokens: 32768,
-      costPerMillionInputTokens: 0,
-      costPerMillionOutputTokens: 0,
-    }),
-    generateModelSpec("Llama-3.3-8B-Instruct", {
-      maxContextLength: 131072,
-      maxCompletionTokens: 131072,
-      costPerMillionInputTokens: 0,
-      costPerMillionOutputTokens: 0,
-    }),
-    generateModelSpec("Llama-4-Maverick-17B-128E-Instruct-FP8", {
-      maxContextLength: 131072,
-      maxCompletionTokens: 32768,
-      costPerMillionInputTokens: 0,
-      costPerMillionOutputTokens: 0,
-    }),
-    generateModelSpec("Llama-4-Scout-17B-16E-Instruct-FP8", {
-      maxContextLength: 131072,
-      maxCompletionTokens: 32768,
-      costPerMillionInputTokens: 0,
-      costPerMillionOutputTokens: 0,
-    }),
+      generateModelSpec("Llama-3.3-70B-Instruct", {
+        maxContextLength: 131072,
+        maxCompletionTokens: 32768,
+        costPerMillionInputTokens: 0,
+        costPerMillionOutputTokens: 0,
+      }),
+      generateModelSpec("Llama-3.3-8B-Instruct", {
+        maxContextLength: 131072,
+        maxCompletionTokens: 131072,
+        costPerMillionInputTokens: 0,
+        costPerMillionOutputTokens: 0,
+      }),
+      generateModelSpec("Llama-4-Maverick-17B-128E-Instruct-FP8", {
+        maxContextLength: 131072,
+        maxCompletionTokens: 32768,
+        costPerMillionInputTokens: 0,
+        costPerMillionOutputTokens: 0,
+      }),
+      generateModelSpec("Llama-4-Scout-17B-16E-Instruct-FP8", {
+        maxContextLength: 131072,
+        maxCompletionTokens: 32768,
+        costPerMillionInputTokens: 0,
+        costPerMillionOutputTokens: 0,
+      }),
     ]);
   });
 }
 
 export default {
-  providerCode: 'llama',
+  providerCode: "llama",
   configSchema: LlamaModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof LlamaModelProviderConfigSchema>;

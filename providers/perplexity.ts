@@ -1,15 +1,15 @@
 import {perplexity} from "@ai-sdk/perplexity";
 import type {JSONObject} from "@ai-sdk/provider";
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
-import type {ChatModelSpec, ChatRequest,} from "../client/AIChatClient.ts";
+import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
-import {ChatModelSettings} from "../ModelTypeRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import type {ChatModelSettings} from "../ModelTypeRegistry.ts";
+import type {AIModelProvider} from "../schema.ts";
 import {resequenceMessages} from "../util/resequenceMessages.ts";
 
 const PerplexityModelProviderConfigSchema = z.object({
-  provider: z.literal('perplexity'),
+  provider: z.literal("perplexity"),
   apiKey: z.string(),
 });
 
@@ -17,7 +17,7 @@ const PerplexityModelProviderConfigSchema = z.object({
  * Initializes the Perplexity AI provider and registers its chat models with the model agent.
  *
  */
-async function init(
+function init(
   providerDisplayName: string,
   config: z.output<typeof PerplexityModelProviderConfigSchema>,
   app: TokenRingApp,
@@ -44,7 +44,7 @@ async function init(
       providerDisplayName: providerDisplayName,
       impl: perplexity(modelId),
       mangleRequest,
-      async isAvailable() {
+      isAvailable() {
         return true;
       },
       settings: {
@@ -54,7 +54,8 @@ async function init(
           type: "boolean",
         },
         searchContextSize: {
-          description: "The searchContextSize parameter allows you to control how much search context is retrieved from the web during query resolution",
+          description:
+            "The searchContextSize parameter allows you to control how much search context is retrieved from the web during query resolution",
           defaultValue: "low",
           type: "enum",
           values: ["low", "medium", "high"],
@@ -64,34 +65,34 @@ async function init(
     } satisfies ChatModelSpec;
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
     chatModelRegistry.registerAllModelSpecs([
-    generateModelSpec("sonar", {
-      costPerMillionInputTokens: 1,
-      costPerMillionOutputTokens: 1,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("sonar-pro", {
-      costPerMillionInputTokens: 3,
-      costPerMillionOutputTokens: 15,
-      maxContextLength: 200000,
-    }),
-    generateModelSpec("sonar-reasoning", {
-      costPerMillionInputTokens: 1,
-      costPerMillionOutputTokens: 5,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("sonar-reasoning-pro", {
-      costPerMillionInputTokens: 2,
-      costPerMillionOutputTokens: 8,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("sonar-deep-research", {
-      costPerMillionInputTokens: 2,
-      costPerMillionOutputTokens: 8,
-      costPerMillionReasoningTokens: 3,
-      maxContextLength: 128000,
-    }),
+      generateModelSpec("sonar", {
+        costPerMillionInputTokens: 1,
+        costPerMillionOutputTokens: 1,
+        maxContextLength: 128000,
+      }),
+      generateModelSpec("sonar-pro", {
+        costPerMillionInputTokens: 3,
+        costPerMillionOutputTokens: 15,
+        maxContextLength: 200000,
+      }),
+      generateModelSpec("sonar-reasoning", {
+        costPerMillionInputTokens: 1,
+        costPerMillionOutputTokens: 5,
+        maxContextLength: 128000,
+      }),
+      generateModelSpec("sonar-reasoning-pro", {
+        costPerMillionInputTokens: 2,
+        costPerMillionOutputTokens: 8,
+        maxContextLength: 128000,
+      }),
+      generateModelSpec("sonar-deep-research", {
+        costPerMillionInputTokens: 2,
+        costPerMillionOutputTokens: 8,
+        costPerMillionReasoningTokens: 3,
+        maxContextLength: 128000,
+      }),
     ]);
   });
 }
@@ -100,12 +101,19 @@ async function init(
  * Mangles OpenAI-style chat input messages to ensure they follow the required alternating pattern.
  * This function combines consecutive messages from the same role and ensures user/assistant roles alternate.
  */
-function mangleRequest(request: ChatRequest, settings: ChatModelSettings ): void {
-  const perplexityOptions = (request.providerOptions ??= {}).perplexity ??= {};
-  const webSearchOptions = (perplexityOptions.web_search_options ??= {}) as JSONObject;
+function mangleRequest(
+  request: ChatRequest,
+  settings: ChatModelSettings,
+): void {
+  const perplexityOptions = ((request.providerOptions ??= {}).perplexity ??=
+    {});
+  const webSearchOptions = (perplexityOptions.web_search_options ??=
+    {}) as JSONObject;
 
   if (settings.has("searchContextSize")) {
-    webSearchOptions.search_context_size = settings.get("searchContextSize") as number;
+    webSearchOptions.search_context_size = settings.get(
+      "searchContextSize",
+    ) as number;
   }
 
   if (!settings.has("websearch")) {
@@ -116,7 +124,7 @@ function mangleRequest(request: ChatRequest, settings: ChatModelSettings ): void
 }
 
 export default {
-  providerCode: 'perplexity',
+  providerCode: "perplexity",
   configSchema: PerplexityModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof PerplexityModelProviderConfigSchema>;

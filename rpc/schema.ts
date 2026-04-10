@@ -1,4 +1,4 @@
-import {RPCSchema} from "@tokenring-ai/rpc/types";
+import type {RPCSchema} from "@tokenring-ai/rpc/types";
 import {z} from "zod";
 
 export default {
@@ -9,144 +9,198 @@ export default {
       type: "query",
       input: z.object({}),
       result: z.object({
-        models: z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        }))
-      })
+        models: z.record(
+          z.string(),
+          z.object({
+            status: z.string(),
+            available: z.boolean(),
+            hot: z.boolean(),
+            modelSpec: z.any(),
+          }),
+        ),
+      }),
     },
     listChatModelsByProvider: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-        })))
-      })
+        modelsByProvider: z.record(
+          z.string(),
+          z.record(
+            z.string(),
+            z.object({
+              status: z.string(),
+              available: z.boolean(),
+              hot: z.boolean(),
+            }),
+          ),
+        ),
+      }),
     },
     listEmbeddingModels: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        models: z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        }))
-      })
+        models: z.record(
+          z.string(),
+          z.object({
+            status: z.string(),
+            available: z.boolean(),
+            hot: z.boolean(),
+            modelSpec: z.any(),
+          }),
+        ),
+      }),
     },
     listEmbeddingModelsByProvider: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        })))
-      })
+        modelsByProvider: z.record(
+          z.string(),
+          z.record(
+            z.string(),
+            z.object({
+              status: z.string(),
+              available: z.boolean(),
+              hot: z.boolean(),
+              modelSpec: z.any(),
+            }),
+          ),
+        ),
+      }),
     },
     listImageGenerationModels: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        models: z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        }))
-      })
+        models: z.record(
+          z.string(),
+          z.object({
+            status: z.string(),
+            available: z.boolean(),
+            hot: z.boolean(),
+            modelSpec: z.any(),
+          }),
+        ),
+      }),
     },
     listImageGenerationModelsByProvider: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        })))
-      })
+        modelsByProvider: z.record(
+          z.string(),
+          z.record(
+            z.string(),
+            z.object({
+              status: z.string(),
+              available: z.boolean(),
+              hot: z.boolean(),
+              modelSpec: z.any(),
+            }),
+          ),
+        ),
+      }),
     },
     listSpeechModels: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        models: z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        }))
-      })
+        models: z.record(
+          z.string(),
+          z.object({
+            status: z.string(),
+            available: z.boolean(),
+            hot: z.boolean(),
+            modelSpec: z.any(),
+          }),
+        ),
+      }),
     },
     listSpeechModelsByProvider: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        })))
-      })
+        modelsByProvider: z.record(
+          z.string(),
+          z.record(
+            z.string(),
+            z.object({
+              status: z.string(),
+              available: z.boolean(),
+              hot: z.boolean(),
+              modelSpec: z.any(),
+            }),
+          ),
+        ),
+      }),
     },
     listTranscriptionModels: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        models: z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        }))
-      })
+        models: z.record(
+          z.string(),
+          z.object({
+            status: z.string(),
+            available: z.boolean(),
+            hot: z.boolean(),
+            modelSpec: z.any(),
+          }),
+        ),
+      }),
     },
     listTranscriptionModelsByProvider: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        })))
-      })
+        modelsByProvider: z.record(
+          z.string(),
+          z.record(
+            z.string(),
+            z.object({
+              status: z.string(),
+              available: z.boolean(),
+              hot: z.boolean(),
+              modelSpec: z.any(),
+            }),
+          ),
+        ),
+      }),
     },
     listRerankingModels: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        models: z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        }))
-      })
+        models: z.record(
+          z.string(),
+          z.object({
+            status: z.string(),
+            available: z.boolean(),
+            hot: z.boolean(),
+            modelSpec: z.any(),
+          }),
+        ),
+      }),
     },
     listRerankingModelsByProvider: {
       type: "query",
       input: z.object({}),
       result: z.object({
-        modelsByProvider: z.record(z.string(),z.record(z.string(),z.object({
-          status: z.string(),
-          available: z.boolean(),
-          hot: z.boolean(),
-          modelSpec: z.any()
-        })))
-      })
-    }
-  }
+        modelsByProvider: z.record(
+          z.string(),
+          z.record(
+            z.string(),
+            z.object({
+              status: z.string(),
+              available: z.boolean(),
+              hot: z.boolean(),
+              modelSpec: z.any(),
+            }),
+          ),
+        ),
+      }),
+    },
+  },
 } satisfies RPCSchema;

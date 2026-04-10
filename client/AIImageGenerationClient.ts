@@ -1,4 +1,4 @@
-import Agent from "@tokenring-ai/agent/Agent";
+import type Agent from "@tokenring-ai/agent/Agent";
 import {MetricsService} from "@tokenring-ai/metrics";
 import {type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel,} from "ai";
 import {z} from "zod";
@@ -49,18 +49,22 @@ export type ImageModelSpec = ModelSpec & {
    * - Optional hook to adjust the request prior to sending.
    *   Receives the runtime feature flags as the second parameter.
    */
-  mangleRequest?: (
-    req: ImageRequest,
-    settings?: Record<string, any>,
-  ) => void;
+  mangleRequest?: (req: ImageRequest, settings?: Record<string, any>) => void;
 };
 
-export const ImageModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+export const ImageModelSpecSchema = createModelSpecSchema(
+  ModelInputCapabilitiesSchema,
+).extend({
   contextLength: z.number().optional(),
-  calculateImageCost: z.function({input: z.tuple([z.any(), z.any()]), output: z.number()}),
+  calculateImageCost: z.function({
+    input: z.tuple([z.any(), z.any()]),
+    output: z.number(),
+  }),
 });
 
-export function normalizeImageModelSpec(modelSpec: ImageModelSpec): ImageModelSpec {
+export function normalizeImageModelSpec(
+  modelSpec: ImageModelSpec,
+): ImageModelSpec {
   return ImageModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -71,7 +75,10 @@ export function normalizeImageModelSpec(modelSpec: ImageModelSpec): ImageModelSp
  * Client for generating images using the Vercel AI SDK's experimental image generation settings.
  */
 export default class AIImageGenerationClient {
-  constructor(private modelSpec: ImageModelSpec, private settings: ChatModelSettings) {
+  constructor(
+    private modelSpec: ImageModelSpec,
+    private settings: ChatModelSettings,
+  ) {
   }
 
   /**
@@ -119,8 +126,13 @@ export default class AIImageGenerationClient {
 
       const cost = this.modelSpec.calculateImageCost(request, result);
 
-      agent.getServiceByType(MetricsService)?.addCost(`Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost, agent);
-
+      agent
+        .getServiceByType(MetricsService)
+        ?.addCost(
+          `Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
+          cost,
+          agent,
+        );
 
       return [result.image, result];
     } catch (error) {

@@ -1,4 +1,4 @@
-import TokenRingApp from "@tokenring-ai/app";
+import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {abandon} from "@tokenring-ai/utility/promise/abandon";
 import {createOllama} from "ollama-ai-provider-v2";
@@ -6,10 +6,10 @@ import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
 import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
-import {AIModelProvider} from "../schema.ts";
+import type {AIModelProvider} from "../schema.ts";
 
 const OllamaModelProviderConfigSchema = z.object({
-  provider: z.literal('ollama'),
+  provider: z.literal("ollama"),
   baseURL: z.string(),
   generateModelSpec: z.function({
     input: z.tuple([z.any()]),
@@ -19,15 +19,17 @@ const OllamaModelProviderConfigSchema = z.object({
     }),
   }),
 });
-function defaultModelSpecGenerator(modelInfo: OllamaModelTagItem): ModelConfigResults {
-  let {model} = modelInfo;
+
+function defaultModelSpecGenerator(
+  modelInfo: OllamaModelTagItem,
+): ModelConfigResults {
+  const {model} = modelInfo;
   let type = "chat";
   if (model.match(/embed/i)) {
     type = "embedding";
   }
   return {type};
 }
-
 
 type ModelConfigResults = {
   type: string;
@@ -113,9 +115,12 @@ async function init(
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () =>
           capabilities.alwaysHot
-            ? Promise.resolve(true)
-            : getRunningModels().then((result) =>
-              !!result?.models?.find((row) => modelInfo.model === row.model),
+            ? true
+            : getRunningModels().then(
+              (result) =>
+                !!result?.models?.find(
+                  (row) => modelInfo.model === row.model,
+                ),
             ),
         ...capabilities,
       });
@@ -129,25 +134,28 @@ async function init(
         isAvailable: () => getModelList().then((data) => !!data),
         isHot: () =>
           capabilities.alwaysHot
-            ? Promise.resolve(true)
-            : getRunningModels().then((result) =>
-              !!result?.models?.find((row) => modelInfo.model === row.model),
+            ? true
+            : getRunningModels().then(
+              (result) =>
+                !!result?.models?.find(
+                  (row) => modelInfo.model === row.model,
+                ),
             ),
       });
     }
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
     chatModelRegistry.registerAllModelSpecs(chatModelSpecs);
   });
-  
-  app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
+
+  app.waitForService(EmbeddingModelRegistry, (embeddingModelRegistry) => {
     embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
   });
 }
 
 export default {
-  providerCode: 'ollama',
+  providerCode: "ollama",
   configSchema: OllamaModelProviderConfigSchema,
-  init
+  init,
 } satisfies AIModelProvider<typeof OllamaModelProviderConfigSchema>;
