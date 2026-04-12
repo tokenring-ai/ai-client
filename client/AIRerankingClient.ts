@@ -1,7 +1,7 @@
 import {rerank, type RerankingModel, type RerankResult} from "ai";
 import {z} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
-import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
+import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
 
 export type RerankingModelSpec = ModelSpec & {
   costPerMillionInputTokens?: number;

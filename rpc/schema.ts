@@ -103,6 +103,39 @@ export default {
         ),
       }),
     },
+    listVideoGenerationModels: {
+      type: "query",
+      input: z.object({}),
+      result: z.object({
+        models: z.record(
+          z.string(),
+          z.object({
+            status: z.string(),
+            available: z.boolean(),
+            hot: z.boolean(),
+            modelSpec: z.any(),
+          }),
+        ),
+      }),
+    },
+    listVideoGenerationModelsByProvider: {
+      type: "query",
+      input: z.object({}),
+      result: z.object({
+        modelsByProvider: z.record(
+          z.string(),
+          z.record(
+            z.string(),
+            z.object({
+              status: z.string(),
+              available: z.boolean(),
+              hot: z.boolean(),
+              modelSpec: z.any(),
+            }),
+          ),
+        ),
+      }),
+    },
     listSpeechModels: {
       type: "query",
       input: z.object({}),

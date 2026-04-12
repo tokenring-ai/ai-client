@@ -1,11 +1,11 @@
 import type {TokenRingService} from "@tokenring-ai/app/types";
-import AIChatClient, {type ChatModelSpec, normalizeChatModelSpec,} from "./client/AIChatClient.ts";
-import AIEmbeddingClient, {type EmbeddingModelSpec, normalizeEmbeddingModelSpec,} from "./client/AIEmbeddingClient.ts";
-import AIImageGenerationClient, {type ImageModelSpec, normalizeImageModelSpec,} from "./client/AIImageGenerationClient.ts";
-import AIRerankingClient, {normalizeRerankingModelSpec, type RerankingModelSpec,} from "./client/AIRerankingClient.ts";
-import AISpeechClient, {normalizeSpeechModelSpec, type SpeechModelSpec,} from "./client/AISpeechClient.ts";
-import AITranscriptionClient, {normalizeTranscriptionModelSpec, type TranscriptionModelSpec,} from "./client/AITranscriptionClient.ts";
-import AIVideoGenerationClient, {normalizeVideoModelSpec, type VideoModelSpec,} from "./client/AIVideoGenerationClient.ts";
+import AIChatClient, {type ChatModelSpec, normalizeChatModelSpec} from "./client/AIChatClient.ts";
+import AIEmbeddingClient, {type EmbeddingModelSpec, normalizeEmbeddingModelSpec} from "./client/AIEmbeddingClient.ts";
+import AIImageGenerationClient, {type ImageModelSpec, normalizeImageModelSpec} from "./client/AIImageGenerationClient.ts";
+import AIRerankingClient, {normalizeRerankingModelSpec, type RerankingModelSpec} from "./client/AIRerankingClient.ts";
+import AISpeechClient, {normalizeSpeechModelSpec, type SpeechModelSpec} from "./client/AISpeechClient.ts";
+import AITranscriptionClient, {normalizeTranscriptionModelSpec, type TranscriptionModelSpec} from "./client/AITranscriptionClient.ts";
+import AIVideoGenerationClient, {normalizeVideoModelSpec, type VideoModelSpec} from "./client/AIVideoGenerationClient.ts";
 import {ModelTypeRegistry} from "./ModelTypeRegistry.ts";
 
 export class ChatModelRegistry

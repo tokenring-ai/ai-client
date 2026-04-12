@@ -1,7 +1,7 @@
 import {createElevenLabs} from "@ai-sdk/elevenlabs";
 import type TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
-import {SpeechModelRegistry, TranscriptionModelRegistry,} from "../ModelRegistry.ts";
+import {SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
 import type {AIModelProvider} from "../schema.ts";
 
 const ElevenLabsModelProviderConfigSchema = z.object({

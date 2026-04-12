@@ -1,9 +1,9 @@
 import type Agent from "@tokenring-ai/agent/Agent";
 import {MetricsService} from "@tokenring-ai/metrics";
-import {type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel,} from "ai";
+import {type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel} from "ai";
 import {z} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
-import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
+import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
 
 export type ImageRequest = {
   prompt: string;

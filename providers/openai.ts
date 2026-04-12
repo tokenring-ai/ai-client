@@ -4,7 +4,7 @@ import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever"
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry,} from "../ModelRegistry.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
 import type {AIModelProvider} from "../schema.ts";
 
 const OpenAIModelProviderConfigSchema = z.object({

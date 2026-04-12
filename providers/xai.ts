@@ -3,7 +3,7 @@ import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry,} from "../ModelRegistry.ts";
+import {ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry} from "../ModelRegistry.ts";
 import type {AIModelProvider} from "../schema.ts";
 
 export const XAIModelProviderConfigSchema = z.object({

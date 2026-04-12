@@ -1,8 +1,8 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import {type DataContent, experimental_transcribe as transcribe, type TranscriptionModel,} from "ai";
+import {type DataContent, experimental_transcribe as transcribe, type TranscriptionModel} from "ai";
 import {z} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
-import {createModelSpecSchema, type ModelInputCapabilities, TranscriptionModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
+import {createModelSpecSchema, type ModelInputCapabilities, TranscriptionModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
 
 export interface TranscriptionResult {
   text: string;

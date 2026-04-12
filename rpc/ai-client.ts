@@ -6,7 +6,7 @@ import {
   ImageGenerationModelRegistry,
   RerankingModelRegistry,
   SpeechModelRegistry,
-  TranscriptionModelRegistry,
+  TranscriptionModelRegistry, VideoGenerationModelRegistry,
 } from "../ModelRegistry.ts";
 import AIClientRpcSchema from "./schema.ts";
 
@@ -43,6 +43,18 @@ export default createRPCEndpoint(AIClientRpcSchema, {
 
   async listImageGenerationModelsByProvider(_args, app: TokenRingApp) {
     const registry = app.requireService(ImageGenerationModelRegistry);
+    const modelsByProvider = await registry.getModelsByProvider();
+    return {modelsByProvider};
+  },
+
+  async listVideoGenerationModels(_args, app: TokenRingApp) {
+    const registry = app.requireService(VideoGenerationModelRegistry);
+    const models = await registry.getAllModelsWithOnlineStatus();
+    return {models};
+  },
+
+  async listVideoGenerationModelsByProvider(_args, app: TokenRingApp) {
+    const registry = app.requireService(VideoGenerationModelRegistry);
     const modelsByProvider = await registry.getModelsByProvider();
     return {modelsByProvider};
   },

@@ -1,6 +1,4 @@
-import type Agent from "@tokenring-ai/agent/Agent";
 import type {ChatModelSettings} from "@tokenring-ai/ai-client/ModelTypeRegistry";
-import type {ChatService} from "@tokenring-ai/chat";
 
 export function parseModelAndSettings(model: string): {
   base: string;
@@ -50,9 +48,4 @@ export function serializeModel(
     )
     .join("&");
   return `${base}?${query}`;
-}
-
-export function getModelAndSettings(chatService: ChatService, agent: Agent) {
-  const currentModel = chatService.requireModel(agent);
-  return {currentModel, ...parseModelAndSettings(currentModel)};
 }

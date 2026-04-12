@@ -1,5 +1,6 @@
-import type {LanguageModelV2Usage, LanguageModelV3Source, SharedV3Warning,} from "@ai-sdk/provider";
+import type {LanguageModelV2Usage, LanguageModelV3Source, SharedV3Warning} from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
+import {BaseAttachmentSchema} from "@tokenring-ai/agent/AgentEvents";
 import {MetricsService} from "@tokenring-ai/metrics";
 
 import {
@@ -18,7 +19,7 @@ import {
 } from "ai";
 import {z, type ZodObject} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
-import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema,} from "./modelCapabilities.ts";
+import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
 
 export type ChatInputMessage =
   | SystemModelMessage
@@ -305,12 +306,17 @@ export default class AIChatClient {
         switch (part.type) {
           case "file":
             flushBuffer(true);
-            agent.artifactOutput({
-              name: "Generated File",
-              encoding: "base64",
-              mimeType: part.file.mediaType,
-              body: part.file.base64,
-            });
+            const mimeType = BaseAttachmentSchema.shape.mimeType.parse(part.file.mediaType);
+            try {
+              agent.artifactOutput({
+                name: "Generated File",
+                encoding: "base64",
+                mimeType,
+                body: part.file.base64,
+              });
+            } catch (err) {
+              agent.errorMessage(`The LLM generate a file with ${mimeType} output type, which is unsupported, and has been dropped`)
+            }
             break;
           case "text-end":
           case "reasoning-end": {
