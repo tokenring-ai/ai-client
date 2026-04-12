@@ -304,7 +304,7 @@ export default class AIChatClient {
     try {
       for await (const part of stream) {
         switch (part.type) {
-          case "file":
+          case "file": {
             flushBuffer(true);
             const mimeType = BaseAttachmentSchema.shape.mimeType.parse(part.file.mediaType);
             try {
@@ -314,10 +314,10 @@ export default class AIChatClient {
                 mimeType,
                 body: part.file.base64,
               });
-            } catch (err) {
+            } catch {
               agent.errorMessage(`The LLM generate a file with ${mimeType} output type, which is unsupported, and has been dropped`)
             }
-            break;
+          } break;
           case "text-end":
           case "reasoning-end": {
             flushBuffer(true);
