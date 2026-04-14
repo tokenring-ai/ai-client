@@ -124,7 +124,7 @@ export default class AIVideoGenerationClient {
         );
 
       return [result.video, result];
-    } catch (error) {
+    } catch (error: unknown) {
       agent.errorMessage("Error generating video: ", error as Error);
       throw error;
     }

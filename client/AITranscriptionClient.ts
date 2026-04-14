@@ -85,7 +85,7 @@ export default class AITranscriptionClient {
       });
 
       return [result.text, result];
-    } catch (error) {
+    } catch (error: unknown) {
       agent.errorMessage("Error transcribing audio: ", error as Error);
       throw error;
     }

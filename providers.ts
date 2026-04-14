@@ -49,11 +49,11 @@ export async function registerProviders(
           providerConfig.provider in providers,
       )
       .map(([providerDisplayName, providerConfig]) =>
-        providers[providerConfig.provider].init(
+        Promise.resolve(providers[providerConfig.provider].init(
           providerDisplayName,
           {...providerConfig} as any,
           app,
-        ),
+        )),
       ),
   );
 }

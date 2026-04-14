@@ -47,7 +47,7 @@ interface ModelData {
     max_completion_tokens: number | null;
     is_moderated: boolean;
   };
-  per_request_limits: any | null; // You may want to define a more specific type based on your use case
+  //per_request_limits: any | null; // You may want to define a more specific type based on your use case
   supported_parameters: string[];
 }
 

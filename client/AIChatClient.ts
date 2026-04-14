@@ -2,6 +2,7 @@ import type {LanguageModelV2Usage, LanguageModelV3Source, SharedV3Warning} from 
 import type Agent from "@tokenring-ai/agent/Agent";
 import {BaseAttachmentSchema} from "@tokenring-ai/agent/AgentEvents";
 import {MetricsService} from "@tokenring-ai/metrics";
+import omit from "@tokenring-ai/utility/object/omit";
 
 import {
   type AssistantModelMessage,
@@ -280,10 +281,16 @@ export default class AIChatClient {
 
     let chunkType: "chat" | "reasoning" | null = null;
     let chunkText = "";
+    let chunkEmpty = true;
 
     // Function to flush buffers
     const flushBuffer = (finalMessage: true | undefined) => {
+      if (chunkEmpty) {
+        chunkText = chunkText.trimStart();
+      }
+
       if (chunkType && chunkText) {
+        chunkEmpty = false;
         if (chunkType === "chat") {
           agent.chatOutput(chunkText);
         } else {
@@ -294,6 +301,7 @@ export default class AIChatClient {
 
       if (finalMessage) {
         chunkType = null;
+        chunkEmpty = true;
         chunkText = "";
       }
     };
@@ -433,7 +441,7 @@ export default class AIChatClient {
       this.modelSpec.mangleRequest(request, this.settings);
     }
 
-    const {schema, ...generateRequest} = request;
+    const generateRequest = omit(request, ["schema"]);
 
     const signal = agent.getAbortSignal();
 

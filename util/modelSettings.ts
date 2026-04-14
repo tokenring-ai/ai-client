@@ -20,7 +20,7 @@ export function parseModelAndSettings(model: string): {
   return {base, settings};
 }
 
-export function coerceFeatureValue(v: string): any {
+export function coerceFeatureValue(v: string): true | false | number | string {
   const lower = v.toLowerCase?.();
   if (v === "1" || lower === "true") return true;
   if (v === "0" || lower === "false") return false;

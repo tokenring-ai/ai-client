@@ -74,7 +74,7 @@ export default class AISpeechClient {
       });
 
       return [result.audio.uint8Array, result];
-    } catch (error) {
+    } catch (error: unknown) {
       agent.errorMessage("Error generating speech: ", error as Error);
       throw error;
     }

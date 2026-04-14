@@ -1,6 +1,8 @@
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import type {PrimitiveType} from "@tokenring-ai/utility/types";
 import type {MaybePromise} from "bun";
+
+import {setTimeout as delay} from "node:timers/promises";
 import {parseModelAndSettings} from "./util/modelSettings.ts";
 
 export type SettingDefinition = {
@@ -31,7 +33,7 @@ export type SettingDefinition = {
 }
   );
 
-export type ChatModelSettings = Map<string, PrimitiveType | PrimitiveType[]>;
+export type ChatModelSettings = Map<string, PrimitiveType>;
 
 export type ModelSpec = {
   modelId: string;
@@ -71,8 +73,16 @@ export class ModelTypeRegistry<
    * Creates a new ModelTypeRegistry instance
    */
   constructor(
-    private AIClient: new (modelSpec: T, settings: ChatModelSettings) => C,
+    private readonly AIClient: new (modelSpec: T, settings: ChatModelSettings) => C,
   ) {
+  }
+
+  // noinspection JSUnusedGlobalSymbols
+  async run(signal: AbortSignal) {
+    do {
+      await this.getAllModelsWithOnlineStatus();
+      await delay(30000, null, {signal});
+    } while (!signal.aborted);
   }
 
   /**
@@ -85,23 +95,6 @@ export class ModelTypeRegistry<
         modelSpec,
       );
     }
-
-    // Check model availability in the background
-    this.checkModelsAvailabilityInBackground();
-  }
-
-  /**
-   * Checks the availability of all registered chatModels in the background
-   * This helps to pre-warm the cache for isAvailable checks
-   */
-  checkModelsAvailabilityInBackground(): void {
-    setTimeout(async () => {
-      try {
-        await this.getAllModelsWithOnlineStatus();
-      } catch (_error) {
-        /* empty */
-      }
-    }, 0).unref();
   }
 
   /**

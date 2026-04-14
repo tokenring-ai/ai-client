@@ -14,13 +14,14 @@ The AI Client package acts as a unified interface to multiple AI providers, abst
 - **Seven Model Registry Classes**: Dedicated registries for managing model specifications and capabilities (ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry, EmbeddingModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry, and RerankingModelRegistry)
 - **Dynamic Model Registration**: Register custom models with availability checks and background discovery
 - **Model Status Tracking**: Monitor model online, cold, and offline status with automatic availability checking
-- **Auto-Configuration**: Automatic provider setup from environment variables with fallback to manual configuration
-- **JSON-RPC API**: Remote procedure call endpoints for programmatic access via plugin registration
+- **Auto-Configuration**: Automatic provider setup from environment variables with fallback to manual configuration (defaults to `autoConfigure: true`)
+- **JSON-RPC API**: Remote procedure call endpoints for programmatic access via plugin registration at `/rpc/ai-client`
 - **Streaming Support**: Real-time streaming responses with delta handling for text and reasoning output
-- **Agent Integration**: Seamless integration with Token Ring agent system through services with cost tracking
+- **Agent Integration**: Seamless integration with Token Ring agent system through services with automatic cost tracking
 - **Feature System**: Rich feature specification system supporting boolean, number, string, enum, and array types with validation
 - **Cost Tracking**: Automatic cost calculation and metrics integration with detailed cost breakdowns
-- **Model Querying**: Query models by name pattern with optional feature settings and wildcard support
+- **Model Querying**: Query models by name pattern with optional feature settings and wildcard support (e.g., `openai:*` for all OpenAI models)
+- **Vercel AI SDK Integration**: Built on the Vercel AI SDK for consistent provider interfaces and streaming support
 
 ## Installation
 
@@ -400,7 +401,9 @@ Manages chat model specifications and provides access to chat completion capabil
 - `getClient(name)`: Get a client instance matching the model name (supports query parameters for features)
 - `getCheapestModelByRequirements(nameLike, estimatedContextLength)`: Find the cheapest model matching a name pattern
 
-**Note**: The `getModelSpecsByRequirements` method accepts a name pattern string (e.g., `"openai:gpt-5"` or `"openai:*"`) to filter models by name. The method returns all models matching the pattern that also support the features specified in the query string (e.g., `"openai:gpt-5?websearch=1"`).
+**Note**: The `getModelSpecsByRequirements` method accepts a name pattern string (e.g., `"openai:gpt-5"` or `"openai:*"`) to filter models by name.
+The method returns all models matching the pattern that also support the features specified in the query string
+(e.g., `"openai:gpt-5?websearch=1"`).
 
 **Model Specification:**
 
@@ -1162,7 +1165,7 @@ The AI Client exposes JSON-RPC endpoints for programmatic access via the RPC ser
         status: "online" | "cold" | "offline",
         available: boolean,
         hot: boolean,
-        modelSpec: ModelSpec
+        modelSpec: T  // ModelSpec type varies by registry
       }
     }
   }
@@ -1426,39 +1429,45 @@ bun run test:coverage
 
 ### Runtime Dependencies
 
-- `@tokenring-ai/app`: Base application framework with service and plugin system
-- `@tokenring-ai/agent`: Agent framework for tool execution
-- `@tokenring-ai/rpc`: RPC service for programmatic access
-- `@tokenring-ai/utility`: Shared utilities and registry functionality
-- `@tokenring-ai/metrics`: Metrics service for cost tracking
-- `ai`: Vercel AI SDK for streaming and client functionality
-- `zod`: Runtime schema validation
-- `axios`: HTTP client for API requests
+```json
+{
+  "@tokenring-ai/app": "0.2.0",
+  "@tokenring-ai/agent": "0.2.0",
+  "@tokenring-ai/rpc": "0.2.0",
+  "@tokenring-ai/utility": "0.2.0",
+  "@tokenring-ai/metrics": "0.2.0",
+  "ai": "^6.0.149",
+  "zod": "^4.3.6"
+}
+```
 
 ### AI SDK Dependencies
 
-- `@ai-sdk/anthropic`: Anthropic AI SDK for Claude models
-- `@ai-sdk/azure`: Azure OpenAI SDK for Azure hosting
-- `@ai-sdk/cerebras`: Cerebras AI SDK for LLaMA models
-- `@ai-sdk/deepseek`: DeepSeek AI SDK for DeepSeek models
-- `@ai-sdk/elevenlabs`: ElevenLabs SDK for speech synthesis and transcription
-- `@ai-sdk/fal`: Fal AI SDK for image generation
-- `@ai-sdk/google`: Google Generative AI SDK for Gemini and Imagen models
-- `@ai-sdk/groq`: Groq AI SDK for fast LLaMA inference
-- `@ai-sdk/openai`: OpenAI AI SDK for GPT, Whisper, TTS, and image models
-- `@ai-sdk/openai-compatible`: OpenAI-compatible API SDK for generic providers
-- `@ai-sdk/open-responses`: OpenAI Responses API SDK
-- `@ai-sdk/provider`: AI SDK provider types
-- `@ai-sdk/perplexity`: Perplexity AI SDK for Perplexity models
-- `@ai-sdk/xai`: xAI SDK for Grok models
-- `@openrouter/ai-sdk-provider`: OpenRouter SDK for provider aggregation
-- `ollama-ai-provider-v2`: Ollama SDK for local model hosting
+```json
+{
+  "@ai-sdk/anthropic": "^3.0.67",
+  "@ai-sdk/azure": "^3.0.52",
+  "@ai-sdk/cerebras": "^2.0.44",
+  "@ai-sdk/deepseek": "^2.0.28",
+  "@ai-sdk/elevenlabs": "^2.0.28",
+  "@ai-sdk/fal": "^2.0.29",
+  "@ai-sdk/google": "^3.0.59",
+  "@ai-sdk/groq": "^3.0.34",
+  "@ai-sdk/openai": "^3.0.51",
+  "@ai-sdk/openai-compatible": "^2.0.40",
+  "@ai-sdk/open-responses": "^1.0.10",
+  "@ai-sdk/provider": "^3.0.8",
+  "@ai-sdk/perplexity": "^3.0.28",
+  "@ai-sdk/xai": "^3.0.79",
+  "@openrouter/ai-sdk-provider": "^2.4.3",
+  "ollama-ai-provider-v2": "^3.5.0"
+}
+```
 
 ### Development Dependencies
 
-- `@vitest/coverage-v8`: Code coverage
-- `typescript`: TypeScript compiler
-- `vitest`: Unit testing framework
+- `typescript`: ^6.0.2
+- `vitest`: ^4.1.1
 
 ## Development
 

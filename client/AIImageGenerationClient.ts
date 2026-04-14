@@ -135,7 +135,7 @@ export default class AIImageGenerationClient {
         );
 
       return [result.image, result];
-    } catch (error) {
+    } catch (error: unknown) {
       agent.errorMessage("Error generating image: ", error as Error);
       throw error;
     }

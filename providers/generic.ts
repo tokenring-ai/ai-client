@@ -52,7 +52,7 @@ interface UnderlyingProvider {
     propsResponse: PropsResponse | null,
   ): Record<string, SettingDefinition>;
 
-  mangleRequest(req: any, settings: Map<string, unknown>): void;
+  mangleRequest: (req: any, settings: Map<string, unknown>) => void;
 
   inputCapabilities?: { image?: boolean; file?: boolean };
 }
@@ -711,7 +711,7 @@ async function init(
     while (!signal.aborted) {
       try {
         await checkForNewModels();
-      } catch (err) {
+      } catch (err: unknown) {
         app.serviceError(
           modelRegistry,
           `Error while checking for new models: `,
