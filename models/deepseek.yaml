@@ -1,0 +1,13 @@
+models:
+  deepseek:
+    chat:
+      deepseek-chat:
+        costPerMillionInputTokens: 0.28
+        costPerMillionCachedInputTokens: 0.028
+        costPerMillionOutputTokens: 0.42
+        maxContextLength: 128000
+      deepseek-reasoner:
+        costPerMillionInputTokens: 0.28
+        costPerMillionCachedInputTokens: 0.028
+        costPerMillionOutputTokens: 0.42
+        maxContextLength: 128000

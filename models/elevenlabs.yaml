@@ -1,0 +1,32 @@
+models:
+  elevenlabs:
+    speech:
+      eleven_v3:
+        costPerMillionCharacters: 100
+        supportsLanguageCode: true
+      eleven_multilingual_v2:
+        costPerMillionCharacters: 60
+        supportsLanguageCode: true
+      eleven_flash_v2_5:
+        costPerMillionCharacters: 30
+        supportsLanguageCode: true
+      eleven_flash_v2:
+        costPerMillionCharacters: 30
+        supportsLanguageCode: true
+      eleven_turbo_v2_5:
+        costPerMillionCharacters: 45
+        supportsLanguageCode: true
+      eleven_turbo_v2:
+        costPerMillionCharacters: 45
+        supportsLanguageCode: true
+      eleven_monolingual_v1:
+        costPerMillionCharacters: 50
+        supportsLanguageCode: false
+      eleven_multilingual_v1:
+        costPerMillionCharacters: 50
+        supportsLanguageCode: true
+    transcription:
+      scribe_v1:
+        costPerMinute: 0.034
+      scribe_v1_experimental:
+        costPerMinute: 0.034

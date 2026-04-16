@@ -4,7 +4,20 @@ import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever"
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import modelConfigs from "../models/cerebras.yaml" with {type: "yaml"};
 import type {AIModelProvider} from "../schema.ts";
+
+const ChatModelSchema = z.object({
+  costPerMillionInputTokens: z.number(),
+  costPerMillionOutputTokens: z.number(),
+  maxContextLength: z.number(),
+});
+
+const CerebrasSchema = z.object({
+  chat: z.record(z.string(), ChatModelSchema),
+});
+
+const parsedModelConfigs = CerebrasSchema.parse(modelConfigs.models.cerebras);
 
 const CerebrasModelProviderConfigSchema = z.object({
   provider: z.literal("cerebras"),
@@ -62,29 +75,11 @@ function init(
   }
 
   app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
-    chatModelRegistry.registerAllModelSpecs([
-      generateModelSpec("llama3.1-8b", {
-        costPerMillionInputTokens: 0.1,
-        costPerMillionOutputTokens: 0.1,
-        maxContextLength: 32000,
-      }),
-      generateModelSpec("qwen-3-235b-a22b-instruct-2507", {
-        costPerMillionInputTokens: 0.6,
-        costPerMillionOutputTokens: 1.2,
-        maxContextLength: 131000,
-      }),
-
-      generateModelSpec("zai-glm-4.7", {
-        costPerMillionInputTokens: 2.25,
-        costPerMillionOutputTokens: 2.75,
-        maxContextLength: 131000,
-      }),
-      generateModelSpec("gpt-oss-120b", {
-        costPerMillionInputTokens: 0.35,
-        costPerMillionOutputTokens: 0.75,
-        maxContextLength: 131000,
-      }),
-    ]);
+    chatModelRegistry.registerAllModelSpecs(
+      Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
+        generateModelSpec(modelId, config),
+      ),
+    );
   });
 }
 

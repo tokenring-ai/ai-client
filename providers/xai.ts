@@ -4,7 +4,31 @@ import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever"
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry} from "../ModelRegistry.ts";
+import modelConfigs from "../models/xai.yaml" with {type: "yaml"};
 import type {AIModelProvider} from "../schema.ts";
+
+const ChatModelSchema = z.object({
+  costPerMillionInputTokens: z.number(),
+  costPerMillionOutputTokens: z.number(),
+  costPerMillionCachedInputTokens: z.number().optional(),
+  maxContextLength: z.number(),
+});
+
+const ImageGenerationModelSchema = z.object({
+  costPerImage: z.number(),
+});
+
+const VideoGenerationModelSchema = z.object({
+  costPerSecond: z.number(),
+});
+
+const XAISchema = z.object({
+  chat: z.record(z.string(), ChatModelSchema),
+  imageGeneration: z.record(z.string(), ImageGenerationModelSchema),
+  videoGeneration: z.record(z.string(), VideoGenerationModelSchema),
+});
+
+const parsedModelConfigs = XAISchema.parse(modelConfigs.models.xai);
 
 export const XAIModelProviderConfigSchema = z.object({
   provider: z.literal("xai"),
@@ -129,127 +153,50 @@ export function init(
     };
   }
 
-  /**
-   * A collection of xAI chat model specifications.
-   * Each key is a model ID, and the value is a `ChatModelSpec` object.
-   * Assumes `ChatModelSpec` typedef is defined elsewhere (e.g., in AIChatClient.ts).
-   */
   app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
-    chatModelRegistry.registerAllModelSpecs([
-      generateModelSpec("grok-code-fast-1", {
-        costPerMillionInputTokens: 0.2,
-        costPerMillionCachedInputTokens: 0.02,
-        costPerMillionOutputTokens: 1.5,
-        maxContextLength: 256000,
-      }),
-      generateModelSpec("grok-4-1-fast-reasoning", {
-        costPerMillionInputTokens: 0.2,
-        costPerMillionCachedInputTokens: 0.05,
-        costPerMillionOutputTokens: 0.5,
-        maxContextLength: 2000000,
-      }),
-      generateModelSpec("grok-4-1-fast-non-reasoning", {
-        costPerMillionInputTokens: 0.2,
-        costPerMillionCachedInputTokens: 0.05,
-        costPerMillionOutputTokens: 0.5,
-        maxContextLength: 2000000,
-      }),
-      generateModelSpec("grok-4.20-0309-reasoning", {
-        costPerMillionInputTokens: 2.0,
-        costPerMillionOutputTokens: 6.0,
-        maxContextLength: 2000000,
-      }),
-      generateModelSpec("grok-4.20-0309-non-reasoning", {
-        costPerMillionInputTokens: 2.0,
-        costPerMillionOutputTokens: 6.0,
-        maxContextLength: 2000000,
-      }),
-      generateModelSpec("grok-4.20-multi-agent-0309", {
-        costPerMillionInputTokens: 2.0,
-        costPerMillionOutputTokens: 6.0,
-        maxContextLength: 2000000,
-      }),
-    ]);
+    chatModelRegistry.registerAllModelSpecs(
+      Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
+        generateModelSpec(modelId, config),
+      ),
+    );
   });
 
-  /**
-   * A collection of xAI image generation model specifications.
-   * Each key is a model ID, and the value is an `ImageModelSpec` object.
-   */
   app.waitForService(
     ImageGenerationModelRegistry,
     (imageGenerationModelRegistry) => {
-      imageGenerationModelRegistry.registerAllModelSpecs([
-        {
-          modelId: "grok-imagine-image-pro",
-          providerDisplayName: providerDisplayName,
-          impl: xai.imageModel("grok-imagine-image-pro"),
+      imageGenerationModelRegistry.registerAllModelSpecs(
+        Object.entries(parsedModelConfigs.imageGeneration).map(([modelId, config]) => ({
+          modelId,
+          providerDisplayName,
+          impl: xai.imageModel(modelId),
           async isAvailable() {
             const modelList = await getModels();
-            return !!modelList?.data.some(
-              (model) => model.id === "grok-imagine-image-pro",
-            );
+            return !!modelList?.data.some((model) => model.id === modelId);
           },
           calculateImageCost() {
-            return 0.07;
+            return config.costPerImage;
           },
-        },
-        {
-          modelId: "grok-imagine-image",
-          providerDisplayName: providerDisplayName,
-          impl: xai.imageModel("grok-imagine-image"),
-          async isAvailable() {
-            const modelList = await getModels();
-            return !!modelList?.data.some(
-              (model) => model.id === "grok-imagine-image",
-            );
-          },
-          calculateImageCost() {
-            return 0.02;
-          },
-        },
-        {
-          modelId: "grok-2-image-1212",
-          providerDisplayName: providerDisplayName,
-          impl: xai.imageModel("grok-2-image-1212"),
-          async isAvailable() {
-            const modelList = await getModels();
-            return !!modelList?.data.some(
-              (model) => model.id === "grok-2-image-1212",
-            );
-          },
-          calculateImageCost(_req, _result) {
-            return 0.07;
-          },
-        },
-      ]);
+        })),
+      );
 
-      /**
-       * A collection of xAI video generation model specifications.
-       * Each key is a model ID, and the value is an `VideoModelSpec` object.
-       */
       app.waitForService(
         VideoGenerationModelRegistry,
         (videoGenerationModelRegistry) => {
-          videoGenerationModelRegistry.registerAllModelSpecs([
-            {
-              modelId: "grok-imagine-video",
-              providerDisplayName: providerDisplayName,
-              impl: xai.videoModel("grok-imagine-video"),
-              inputCapabilities: {
-                image: true,
-              },
+          videoGenerationModelRegistry.registerAllModelSpecs(
+            Object.entries(parsedModelConfigs.videoGeneration).map(([modelId, config]) => ({
+              modelId,
+              providerDisplayName,
+              impl: xai.videoModel(modelId),
+              inputCapabilities: {image: true},
               async isAvailable() {
                 const modelList = await getModels();
-                return !!modelList?.data.some(
-                  (model) => model.id === "grok-imagine-video",
-                );
+                return !!modelList?.data.some((model) => model.id === modelId);
               },
-              calculateVideoCost(request) {
-                return request.duration ? request.duration * 0.05 : NaN;
+              calculateVideoCost(request: { duration?: number }) {
+                return request.duration ? request.duration * config.costPerSecond : NaN;
               },
-            },
-          ]);
+            })),
+          );
         },
       );
     },

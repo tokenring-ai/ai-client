@@ -1,0 +1,48 @@
+models:
+  anthropic:
+    chat:
+      claude-4.7-opus:
+        providerModelId: claude-opus-4-7
+        costPerMillionInputTokens: 5
+        costPerMillionOutputTokens: 25
+        maxContextLength: 1000000
+      claude-4.6-opus:
+        providerModelId: claude-opus-4-6
+        costPerMillionInputTokens: 5
+        costPerMillionOutputTokens: 25
+        maxContextLength: 1000000
+      claude-4.5-opus:
+        providerModelId: claude-opus-4-5-20251101
+        costPerMillionInputTokens: 5
+        costPerMillionOutputTokens: 25
+        maxContextLength: 200000
+      claude-4.5-haiku:
+        providerModelId: claude-haiku-4-5-20251001
+        costPerMillionInputTokens: 1
+        costPerMillionOutputTokens: 5.0
+        maxContextLength: 200000
+      claude-4.1-opus:
+        providerModelId: claude-opus-4-1-20250805
+        costPerMillionInputTokens: 15
+        costPerMillionOutputTokens: 75
+        maxContextLength: 200000
+      claude-4.6-sonnet-long-context:
+        providerModelId: claude-sonnet-4-6
+        costPerMillionInputTokens: 6.0
+        costPerMillionOutputTokens: 22.5
+        maxContextLength: 1000000
+      claude-4.6-sonnet:
+        providerModelId: claude-sonnet-4-6
+        costPerMillionInputTokens: 3.0
+        costPerMillionOutputTokens: 15.0
+        maxContextLength: 200000
+      claude-4.5-sonnet-long-context:
+        providerModelId: claude-sonnet-4-5-20250929
+        costPerMillionInputTokens: 6.0
+        costPerMillionOutputTokens: 22.5
+        maxContextLength: 1000000
+      claude-4.5-sonnet:
+        providerModelId: claude-sonnet-4-5-20250929
+        costPerMillionInputTokens: 3.0
+        costPerMillionOutputTokens: 15.0
+        maxContextLength: 200000

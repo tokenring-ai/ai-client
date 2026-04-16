@@ -1,0 +1,9 @@
+models:
+  fal:
+    imageGeneration:
+      fal-ai/qwen-image:
+        costPerMegapixel: 0.02
+      fal-ai/flux-pro/v1.1-ultra:
+        costPerMegapixel: 0.06
+      fal-ai/flux-pro/v1.1:
+        costPerMegapixel: 0.04

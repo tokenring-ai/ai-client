@@ -1,0 +1,323 @@
+models:
+  openai:
+    chat:
+      gpt-4.1:
+        costPerMillionInputTokens: 2.0
+        costPerMillionOutputTokens: 8.0
+        costPerMillionCachedInputTokens: 0.5
+        maxContextLength: 1000000
+        features:
+         - websearch
+      gpt-4.1-mini:
+        costPerMillionInputTokens: 0.4
+        costPerMillionOutputTokens: 1.6
+        costPerMillionCachedInputTokens: 0.1
+        maxContextLength: 1000000
+        features:
+         - websearch
+      gpt-4.1-nano:
+        costPerMillionInputTokens: 0.1
+        costPerMillionOutputTokens: 0.4
+        costPerMillionCachedInputTokens: 0.025
+        maxContextLength: 1000000
+        features:
+         - websearch
+      gpt-5:
+        costPerMillionInputTokens: 1.25
+        costPerMillionCachedInputTokens: 0.125
+        costPerMillionOutputTokens: 10
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5.1:
+        costPerMillionInputTokens: 1.25
+        costPerMillionCachedInputTokens: 0.125
+        costPerMillionOutputTokens: 10
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5.2:
+        costPerMillionInputTokens: 1.75
+        costPerMillionCachedInputTokens: 0.175
+        costPerMillionOutputTokens: 14
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5.4:
+        costPerMillionInputTokens: 2.5
+        costPerMillionCachedInputTokens: 0.25
+        costPerMillionOutputTokens: 15.0
+        maxContextLength: 272000
+        features:
+         - websearch
+      gpt-5.4-mini:
+        costPerMillionInputTokens: 0.75
+        costPerMillionOutputTokens: 4.5
+        costPerMillionCachedInputTokens: 0.075
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5.4-nano:
+        costPerMillionInputTokens: 0.2
+        costPerMillionOutputTokens: 1.25
+        costPerMillionCachedInputTokens: 0.02
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5.4-long-context:
+        providerModelId: "gpt-5.4"
+        costPerMillionInputTokens: 5.0
+        costPerMillionCachedInputTokens: 0.5
+        costPerMillionOutputTokens: 22.5
+        maxContextLength: 1000000
+        features:
+         - websearch
+      gpt-5.4-pro:
+        costPerMillionInputTokens: 30.0
+        costPerMillionOutputTokens: 180.0
+        maxContextLength: 272000
+        features:
+         - websearch
+      gpt-5.4-pro-long-context:
+        providerModelId: "gpt-5.4-pro"
+        costPerMillionInputTokens: 60.0
+        costPerMillionOutputTokens: 270.0
+        maxContextLength: 1000000
+        features:
+         - websearch
+      gpt-5-codex:
+        costPerMillionInputTokens: 1.25
+        costPerMillionCachedInputTokens: 0.125
+        costPerMillionOutputTokens: 10
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5.1-codex:
+        costPerMillionInputTokens: 1.25
+        costPerMillionCachedInputTokens: 0.125
+        costPerMillionOutputTokens: 10
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5-mini:
+        costPerMillionInputTokens: 0.25
+        costPerMillionOutputTokens: 2
+        costPerMillionCachedInputTokens: 0.025
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5-nano:
+        costPerMillionInputTokens: 0.05
+        costPerMillionOutputTokens: 0.4
+        costPerMillionCachedInputTokens: 0.005
+        maxContextLength: 400000
+        features:
+         - websearch
+      o4-mini:
+        costPerMillionInputTokens: 1.1
+        costPerMillionOutputTokens: 4.4
+        costPerMillionCachedInputTokens: 0.275
+        maxContextLength: 200000
+        features:
+         - websearch
+      o3:
+        costPerMillionInputTokens: 2.0
+        costPerMillionOutputTokens: 8.0
+        costPerMillionCachedInputTokens: 0.5
+        maxContextLength: 200000
+        features:
+         - websearch
+      o3-mini:
+        costPerMillionInputTokens: 1.1
+        costPerMillionOutputTokens: 4.4
+        costPerMillionCachedInputTokens: 0.55
+        maxContextLength: 200000
+        features:
+         - websearch
+      o3-pro:
+        costPerMillionInputTokens: 20.0
+        costPerMillionOutputTokens: 80.0
+        maxContextLength: 200000
+        features:
+         - websearch
+      o3-deep-research:
+        costPerMillionInputTokens: 10.0
+        costPerMillionOutputTokens: 40.0
+        costPerMillionCachedInputTokens: 2.5
+        maxContextLength: 200000
+        features:
+         - websearch
+      o4-mini-deep-research:
+        costPerMillionInputTokens: 2.0
+        costPerMillionOutputTokens: 8.0
+        costPerMillionCachedInputTokens: 0.5
+        maxContextLength: 200000
+        features:
+         - websearch
+      o1:
+        costPerMillionInputTokens: 15.0
+        costPerMillionOutputTokens: 60.0
+        costPerMillionCachedInputTokens: 7.5
+        maxContextLength: 200000
+        features:
+         - websearch
+      o1-pro:
+        costPerMillionInputTokens: 150.0
+        costPerMillionOutputTokens: 600.0
+        maxContextLength: 200000
+        features:
+         - websearch
+      gpt-5-pro:
+        costPerMillionInputTokens: 15.0
+        costPerMillionOutputTokens: 120.0
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5-chat-latest:
+        costPerMillionInputTokens: 1.25
+        costPerMillionCachedInputTokens: 0.125
+        costPerMillionOutputTokens: 10
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5.1-chat-latest:
+        costPerMillionInputTokens: 1.25
+        costPerMillionCachedInputTokens: 0.125
+        costPerMillionOutputTokens: 10
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5.1-codex-mini:
+        costPerMillionInputTokens: 0.25
+        costPerMillionOutputTokens: 2
+        costPerMillionCachedInputTokens: 0.025
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-5-search-api:
+        costPerMillionInputTokens: 1.25
+        costPerMillionCachedInputTokens: 0.125
+        costPerMillionOutputTokens: 10
+        maxContextLength: 400000
+        features:
+         - websearch
+      gpt-4o:
+        costPerMillionInputTokens: 2.5
+        costPerMillionOutputTokens: 10
+        costPerMillionCachedInputTokens: 1.25
+        maxContextLength: 128000
+      gpt-4o-2024-05-13:
+        costPerMillionInputTokens: 5.0
+        costPerMillionOutputTokens: 15.0
+        maxContextLength: 128000
+      gpt-4o-mini:
+        costPerMillionInputTokens: 0.15
+        costPerMillionOutputTokens: 0.6
+        costPerMillionCachedInputTokens: 0.075
+        maxContextLength: 128000
+      gpt-4o-mini-search-preview:
+        costPerMillionInputTokens: 0.15
+        costPerMillionOutputTokens: 0.6
+        maxContextLength: 128000
+        features:
+         - websearch
+      gpt-4o-search-preview:
+        costPerMillionInputTokens: 2.5
+        costPerMillionOutputTokens: 10
+        maxContextLength: 128000
+        features:
+         - websearch
+      gpt-realtime:
+        costPerMillionInputTokens: 4.0
+        costPerMillionOutputTokens: 16.0
+        costPerMillionCachedInputTokens: 0.4
+        maxContextLength: 128000
+      gpt-realtime-mini:
+        costPerMillionInputTokens: 0.6
+        costPerMillionOutputTokens: 2.4
+        costPerMillionCachedInputTokens: 0.06
+        maxContextLength: 128000
+      gpt-4o-realtime-preview:
+        costPerMillionInputTokens: 5.0
+        costPerMillionOutputTokens: 20.0
+        costPerMillionCachedInputTokens: 2.5
+        maxContextLength: 128000
+      gpt-4o-mini-realtime-preview:
+        costPerMillionInputTokens: 0.6
+        costPerMillionOutputTokens: 2.4
+        costPerMillionCachedInputTokens: 0.3
+        maxContextLength: 128000
+      gpt-audio:
+        costPerMillionInputTokens: 2.5
+        costPerMillionOutputTokens: 10.0
+        maxContextLength: 128000
+      gpt-audio-mini:
+        costPerMillionInputTokens: 0.6
+        costPerMillionOutputTokens: 2.4
+        maxContextLength: 128000
+      gpt-4o-audio-preview:
+        costPerMillionInputTokens: 2.5
+        costPerMillionOutputTokens: 10.0
+        maxContextLength: 128000
+      gpt-4o-mini-audio-preview:
+        costPerMillionInputTokens: 0.15
+        costPerMillionOutputTokens: 0.6
+        maxContextLength: 128000
+      computer-use-preview:
+        costPerMillionInputTokens: 3.0
+        costPerMillionOutputTokens: 12.0
+        maxContextLength: 128000
+    imageGeneration:
+      gpt-image-1-mini-high:
+        providerModelId: "gpt-image-1-mini"
+        providerOptions:
+          quality: high
+        costPerMegapixel: 0.036
+      gpt-image-1-mini-medium:
+        providerModelId: "gpt-image-1-mini"
+        providerOptions:
+          quality: medium
+        costPerMegapixel: 0.011
+      gpt-image-1-mini-low:
+        providerModelId: "gpt-image-1-mini"
+        providerOptions:
+          quality: low
+        costPerMegapixel: 0.005
+      gpt-image-1-high:
+        providerModelId: "gpt-image-1"
+        providerOptions:
+          quality: high
+        costPerMegapixel: 0.167
+      gpt-image-1-medium:
+        providerModelId: "gpt-image-1"
+        providerOptions:
+          quality: medium
+        costPerMegapixel: 0.042
+      gpt-image-1-low:
+        providerModelId: "gpt-image-1"
+        providerOptions:
+          quality: low
+        costPerMegapixel: 0.011
+      gpt-image-1-5-mini-high:
+        providerModelId: "gpt-image-1-5-mini"
+        providerOptions:
+          quality: high
+        costPerMegapixel: 0.133
+      gpt-image-1-5-mini-medium:
+        providerModelId: "gpt-image-1-5-mini"
+        providerOptions:
+          quality: medium
+        costPerMegapixel: 0.034
+      gpt-image-1-5-mini-low:
+        providerModelId: "gpt-image-1-5-mini"
+        providerOptions:
+          quality: low
+        costPerMegapixel: 0.009
+    textToSpeech:
+      tts-1:
+        costPerMillionCharacters: 15
+      tts-1-hd:
+        costPerMillionCharacters: 30
+    speechToText:
+      whisper-1:
+        costPerMinute: 0.006

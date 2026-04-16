@@ -1,0 +1,19 @@
+models:
+  cerebras:
+    chat:
+      llama3.1-8b:
+        costPerMillionInputTokens: 0.1
+        costPerMillionOutputTokens: 0.1
+        maxContextLength: 32000
+      qwen-3-235b-a22b-instruct-2507:
+        costPerMillionInputTokens: 0.6
+        costPerMillionOutputTokens: 1.2
+        maxContextLength: 131000
+      zai-glm-4.7:
+        costPerMillionInputTokens: 2.25
+        costPerMillionOutputTokens: 2.75
+        maxContextLength: 131000
+      gpt-oss-120b:
+        costPerMillionInputTokens: 0.35
+        costPerMillionOutputTokens: 0.75
+        maxContextLength: 131000

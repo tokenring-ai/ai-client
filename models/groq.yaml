@@ -1,0 +1,48 @@
+models:
+  groq:
+    chat:
+      llama-3.1-8b-instant:
+        costPerMillionInputTokens: 0.05
+        costPerMillionOutputTokens: 0.08
+        maxContextLength: 131072
+        maxCompletionTokens: 131072
+      llama-3.3-70b-versatile:
+        costPerMillionInputTokens: 0.59
+        costPerMillionOutputTokens: 0.79
+        maxContextLength: 131072
+        maxCompletionTokens: 32768
+      openai/gpt-oss-120b:
+        costPerMillionInputTokens: 0.15
+        costPerMillionOutputTokens: 0.6
+        maxContextLength: 131072
+        maxCompletionTokens: 65536
+      openai/gpt-oss-20b:
+        costPerMillionInputTokens: 0.075
+        costPerMillionOutputTokens: 0.3
+        maxContextLength: 131072
+        maxCompletionTokens: 65536
+      meta-llama/llama-4-scout-17b-16e-instruct:
+        costPerMillionInputTokens: 0.11
+        costPerMillionOutputTokens: 0.34
+        maxContextLength: 131072
+        maxCompletionTokens: 8192
+      meta-llama/llama-prompt-guard-2-22m:
+        costPerMillionInputTokens: 0.03
+        costPerMillionOutputTokens: 0.03
+        maxContextLength: 512
+        maxCompletionTokens: 512
+      meta-llama/llama-prompt-guard-2-86m:
+        costPerMillionInputTokens: 0.04
+        costPerMillionOutputTokens: 0.04
+        maxContextLength: 512
+        maxCompletionTokens: 512
+      openai/gpt-oss-safeguard-20b:
+        costPerMillionInputTokens: 0.075
+        costPerMillionOutputTokens: 0.3
+        maxContextLength: 131072
+        maxCompletionTokens: 65536
+      qwen/qwen3-32b:
+        costPerMillionInputTokens: 0.29
+        costPerMillionOutputTokens: 0.59
+        maxContextLength: 131072
+        maxCompletionTokens: 40960

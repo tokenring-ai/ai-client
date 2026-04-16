@@ -1,0 +1,31 @@
+models:
+  minimax:
+    chat:
+      MiniMax-M2.7:
+        costPerMillionInputTokens: 0.3
+        costPerMillionOutputTokens: 1.2
+        costPerMillionCachedInputTokens: 0.06
+      MiniMax-M2.7-highspeed:
+        costPerMillionInputTokens: 0.6
+        costPerMillionOutputTokens: 2.4
+        costPerMillionCachedInputTokens: 0.06
+      MiniMax-M2.5:
+        costPerMillionInputTokens: 0.3
+        costPerMillionOutputTokens: 1.2
+        costPerMillionCachedInputTokens: 0.03
+      MiniMax-M2.5-highspeed:
+        costPerMillionInputTokens: 0.6
+        costPerMillionOutputTokens: 2.4
+        costPerMillionCachedInputTokens: 0.03
+      MiniMax-M2.1:
+        costPerMillionInputTokens: 0.3
+        costPerMillionOutputTokens: 1.2
+        costPerMillionCachedInputTokens: 0.03
+      MiniMax-M2.1-highspeed:
+        costPerMillionInputTokens: 0.6
+        costPerMillionOutputTokens: 2.4
+        costPerMillionCachedInputTokens: 0.03
+      MiniMax-M2:
+        costPerMillionInputTokens: 0.3
+        costPerMillionOutputTokens: 1.2
+        costPerMillionCachedInputTokens: 0.03

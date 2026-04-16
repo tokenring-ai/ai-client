@@ -5,7 +5,41 @@ import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
+import modelConfigs from "../models/openai.yaml" with {type: "yaml"};
 import type {AIModelProvider} from "../schema.ts";
+
+const ChatModelSchema = z.object({
+  providerModelId: z.string().optional(),
+  providerOptions: z.record(z.string(), z.unknown()).optional(),
+  costPerMillionInputTokens: z.number(),
+  costPerMillionOutputTokens: z.number(),
+  costPerMillionCachedInputTokens: z.number().optional(),
+  maxContextLength: z.number(),
+  features: z.array(z.string()).optional(),
+});
+
+const ImageGenerationModelSchema = z.object({
+  providerModelId: z.string().optional(),
+  providerOptions: z.record(z.string(), z.unknown()).optional(),
+  costPerMegapixel: z.number(),
+});
+
+const TextToSpeechModelSchema = z.object({
+  costPerMillionCharacters: z.number(),
+});
+
+const SpeechToTextModelSchema = z.object({
+  costPerMinute: z.number(),
+});
+
+export const OpenAISchema = z.object({
+  chat: z.record(z.string(), ChatModelSchema),
+  imageGeneration: z.record(z.string(), ImageGenerationModelSchema),
+  textToSpeech: z.record(z.string(), TextToSpeechModelSchema),
+  speechToText: z.record(z.string(), SpeechToTextModelSchema),
+});
+
+const parsedModelConfigs = OpenAISchema.parse(modelConfigs.models.openai);
 
 const OpenAIModelProviderConfigSchema = z.object({
   provider: z.literal("openai"),
@@ -196,544 +230,69 @@ function init(
     };
   }
 
+  // Register chat models from parsed YAML config
   const chatModelRegistry = app.requireService(ChatModelRegistry);
-  chatModelRegistry.registerAllModelSpecs([
-    generateModelSpec("gpt-4.1", {
-      costPerMillionInputTokens: 2.0,
-      costPerMillionOutputTokens: 8.0,
-      costPerMillionCachedInputTokens: 0.5,
-      maxContextLength: 1000000,
-    }),
-    generateModelSpec("gpt-4.1-mini", {
-      costPerMillionInputTokens: 0.4,
-      costPerMillionOutputTokens: 1.6,
-      costPerMillionCachedInputTokens: 0.1,
-      maxContextLength: 1000000,
-    }),
-    generateModelSpec("gpt-4.1-nano", {
-      costPerMillionInputTokens: 0.1,
-      costPerMillionOutputTokens: 0.4,
-      costPerMillionCachedInputTokens: 0.025,
-      maxContextLength: 1000000,
-    }),
-    generateModelSpec("gpt-5", {
-      costPerMillionInputTokens: 1.25,
-      costPerMillionCachedInputTokens: 0.125,
-      costPerMillionOutputTokens: 10,
-      maxContextLength: 400000,
-    }),
+  chatModelRegistry.registerAllModelSpecs(
+    Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
+      generateModelSpec(modelId, {
+        providerModelId: config.providerModelId,
+        costPerMillionInputTokens: config.costPerMillionInputTokens,
+        costPerMillionOutputTokens: config.costPerMillionOutputTokens,
+        costPerMillionCachedInputTokens: config.costPerMillionCachedInputTokens,
+        maxContextLength: config.maxContextLength,
+      }),
+    ),
+  );
 
-    generateModelSpec("gpt-5.1", {
-      costPerMillionInputTokens: 1.25,
-      costPerMillionCachedInputTokens: 0.125,
-      costPerMillionOutputTokens: 10,
-      maxContextLength: 400000,
-    }),
-    generateModelSpec("gpt-5.2", {
-      costPerMillionInputTokens: 1.75,
-      costPerMillionCachedInputTokens: 0.175,
-      costPerMillionOutputTokens: 14,
-      maxContextLength: 400000,
-    }),
-
-    generateModelSpec("gpt-5.4", {
-      costPerMillionInputTokens: 2.5,
-      costPerMillionCachedInputTokens: 0.25,
-      costPerMillionOutputTokens: 15.0,
-      maxContextLength: 272000,
-    }),
-
-    generateModelSpec("gpt-5.4-mini", {
-      costPerMillionInputTokens: 0.75,
-      costPerMillionOutputTokens: 4.5,
-      costPerMillionCachedInputTokens: 0.075,
-      maxContextLength: 400000,
-    }),
-
-    generateModelSpec("gpt-5.4-nano", {
-      costPerMillionInputTokens: 0.2,
-      costPerMillionOutputTokens: 1.25,
-      costPerMillionCachedInputTokens: 0.02,
-      maxContextLength: 400000,
-    }),
-
-    generateModelSpec("gpt-5.4-long-context", {
-      providerModelId: "gpt-5.4", // Assuming it uses the same base model ID
-      costPerMillionInputTokens: 5.0,
-      costPerMillionCachedInputTokens: 0.5,
-      costPerMillionOutputTokens: 22.5,
-      maxContextLength: 1000000,
-    }),
-
-    generateModelSpec("gpt-5.4-pro", {
-      costPerMillionInputTokens: 30.0,
-      costPerMillionOutputTokens: 180.0,
-      maxContextLength: 272000,
-    }),
-
-    generateModelSpec("gpt-5.4-pro-long-context", {
-      providerModelId: "gpt-5.4-pro", // Assuming it uses the same base model ID
-      costPerMillionInputTokens: 60.0,
-      costPerMillionOutputTokens: 270.0,
-      maxContextLength: 1000000,
-    }),
-
-    generateModelSpec("gpt-5-codex", {
-      costPerMillionInputTokens: 1.25,
-      costPerMillionCachedInputTokens: 0.125,
-      costPerMillionOutputTokens: 10,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 400000,
-    }),
-
-    generateModelSpec("gpt-5.1-codex", {
-      costPerMillionInputTokens: 1.25,
-      costPerMillionCachedInputTokens: 0.125,
-      costPerMillionOutputTokens: 10,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 400000,
-    }),
-
-    generateModelSpec("gpt-5-mini", {
-      costPerMillionInputTokens: 0.25,
-      costPerMillionOutputTokens: 2,
-      costPerMillionCachedInputTokens: 0.025,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 400000,
-    }),
-    generateModelSpec("gpt-5-nano", {
-      costPerMillionInputTokens: 0.05,
-      costPerMillionOutputTokens: 0.4,
-      costPerMillionCachedInputTokens: 0.005,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 400000,
-    }),
-    generateModelSpec("o4-mini", {
-      costPerMillionInputTokens: 1.1,
-      costPerMillionOutputTokens: 4.4,
-      costPerMillionCachedInputTokens: 0.275,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 200000,
-    }),
-    generateModelSpec("o3", {
-      costPerMillionInputTokens: 2.0,
-      costPerMillionOutputTokens: 8.0,
-      costPerMillionCachedInputTokens: 0.5,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 200000,
-    }),
-    generateModelSpec("o3-mini", {
-      costPerMillionInputTokens: 1.1,
-      costPerMillionOutputTokens: 4.4,
-      costPerMillionCachedInputTokens: 0.55,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 200000,
-    }),
-    generateModelSpec("o3-pro", {
-      costPerMillionInputTokens: 20.0,
-      costPerMillionOutputTokens: 80.0,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 200000,
-    }),
-    generateModelSpec("o3-deep-research", {
-      costPerMillionInputTokens: 10.0,
-      costPerMillionOutputTokens: 40.0,
-      costPerMillionCachedInputTokens: 2.5,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 200000,
-    }),
-    generateModelSpec("o4-mini-deep-research", {
-      costPerMillionInputTokens: 2.0,
-      costPerMillionOutputTokens: 8.0,
-      costPerMillionCachedInputTokens: 0.5,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 200000,
-    }),
-    generateModelSpec("o1", {
-      costPerMillionInputTokens: 15.0,
-      costPerMillionOutputTokens: 60.0,
-      costPerMillionCachedInputTokens: 7.5,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 200000,
-    }),
-    generateModelSpec("o1-pro", {
-      costPerMillionInputTokens: 150.0,
-      costPerMillionOutputTokens: 600.0,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 200000,
-    }),
-    generateModelSpec("gpt-5-pro", {
-      costPerMillionInputTokens: 15.0,
-      costPerMillionOutputTokens: 120.0,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 400000,
-    }),
-    generateModelSpec("gpt-5-chat-latest", {
-      costPerMillionInputTokens: 1.25,
-      costPerMillionCachedInputTokens: 0.125,
-      costPerMillionOutputTokens: 10,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 400000,
-    }),
-    generateModelSpec("gpt-5.1-chat-latest", {
-      costPerMillionInputTokens: 1.25,
-      costPerMillionCachedInputTokens: 0.125,
-      costPerMillionOutputTokens: 10,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 400000,
-    }),
-    generateModelSpec("gpt-5.1-codex-mini", {
-      costPerMillionInputTokens: 0.25,
-      costPerMillionOutputTokens: 2,
-      costPerMillionCachedInputTokens: 0.025,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 400000,
-    }),
-    generateModelSpec("gpt-5-search-api", {
-      costPerMillionInputTokens: 1.25,
-      costPerMillionCachedInputTokens: 0.125,
-      costPerMillionOutputTokens: 10,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: true,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 400000,
-    }),
-    generateModelSpec("gpt-4o", {
-      costPerMillionInputTokens: 2.5,
-      costPerMillionOutputTokens: 10,
-      costPerMillionCachedInputTokens: 1.25,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-4o-2024-05-13", {
-      costPerMillionInputTokens: 5.0,
-      costPerMillionOutputTokens: 15.0,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-4o-mini", {
-      costPerMillionInputTokens: 0.15,
-      costPerMillionOutputTokens: 0.6,
-      costPerMillionCachedInputTokens: 0.075,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-4o-mini-search-preview", {
-      costPerMillionInputTokens: 0.15,
-      costPerMillionOutputTokens: 0.6,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: true,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-4o-search-preview", {
-      costPerMillionInputTokens: 2.5,
-      costPerMillionOutputTokens: 10,
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: true,
-          type: "boolean",
-        },
-      },
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-realtime", {
-      costPerMillionInputTokens: 4.0,
-      costPerMillionOutputTokens: 16.0,
-      costPerMillionCachedInputTokens: 0.4,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-realtime-mini", {
-      costPerMillionInputTokens: 0.6,
-      costPerMillionOutputTokens: 2.4,
-      costPerMillionCachedInputTokens: 0.06,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-4o-realtime-preview", {
-      costPerMillionInputTokens: 5.0,
-      costPerMillionOutputTokens: 20.0,
-      costPerMillionCachedInputTokens: 2.5,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-4o-mini-realtime-preview", {
-      costPerMillionInputTokens: 0.6,
-      costPerMillionOutputTokens: 2.4,
-      costPerMillionCachedInputTokens: 0.3,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-audio", {
-      costPerMillionInputTokens: 2.5,
-      costPerMillionOutputTokens: 10.0,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-audio-mini", {
-      costPerMillionInputTokens: 0.6,
-      costPerMillionOutputTokens: 2.4,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-4o-audio-preview", {
-      costPerMillionInputTokens: 2.5,
-      costPerMillionOutputTokens: 10.0,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("gpt-4o-mini-audio-preview", {
-      costPerMillionInputTokens: 0.15,
-      costPerMillionOutputTokens: 0.6,
-      maxContextLength: 128000,
-    }),
-    generateModelSpec("computer-use-preview", {
-      costPerMillionInputTokens: 3.0,
-      costPerMillionOutputTokens: 12.0,
-      maxContextLength: 128000,
-    }),
-  ]);
-
+  // Register image generation models from parsed YAML config
   const imageGenerationModelRegistry = app.requireService(
     ImageGenerationModelRegistry,
   );
-  imageGenerationModelRegistry.registerAllModelSpecs([
-    generateImageModelSpec(
-      "gpt-image-1-mini",
-      "gpt-image-1-mini-high",
-      {
-        providerOptions: {
-          openai: {quality: "high"},
+  imageGenerationModelRegistry.registerAllModelSpecs(
+    Object.entries(parsedModelConfigs.imageGeneration).map(([variantId, config]) => {
+      const baseModelId = config.providerModelId ?? variantId;
+      return generateImageModelSpec(
+        baseModelId,
+        variantId,
+        {
+          providerOptions: config.providerOptions
+            ? {openai: config.providerOptions}
+            : undefined,
         },
-        //costPerMillionInputTokens: 10,
-        //costPerMegapixel: 0.067,
-      },
-      0.036,
-    ),
-    generateImageModelSpec(
-      "gpt-image-1-mini",
-      "gpt-image-1-mini-medium",
-      {
-        providerOptions: {
-          openai: {quality: "medium"},
-        },
-        //costPerMillionInputTokens: 10,
-        //costPerMegapixel: 0.042,
-      },
-      0.011,
-    ),
-    generateImageModelSpec(
-      "gpt-image-1-mini",
-      "gpt-image-1-mini-low",
-      {
-        providerOptions: {
-          openai: {quality: "low"},
-        },
-        //costPerMillionInputTokens: 10,
-        //costPerMegapixel: 0.011,
-      },
-      0.005,
-    ),
-    generateImageModelSpec(
-      "gpt-image-1",
-      "gpt-image-1-high",
-      {
-        providerOptions: {
-          openai: {quality: "high"},
-        },
-        //costPerMillionInputTokens: 10,
-        //costPerMegapixel: 0.067,
-      },
-      0.167,
-    ),
-    generateImageModelSpec(
-      "gpt-image-1",
-      "gpt-image-1-medium",
-      {
-        providerOptions: {
-          openai: {quality: "medium"},
-        },
-        //costPerMillionInputTokens: 10,
-        //costPerMegapixel: 0.042,
-      },
-      0.042,
-    ),
-    generateImageModelSpec(
-      "gpt-image-1",
-      "gpt-image-1-low",
-      {
-        providerOptions: {
-          openai: {quality: "low"},
-        },
-        //costPerMillionInputTokens: 10,
-        //costPerMegapixel: 0.011,
-      },
-      0.011,
-    ),
-    generateImageModelSpec(
-      "gpt-image-1.5",
-      "gpt-image-1.5-high",
-      {
-        providerOptions: {
-          openai: {quality: "high"},
-        },
-      },
-      0.133,
-    ),
-    generateImageModelSpec(
-      "gpt-image-1.5",
-      "gpt-image-1.5-medium",
-      {
-        providerOptions: {
-          openai: {quality: "medium"},
-        },
-      },
-      0.034,
-    ),
-    generateImageModelSpec(
-      "gpt-image-1.5",
-      "gpt-image-1.5-low",
-      {
-        providerOptions: {
-          openai: {quality: "low"},
-        },
-      },
-      0.009,
-    ),
-  ]);
+        config.costPerMegapixel,
+      );
+    }),
+  );
 
+  // Register text-to-speech models from parsed YAML config
   const speechModelRegistry = app.requireService(SpeechModelRegistry);
-  speechModelRegistry.registerAllModelSpecs([
-    {
-      modelId: "tts-1",
+  speechModelRegistry.registerAllModelSpecs(
+    Object.entries(parsedModelConfigs.textToSpeech).map(([modelId, config]) => ({
+      modelId,
       providerDisplayName: providerDisplayName,
-      impl: openai.speech("tts-1"),
+      impl: openai.speech(modelId),
       isAvailable() {
         return true;
       },
-      costPerMillionCharacters: 15,
-    },
-    {
-      modelId: "tts-1-hd",
-      providerDisplayName: providerDisplayName,
-      impl: openai.speech("tts-1-hd"),
-      isAvailable() {
-        return true;
-      },
-      costPerMillionCharacters: 30,
-    },
-  ]);
+      costPerMillionCharacters: config.costPerMillionCharacters,
+    })),
+  );
 
+  // Register speech-to-text models from parsed YAML config
   const transcriptionModelRegistry = app.requireService(
     TranscriptionModelRegistry,
   );
-  transcriptionModelRegistry.registerAllModelSpecs([
-    {
-      modelId: "whisper-1",
+  transcriptionModelRegistry.registerAllModelSpecs(
+    Object.entries(parsedModelConfigs.speechToText).map(([modelId, config]) => ({
+      modelId,
       providerDisplayName: providerDisplayName,
-      impl: openai.transcription("whisper-1"),
+      impl: openai.transcription(modelId),
       isAvailable() {
         return true;
       },
-      costPerMinute: 0.006,
-    },
-  ]);
+      costPerMinute: config.costPerMinute,
+    })),
+  );
 }
 
 export default {

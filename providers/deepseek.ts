@@ -4,7 +4,21 @@ import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever"
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import modelConfigs from "../models/deepseek.yaml" with {type: "yaml"};
 import type {AIModelProvider} from "../schema.ts";
+
+const ChatModelSchema = z.object({
+  costPerMillionInputTokens: z.number(),
+  costPerMillionCachedInputTokens: z.number().optional(),
+  costPerMillionOutputTokens: z.number(),
+  maxContextLength: z.number(),
+});
+
+const DeepSeekSchema = z.object({
+  chat: z.record(z.string(), ChatModelSchema),
+});
+
+const parsedModelConfigs = DeepSeekSchema.parse(modelConfigs.models.deepseek);
 
 const DeepSeekModelProviderConfigSchema = z.object({
   provider: z.literal("deepseek"),
@@ -61,20 +75,11 @@ function init(
   }
 
   app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
-    chatModelRegistry.registerAllModelSpecs([
-      generateModelSpecs("deepseek-chat", {
-        costPerMillionInputTokens: 0.28,
-        costPerMillionCachedInputTokens: 0.028,
-        costPerMillionOutputTokens: 0.42,
-        maxContextLength: 128000,
-      }),
-      generateModelSpecs("deepseek-reasoner", {
-        costPerMillionInputTokens: 0.28,
-        costPerMillionCachedInputTokens: 0.028,
-        costPerMillionOutputTokens: 0.42,
-        maxContextLength: 128000,
-      }),
-    ]);
+    chatModelRegistry.registerAllModelSpecs(
+      Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
+        generateModelSpecs(modelId, config),
+      ),
+    );
   });
 }
 

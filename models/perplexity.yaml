@@ -1,0 +1,24 @@
+models:
+  perplexity:
+    chat:
+      sonar:
+        costPerMillionInputTokens: 1
+        costPerMillionOutputTokens: 1
+        maxContextLength: 128000
+      sonar-pro:
+        costPerMillionInputTokens: 3
+        costPerMillionOutputTokens: 15
+        maxContextLength: 200000
+      sonar-reasoning:
+        costPerMillionInputTokens: 1
+        costPerMillionOutputTokens: 5
+        maxContextLength: 128000
+      sonar-reasoning-pro:
+        costPerMillionInputTokens: 2
+        costPerMillionOutputTokens: 8
+        maxContextLength: 128000
+      sonar-deep-research:
+        costPerMillionInputTokens: 2
+        costPerMillionOutputTokens: 8
+        costPerMillionReasoningTokens: 3
+        maxContextLength: 128000

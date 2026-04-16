@@ -4,9 +4,23 @@ import type TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import {ChatModelRegistry} from "../ModelRegistry.ts";
+import modelConfigs from "../models/perplexity.yaml" with {type: "yaml"};
 import type {ChatModelSettings} from "../ModelTypeRegistry.ts";
 import type {AIModelProvider} from "../schema.ts";
 import {resequenceMessages} from "../util/resequenceMessages.ts";
+
+const ChatModelSchema = z.object({
+  costPerMillionInputTokens: z.number(),
+  costPerMillionOutputTokens: z.number(),
+  costPerMillionReasoningTokens: z.number().optional(),
+  maxContextLength: z.number(),
+});
+
+const PerplexitySchema = z.object({
+  chat: z.record(z.string(), ChatModelSchema),
+});
+
+const parsedModelConfigs = PerplexitySchema.parse(modelConfigs.models.perplexity);
 
 const PerplexityModelProviderConfigSchema = z.object({
   provider: z.literal("perplexity"),
@@ -66,34 +80,11 @@ function init(
   }
 
   app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
-    chatModelRegistry.registerAllModelSpecs([
-      generateModelSpec("sonar", {
-        costPerMillionInputTokens: 1,
-        costPerMillionOutputTokens: 1,
-        maxContextLength: 128000,
-      }),
-      generateModelSpec("sonar-pro", {
-        costPerMillionInputTokens: 3,
-        costPerMillionOutputTokens: 15,
-        maxContextLength: 200000,
-      }),
-      generateModelSpec("sonar-reasoning", {
-        costPerMillionInputTokens: 1,
-        costPerMillionOutputTokens: 5,
-        maxContextLength: 128000,
-      }),
-      generateModelSpec("sonar-reasoning-pro", {
-        costPerMillionInputTokens: 2,
-        costPerMillionOutputTokens: 8,
-        maxContextLength: 128000,
-      }),
-      generateModelSpec("sonar-deep-research", {
-        costPerMillionInputTokens: 2,
-        costPerMillionOutputTokens: 8,
-        costPerMillionReasoningTokens: 3,
-        maxContextLength: 128000,
-      }),
-    ]);
+    chatModelRegistry.registerAllModelSpecs(
+      Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
+        generateModelSpec(modelId, config),
+      ),
+    );
   });
 }
 

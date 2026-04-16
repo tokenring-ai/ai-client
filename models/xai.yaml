@@ -1,0 +1,40 @@
+models:
+  xai:
+    chat:
+      grok-code-fast-1:
+        costPerMillionInputTokens: 0.2
+        costPerMillionCachedInputTokens: 0.02
+        costPerMillionOutputTokens: 1.5
+        maxContextLength: 256000
+      grok-4-1-fast-reasoning:
+        costPerMillionInputTokens: 0.2
+        costPerMillionCachedInputTokens: 0.05
+        costPerMillionOutputTokens: 0.5
+        maxContextLength: 2000000
+      grok-4-1-fast-non-reasoning:
+        costPerMillionInputTokens: 0.2
+        costPerMillionCachedInputTokens: 0.05
+        costPerMillionOutputTokens: 0.5
+        maxContextLength: 2000000
+      grok-4.20-0309-reasoning:
+        costPerMillionInputTokens: 2.0
+        costPerMillionOutputTokens: 6.0
+        maxContextLength: 2000000
+      grok-4.20-0309-non-reasoning:
+        costPerMillionInputTokens: 2.0
+        costPerMillionOutputTokens: 6.0
+        maxContextLength: 2000000
+      grok-4.20-multi-agent-0309:
+        costPerMillionInputTokens: 2.0
+        costPerMillionOutputTokens: 6.0
+        maxContextLength: 2000000
+    imageGeneration:
+      grok-imagine-image-pro:
+        costPerImage: 0.07
+      grok-imagine-image:
+        costPerImage: 0.02
+      grok-2-image-1212:
+        costPerImage: 0.07
+    videoGeneration:
+      grok-imagine-video:
+        costPerSecond: 0.05

@@ -3,7 +3,18 @@ import type TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import {ImageGenerationModelRegistry} from "../ModelRegistry.ts";
+import modelConfigs from "../models/fal.yaml" with {type: "yaml"};
 import type {AIModelProvider} from "../schema.ts";
+
+const ImageGenerationModelSchema = z.object({
+  costPerMegapixel: z.number(),
+});
+
+const FalSchema = z.object({
+  imageGeneration: z.record(z.string(), ImageGenerationModelSchema),
+});
+
+const parsedModelConfigs = FalSchema.parse(modelConfigs.models.fal);
 
 const FalModelProviderConfigSchema = z.object({
   provider: z.literal("fal"),
@@ -52,11 +63,11 @@ function init(
   app.waitForService(
     ImageGenerationModelRegistry,
     (imageGenerationModelRegistry) => {
-      imageGenerationModelRegistry.registerAllModelSpecs([
-        generateImageModelSpec({modelId: "fal-ai/qwen-image"}, 0.02),
-        generateImageModelSpec({modelId: "fal-ai/flux-pro/v1.1-ultra"}, 0.06),
-        generateImageModelSpec({modelId: "fal-ai/flux-pro/v1.1"}, 0.04),
-      ]);
+      imageGenerationModelRegistry.registerAllModelSpecs(
+        Object.entries(parsedModelConfigs.imageGeneration).map(([modelId, config]) =>
+          generateImageModelSpec({modelId}, config.costPerMegapixel),
+        ),
+      );
     },
   );
 }

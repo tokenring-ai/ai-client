@@ -5,8 +5,29 @@ import {z} from "zod";
 import type {ChatModelSpec, ChatRequest} from "../client/AIChatClient.ts";
 import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
 import {ChatModelRegistry, ImageGenerationModelRegistry} from "../ModelRegistry.ts";
+import modelConfigs from "../models/google.yaml" with {type: "yaml"};
 import type {ChatModelSettings, SettingDefinition} from "../ModelTypeRegistry.ts";
 import type {AIModelProvider} from "../schema.ts";
+
+const ChatModelSchema = z.object({
+  providerModelId: z.string().optional(),
+  costPerMillionInputTokens: z.number(),
+  costPerMillionOutputTokens: z.number(),
+  costPerMillionCachedInputTokens: z.number().optional(),
+  maxContextLength: z.number(),
+  features: z.array(z.string()).optional(),
+});
+
+const ImageGenerationModelSchema = z.object({
+  costPerImage: z.number(),
+});
+
+const GoogleSchema = z.object({
+  chat: z.record(z.string(), ChatModelSchema),
+  imageGeneration: z.record(z.string(), ImageGenerationModelSchema),
+});
+
+const parsedModelConfigs = GoogleSchema.parse(modelConfigs.models.google);
 
 const GoogleModelProviderConfigSchema = z.object({
   provider: z.literal("google"),
@@ -165,101 +186,34 @@ function init(
   }
 
   app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
-    chatModelRegistry.registerAllModelSpecs([
-      generateModelSpec("gemini-3.1-pro-long-context", {
-        providerModelId: "gemini-3.1-pro-preview",
-        costPerMillionInputTokens: 4.0,
-        costPerMillionOutputTokens: 18.0,
-        settings: {
-          websearch: {
-            description: "Enables web search",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-        maxContextLength: 2000000,
-      }),
-      generateModelSpec("gemini-3.1-pro", {
-        providerModelId: "gemini-3.1-pro-preview",
-        costPerMillionInputTokens: 2.0,
-        costPerMillionOutputTokens: 12.0,
-        settings: {
-          websearch: {
-            description: "Enables web search",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-        maxContextLength: 200000,
-      }),
-      generateModelSpec("gemini-3-pro", {
-        providerModelId: "gemini-3-pro-preview",
-        costPerMillionInputTokens: 4.0,
-        costPerMillionOutputTokens: 18.0,
-        settings: {
-          websearch: {
-            description: "Enables web search",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-        maxContextLength: 1000000,
-      }),
-
-      generateModelSpec("gemini-2.5-pro", {
-        costPerMillionInputTokens: 2.5,
-        costPerMillionOutputTokens: 15.0,
-        settings: {
-          websearch: {
-            description: "Enables web search",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-        maxContextLength: 1000000,
-      }),
-      generateModelSpec("gemini-2.5-flash", {
-        costPerMillionInputTokens: 0.3,
-        costPerMillionOutputTokens: 2.5,
-        settings: {
-          websearch: {
-            description: "Enables web search",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-        maxContextLength: 1000000,
-      }),
-      generateModelSpec("gemini-3-flash", {
-        providerModelId: "gemini-3-flash-preview",
-        costPerMillionInputTokens: 0.5,
-        costPerMillionOutputTokens: 3,
-        settings: {
-          websearch: {
-            description: "Enables web search",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-        maxContextLength: 1000000,
-      }),
-      generateModelSpec("gemini-2.5-flash-lite", {
-        costPerMillionInputTokens: 0.1,
-        costPerMillionOutputTokens: 0.4,
-        maxContextLength: 1000000,
-      }),
-    ]);
+    chatModelRegistry.registerAllModelSpecs(
+      Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
+        generateModelSpec(modelId, {
+          providerModelId: config.providerModelId,
+          costPerMillionInputTokens: config.costPerMillionInputTokens,
+          costPerMillionOutputTokens: config.costPerMillionOutputTokens,
+          costPerMillionCachedInputTokens: config.costPerMillionCachedInputTokens,
+          maxContextLength: config.maxContextLength,
+          settings: config.features?.includes("websearch") ? {
+            websearch: {
+              description: "Enables web search",
+              defaultValue: false,
+              type: "boolean",
+            },
+          } : undefined,
+        }),
+      ),
+    );
   });
 
   app.waitForService(
     ImageGenerationModelRegistry,
     (imageGenerationModelRegistry) => {
-      imageGenerationModelRegistry.registerAllModelSpecs([
-        generateImageModelSpec("gemini-3-pro-image-preview", 0.135),
-        generateImageModelSpec("imagen-4.0-ultra-generate-001", 0.06), // $0.06 per image
-        generateImageModelSpec("imagen-4.0-generate-001", 0.04), // $0.04 per image
-        generateImageModelSpec("imagen-4.0-fast-generate-001", 0.02), // $0.02 per image
-      ]);
+      imageGenerationModelRegistry.registerAllModelSpecs(
+        Object.entries(parsedModelConfigs.imageGeneration).map(([modelId, config]) =>
+          generateImageModelSpec(modelId, config.costPerImage),
+        ),
+      );
     },
   );
 }

@@ -2,7 +2,24 @@ import {createElevenLabs} from "@ai-sdk/elevenlabs";
 import type TokenRingApp from "@tokenring-ai/app";
 import {z} from "zod";
 import {SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
+import modelConfigs from "../models/elevenlabs.yaml" with {type: "yaml"};
 import type {AIModelProvider} from "../schema.ts";
+
+const SpeechModelSchema = z.object({
+  costPerMillionCharacters: z.number(),
+  supportsLanguageCode: z.boolean(),
+});
+
+const TranscriptionModelSchema = z.object({
+  costPerMinute: z.number(),
+});
+
+const ElevenLabsSchema = z.object({
+  speech: z.record(z.string(), SpeechModelSchema),
+  transcription: z.record(z.string(), TranscriptionModelSchema),
+});
+
+const parsedModelConfigs = ElevenLabsSchema.parse(modelConfigs.models.elevenlabs);
 
 const ElevenLabsModelProviderConfigSchema = z.object({
   provider: z.literal("elevenlabs"),
@@ -22,26 +39,28 @@ function init(
   const elevenlabs = createElevenLabs({apiKey});
 
   app.waitForService(SpeechModelRegistry, (speechModelRegistry) => {
-    speechModelRegistry.registerAllModelSpecs([
-      {
-        modelId: "eleven_v3",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.speech("eleven_v3"),
+    speechModelRegistry.registerAllModelSpecs(
+      Object.entries(parsedModelConfigs.speech).map(([modelId, config]) => ({
+        modelId,
+        providerDisplayName,
+        impl: elevenlabs.speech(modelId),
         isAvailable() {
           return true;
         },
-        costPerMillionCharacters: 100,
+        costPerMillionCharacters: config.costPerMillionCharacters,
         settings: {
           voice: {
             description: "Voice ID to use for speech synthesis",
             defaultValue: undefined,
             type: "string",
           },
-          language_code: {
-            description: "Language code (ISO 639-1) for the voice",
-            defaultValue: undefined,
-            type: "string",
-          },
+          ...(config.supportsLanguageCode && {
+            language_code: {
+              description: "Language code (ISO 639-1) for the voice",
+              defaultValue: undefined,
+              type: "string",
+            },
+          }),
           stability: {
             description: "Voice stability (0-1, lower = more variation)",
             defaultValue: 0.5,
@@ -63,284 +82,22 @@ function init(
             type: "boolean",
           },
         },
-      },
-      {
-        modelId: "eleven_multilingual_v2",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.speech("eleven_multilingual_v2"),
-        isAvailable() {
-          return true;
-        },
-        costPerMillionCharacters: 60,
-        settings: {
-          voice: {
-            description: "Voice ID to use for speech synthesis",
-            defaultValue: undefined,
-            type: "string",
-          },
-          language_code: {
-            description: "Language code (ISO 639-1) for the voice",
-            defaultValue: undefined,
-            type: "string",
-          },
-          stability: {
-            description: "Voice stability (0-1, lower = more variation)",
-            defaultValue: 0.5,
-            type: "number",
-          },
-          similarity_boost: {
-            description: "Similarity boost (0-1, controls adherence to voice)",
-            defaultValue: 0.75,
-            type: "number",
-          },
-          style: {
-            description: "Style amplification (0-1)",
-            defaultValue: 0,
-            type: "number",
-          },
-          use_speaker_boost: {
-            description: "Boost similarity to original speaker",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-      },
-      {
-        modelId: "eleven_flash_v2_5",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.speech("eleven_flash_v2_5"),
-        isAvailable() {
-          return true;
-        },
-        costPerMillionCharacters: 30,
-        settings: {
-          voice: {
-            description: "Voice ID to use for speech synthesis",
-            defaultValue: undefined,
-            type: "string",
-          },
-          language_code: {
-            description: "Language code (ISO 639-1) for the voice",
-            defaultValue: undefined,
-            type: "string",
-          },
-          stability: {
-            description: "Voice stability (0-1, lower = more variation)",
-            defaultValue: 0.5,
-            type: "number",
-          },
-          similarity_boost: {
-            description: "Similarity boost (0-1, controls adherence to voice)",
-            defaultValue: 0.75,
-            type: "number",
-          },
-          style: {
-            description: "Style amplification (0-1)",
-            defaultValue: 0,
-            type: "number",
-          },
-          use_speaker_boost: {
-            description: "Boost similarity to original speaker",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-      },
-      {
-        modelId: "eleven_flash_v2",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.speech("eleven_flash_v2"),
-        isAvailable() {
-          return true;
-        },
-        costPerMillionCharacters: 30,
-        settings: {
-          voice: {
-            description: "Voice ID to use for speech synthesis",
-            defaultValue: undefined,
-            type: "string",
-          },
-          language_code: {
-            description: "Language code (ISO 639-1) for the voice",
-            defaultValue: undefined,
-            type: "string",
-          },
-          stability: {
-            description: "Voice stability (0-1, lower = more variation)",
-            defaultValue: 0.5,
-            type: "number",
-          },
-          similarity_boost: {
-            description: "Similarity boost (0-1, controls adherence to voice)",
-            defaultValue: 0.75,
-            type: "number",
-          },
-          style: {
-            description: "Style amplification (0-1)",
-            defaultValue: 0,
-            type: "number",
-          },
-          use_speaker_boost: {
-            description: "Boost similarity to original speaker",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-      },
-      {
-        modelId: "eleven_turbo_v2_5",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.speech("eleven_turbo_v2_5"),
-        isAvailable() {
-          return true;
-        },
-        costPerMillionCharacters: 45,
-        settings: {
-          voice: {
-            description: "Voice ID to use for speech synthesis",
-            defaultValue: undefined,
-            type: "string",
-          },
-          language_code: {
-            description: "Language code (ISO 639-1) for the voice",
-            defaultValue: undefined,
-            type: "string",
-          },
-          stability: {
-            description: "Voice stability (0-1, lower = more variation)",
-            defaultValue: 0.5,
-            type: "number",
-          },
-          similarity_boost: {
-            description: "Similarity boost (0-1, controls adherence to voice)",
-            defaultValue: 0.75,
-            type: "number",
-          },
-          style: {
-            description: "Style amplification (0-1)",
-            defaultValue: 0,
-            type: "number",
-          },
-          use_speaker_boost: {
-            description: "Boost similarity to original speaker",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-      },
-      {
-        modelId: "eleven_turbo_v2",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.speech("eleven_turbo_v2"),
-        isAvailable() {
-          return true;
-        },
-        costPerMillionCharacters: 45,
-        settings: {
-          voice: {
-            description: "Voice ID to use for speech synthesis",
-            defaultValue: undefined,
-            type: "string",
-          },
-          language_code: {
-            description: "Language code (ISO 639-1) for the voice",
-            defaultValue: undefined,
-            type: "string",
-          },
-          stability: {
-            description: "Voice stability (0-1, lower = more variation)",
-            defaultValue: 0.5,
-            type: "number",
-          },
-          similarity_boost: {
-            description: "Similarity boost (0-1, controls adherence to voice)",
-            defaultValue: 0.75,
-            type: "number",
-          },
-          style: {
-            description: "Style amplification (0-1)",
-            defaultValue: 0,
-            type: "number",
-          },
-          use_speaker_boost: {
-            description: "Boost similarity to original speaker",
-            defaultValue: false,
-            type: "boolean",
-          },
-        },
-      },
-      {
-        modelId: "eleven_monolingual_v1",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.speech("eleven_monolingual_v1"),
-        isAvailable() {
-          return true;
-        },
-        costPerMillionCharacters: 50,
-        settings: {
-          voice: {
-            description: "Voice ID to use for speech synthesis",
-            defaultValue: undefined,
-            type: "string",
-          },
-          stability: {
-            description: "Voice stability (0-1, lower = more variation)",
-            defaultValue: 0.5,
-            type: "number",
-          },
-          similarity_boost: {
-            description: "Similarity boost (0-1, controls adherence to voice)",
-            defaultValue: 0.75,
-            type: "number",
-          },
-        },
-      },
-      {
-        modelId: "eleven_multilingual_v1",
-        providerDisplayName: providerDisplayName,
-        impl: elevenlabs.speech("eleven_multilingual_v1"),
-        isAvailable() {
-          return true;
-        },
-        costPerMillionCharacters: 50,
-        settings: {
-          voice: {
-            description: "Voice ID to use for speech synthesis",
-            defaultValue: undefined,
-            type: "string",
-          },
-          language_code: {
-            description: "Language code (ISO 639-1) for the voice",
-            defaultValue: undefined,
-            type: "string",
-          },
-          stability: {
-            description: "Voice stability (0-1, lower = more variation)",
-            defaultValue: 0.5,
-            type: "number",
-          },
-          similarity_boost: {
-            description: "Similarity boost (0-1, controls adherence to voice)",
-            defaultValue: 0.75,
-            type: "number",
-          },
-        },
-      },
-    ]);
+      })),
+    );
   });
 
   app.waitForService(
     TranscriptionModelRegistry,
     (transcriptionModelRegistry) => {
-      transcriptionModelRegistry.registerAllModelSpecs([
-        {
-          modelId: "scribe_v1",
-          providerDisplayName: providerDisplayName,
-          impl: elevenlabs.transcription("scribe_v1"),
+      transcriptionModelRegistry.registerAllModelSpecs(
+        Object.entries(parsedModelConfigs.transcription).map(([modelId, config]) => ({
+          modelId,
+          providerDisplayName,
+          impl: elevenlabs.transcription(modelId),
           isAvailable() {
             return true;
           },
-          costPerMinute: 0.034,
+          costPerMinute: config.costPerMinute,
           settings: {
             languageCode: {
               description: "Language code (ISO 639-1 or ISO 639-3)",
@@ -375,51 +132,8 @@ function init(
               values: ["pcm_s16le_16", "other"],
             },
           },
-        },
-        {
-          modelId: "scribe_v1_experimental",
-          providerDisplayName: providerDisplayName,
-          impl: elevenlabs.transcription("scribe_v1_experimental"),
-          isAvailable() {
-            return true;
-          },
-          costPerMinute: 0.034,
-          settings: {
-            languageCode: {
-              description: "Language code (ISO 639-1 or ISO 639-3)",
-              defaultValue: undefined,
-              type: "string",
-            },
-            tagAudioEvents: {
-              description: "Tag audio events like laughter and footsteps",
-              defaultValue: true,
-              type: "boolean",
-            },
-            numSpeakers: {
-              description: "Maximum number of speakers (1-32)",
-              defaultValue: undefined,
-              type: "number",
-            },
-            timestampsGranularity: {
-              description: "Timestamp granularity",
-              defaultValue: "word",
-              type: "enum",
-              values: ["none", "word", "character"],
-            },
-            diarize: {
-              description: "Annotate which speaker is talking",
-              defaultValue: true,
-              type: "boolean",
-            },
-            fileFormat: {
-              description: "Input audio format",
-              defaultValue: "other",
-              type: "enum",
-              values: ["pcm_s16le_16", "other"],
-            },
-          },
-        },
-      ]);
+        })),
+      );
     },
   );
 }

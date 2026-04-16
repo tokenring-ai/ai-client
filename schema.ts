@@ -8,6 +8,8 @@ import type {GenericModelListResponse} from "./providers/generic.ts";
 export type {FilePart, ImagePart, TextPart, UserModelMessage} from "ai";
 export type {ModelInputCapability} from "./client/modelCapabilities.ts";
 
+import minimaxConfig from "./models/minimax.yaml" with {type: "yaml"};
+
 export type ModelRequirements = {
   /**
    * The name of the provider and model, possibly including wildcards
@@ -263,50 +265,14 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
       defaultContextLength: 204800,
       staticModelList: {
         object: "list",
-        data: [
+        data: Object.entries(minimaxConfig.models.minimax.chat).map(([modelName, _modelConfig]) => (
           {
-            id: "MiniMax-M2.7",
+            id: modelName,
             object: "model",
             owned_by: "organization",
             created: Date.now(),
-          },
-          {
-            id: "MiniMax-M2.7-highspeed",
-            object: "model",
-            owned_by: "organization",
-            created: Date.now(),
-          },
-          {
-            id: "MiniMax-M2.5",
-            object: "model",
-            owned_by: "organization",
-            created: Date.now(),
-          },
-          {
-            id: "MiniMax-M2.5-highspeed",
-            object: "model",
-            owned_by: "organization",
-            created: Date.now(),
-          },
-          {
-            id: "MiniMax-M2.1",
-            object: "model",
-            owned_by: "organization",
-            created: Date.now(),
-          },
-          {
-            id: "MiniMax-M2.1-highspeed",
-            object: "model",
-            owned_by: "organization",
-            created: Date.now(),
-          },
-          {
-            id: "MiniMax-M2",
-            object: "model",
-            owned_by: "organization",
-            created: Date.now(),
-          },
-        ],
+          }
+        )),
       } satisfies GenericModelListResponse,
     };
   }
