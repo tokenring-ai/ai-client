@@ -67,7 +67,7 @@ export class ModelTypeRegistry<
   /**
    * Registers a model with its metadata
    */
-  registerModelSpec = this.modelSpecs.register;
+  registerModelSpec = this.modelSpecs.set;
 
   /**
    * Creates a new ModelTypeRegistry instance
@@ -90,7 +90,7 @@ export class ModelTypeRegistry<
    */
   registerAllModelSpecs(modelSpecs: T[]): void {
     for (const modelSpec of modelSpecs) {
-      this.modelSpecs.register(
+      this.modelSpecs.set(
         `${modelSpec.providerDisplayName}:${modelSpec.modelId}`.toLowerCase(),
         modelSpec,
       );
@@ -104,7 +104,7 @@ export class ModelTypeRegistry<
     Record<string, ModelStatus<T>>
   > {
     const ret: Record<string, ModelStatus<T>> = {};
-    for (const [name, modelSpec] of this.modelSpecs.entries()) {
+    for (const [name, modelSpec] of this.modelSpecs.entriesArray()) {
       let status = "offline";
       const available = modelSpec.isAvailable
         ? await modelSpec.isAvailable()
@@ -149,7 +149,7 @@ export class ModelTypeRegistry<
     let lookupName = base;
 
     if (lookupName.includes("*")) {
-      const matchedNames = this.modelSpecs.getItemNamesLike(lookupName);
+      const matchedNames = this.modelSpecs.keysLike(lookupName);
       if (matchedNames.length > 1) {
         throw new Error(`Model ${lookupName} matched more than one model`);
       } else if (matchedNames.length === 1) {
@@ -159,7 +159,7 @@ export class ModelTypeRegistry<
       }
     }
 
-    const modelSpec = this.modelSpecs.getItemByName(lookupName);
+    const modelSpec = this.modelSpecs.get(lookupName);
     if (!modelSpec) {
       throw new Error(`Model ${lookupName} not found`);
     }
@@ -201,12 +201,12 @@ export class ModelTypeRegistry<
       : undefined;
     const settings = new Set(parsedSettings.keys());
 
-    const modelSpecs = this.modelSpecs.getItemNamesLike(modelSpec);
+    const modelSpecs = this.modelSpecs.keysLike(modelSpec);
 
     return Object.fromEntries(
       modelSpecs
         .filter((modelName) => {
-          const spec = this.modelSpecs.getItemByName(modelName);
+          const spec = this.modelSpecs.get(modelName);
           for (const feature of settings) {
             if (!spec?.settings?.[feature]) {
               return false;

@@ -1,19 +1,20 @@
 import type {ChatInputMessage, ChatRequest} from "../client/AIChatClient.ts";
+import type {TextPart} from "../schema.ts";
 
 export function resequenceMessages(request: ChatRequest) {
   const {messages} = request;
   if (!messages || messages.length === 0) return;
 
-  // First, combine consecutive messages from the same role
   const combinedMessages = messages.reduce(
     (acc: ChatInputMessage[], current: ChatInputMessage) => {
-      if (acc.length === 0 || acc[acc.length - 1].role !== current.role) {
-        // Add the message as is if it's the first one or has a different role from the previous one
-        acc.push({...current});
+      const lastMessage = acc.length === 0 ? null : acc[acc.length - 1];
+      if (lastMessage?.role === 'user' && current.role === 'user') {
+        lastMessage.content = [
+          ...(Array.isArray(lastMessage.content) ? lastMessage.content : [{type: 'text', text: lastMessage.content} satisfies TextPart]),
+          ...(Array.isArray(current.content) ? current.content : [{type: 'text', text: current.content} satisfies TextPart]),
+        ];
       } else {
-        // Combine with the previous message of the same role
-        const lastMessage = acc[acc.length - 1];
-        lastMessage.content = `${lastMessage.content}\n\n${current.content}`;
+        acc.push({...current});
       }
       return acc;
     },

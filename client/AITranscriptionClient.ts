@@ -77,7 +77,7 @@ export default class AITranscriptionClient {
         ...request,
         model: this.modelSpec.impl,
         providerOptions: {
-          ...(this.modelSpec.providerOptions ?? {}),
+          ...this.modelSpec.providerOptions,
           ...(request.language && {language: request.language}),
           ...(request.prompt && {prompt: request.prompt}),
         },
