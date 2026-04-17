@@ -323,7 +323,7 @@ export default class AIChatClient {
                 body: part.file.base64,
               });
             } catch {
-              agent.errorMessage(`The LLM generate a file with ${mimeType} output type, which is unsupported, and has been dropped`)
+              agent.errorMessage(`The LLM generated a file with ${mimeType} output type, which is unsupported, and has been dropped`);
             }
           } break;
           case "text-end":

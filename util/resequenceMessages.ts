@@ -71,7 +71,7 @@ export function resequenceMessages(request: ChatRequest) {
     }
   }
 
-  // Ensure the sequence ends with an assistant message if it ends with a user message
+  // Ensure the sequence ends with an user message if it ends with another type of message
   if (alternatingMessages[alternatingMessages.length - 1].role !== "user") {
     alternatingMessages.push({
       role: "user",
