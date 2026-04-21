@@ -1,6 +1,5 @@
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import {abandon} from "@tokenring-ai/utility/promise/abandon";
 import {createOllama} from "ollama-ai-provider-v2";
 import {z} from "zod";
 import type {ChatModelSpec} from "../client/AIChatClient.ts";
@@ -99,7 +98,7 @@ async function init(
     timeout: 1000,
   }) as () => Promise<ModelPsResponse>;
 
-  abandon(getRunningModels()); // In background, fetch the list of running models.
+  void getRunningModels(); // In background, fetch the list of running models.
 
   const modelList = await getModelList();
   if (!modelList?.models) return;
