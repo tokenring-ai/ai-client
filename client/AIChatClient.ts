@@ -1,44 +1,40 @@
-import type {LanguageModelV2Usage, LanguageModelV3Source, SharedV3Warning} from "@ai-sdk/provider";
+import type { LanguageModelV2Usage, LanguageModelV3Source, SharedV3Warning } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
-import {BaseAttachmentSchema} from "@tokenring-ai/agent/AgentEvents";
-import {MetricsService} from "@tokenring-ai/metrics";
+import { BaseAttachmentSchema } from "@tokenring-ai/agent/AgentEvents";
+import { MetricsService } from "@tokenring-ai/metrics";
 import omit from "@tokenring-ai/utility/object/omit";
+import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 
 import {
   type AssistantModelMessage,
   type GenerateObjectResult,
-  generateText,
   type GenerateTextResult,
+  generateText,
   type LanguageModel,
   Output,
-  streamText,
   type StreamTextResult,
   type SystemModelMessage,
-  type Tool,
+  streamText,
   type ToolModelMessage,
+  type ToolSet,
   type UserModelMessage,
 } from "ai";
-import {z, type ZodObject} from "zod";
-import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
-import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
+import { type ZodObject, z } from "zod";
+import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
+import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
-export type ChatInputMessage =
-  | SystemModelMessage
-  | UserModelMessage
-  | AssistantModelMessage
-  | ToolModelMessage;
+export type ChatInputMessage = SystemModelMessage | UserModelMessage | AssistantModelMessage | ToolModelMessage;
 
-export type ChatRequest = Pick<
-  Parameters<typeof streamText>[0],
-  | "temperature"
-  | "seed"
-  | "topP"
-  | "topK"
-  | "frequencyPenalty"
-  | "presencePenalty"
-  | "providerOptions"
-> & {
-  tools: Record<string, Tool>;
+export type ChatRequest<TOOLS extends ToolSet = ToolSet> = {
+  temperature?: number;
+  seed?: number;
+  topP?: number;
+  topK?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+  providerOptions?: Exclude<Parameters<typeof streamText>[0]["providerOptions"], undefined>;
+
+  tools: TOOLS;
   messages: ChatInputMessage[];
   parallelTools?: boolean;
   _toolQueue?: any;
@@ -47,7 +43,7 @@ export type ChatRequest = Pick<
 export type RerankRequest = {
   query: string;
   documents: string[];
-  topN?: number;
+  topN?: number | undefined;
 };
 
 export type ChatModelSpec = ModelSpec & {
@@ -67,23 +63,19 @@ export type ChatModelSpec = ModelSpec & {
 
 export type ChatModelInputCapabilities = ModelInputCapabilities;
 
-export const ChatModelSpecSchema = createModelSpecSchema(
-  ModelInputCapabilitiesSchema,
-).extend({
+export const ChatModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
   tools: z.boolean().default(true),
   structuredOutput: z.boolean().default(true),
-  webSearch: z.boolean().optional(),
-  maxCompletionTokens: z.number().optional(),
+  webSearch: z.boolean().exactOptional(),
+  maxCompletionTokens: z.number().exactOptional(),
   maxContextLength: z.number(),
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number(),
-  costPerMillionCachedInputTokens: z.number().optional(),
-  costPerMillionReasoningTokens: z.number().optional(),
+  costPerMillionCachedInputTokens: z.number().exactOptional(),
+  costPerMillionReasoningTokens: z.number().exactOptional(),
 });
 
-export function normalizeChatModelSpec(
-  modelSpec: ChatModelSpec,
-): ChatModelSpec {
+export function normalizeChatModelSpec(modelSpec: ChatModelSpec): ChatModelSpec {
   return ChatModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -92,14 +84,7 @@ export function normalizeChatModelSpec(
 
 export type AIResponse = {
   providerMetadata: any;
-  finishReason:
-    | "stop"
-    | "length"
-    | "content-filter"
-    | "tool-calls"
-    | "error"
-    | "other"
-    | "unknown";
+  finishReason: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other" | "unknown";
   timestamp: number;
   modelId: string;
   messages?: ChatInputMessage[];
@@ -131,20 +116,11 @@ const rerankSchema = z.object({
     .array(
       z.object({
         index: z.number().int().describe("Original index of the document"),
-        score: z
-          .number()
-          .min(0)
-          .max(1)
-          .describe("Relevance score between 0 and 1"),
-        reasoning: z
-          .string()
-          .optional()
-          .describe("Brief explanation of the relevance score"),
+        score: z.number().min(0).max(1).describe("Relevance score between 0 and 1"),
+        reasoning: z.string().exactOptional().describe("Brief explanation of the relevance score"),
       }),
     )
-    .describe(
-      "Ranked list of documents ordered by relevance (most relevant first)",
-    ),
+    .describe("Ranked list of documents ordered by relevance (most relevant first)"),
 });
 
 /**
@@ -156,8 +132,7 @@ export default class AIChatClient {
   constructor(
     private readonly modelSpec: ChatModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.
@@ -185,83 +160,55 @@ export default class AIChatClient {
    * using the pricing info from modelSpec (prefers .pricing, falls back to legacy fields).
    * Returns a number (cost in USD or provider's currency).
    */
-  calculateCost({
-                  inputTokens,
-                  outputTokens,
-                  cachedInputTokens,
-                  reasoningTokens,
-                }: LanguageModelV2Usage): AIResponseCost {
+  calculateCost({ inputTokens, outputTokens, cachedInputTokens, reasoningTokens }: LanguageModelV2Usage): AIResponseCost {
     const inputRate = this.modelSpec.costPerMillionInputTokens / 1000000;
-    const cachedInputRate =
-      (this.modelSpec.costPerMillionCachedInputTokens ??
-        this.modelSpec.costPerMillionInputTokens) / 1000000;
+    const cachedInputRate = (this.modelSpec.costPerMillionCachedInputTokens ?? this.modelSpec.costPerMillionInputTokens) / 1000000;
     const outputRate = this.modelSpec.costPerMillionOutputTokens / 1000000;
-    const reasoningRate =
-      (this.modelSpec.costPerMillionReasoningTokens ??
-        this.modelSpec.costPerMillionOutputTokens) / 1000000;
+    const reasoningRate = (this.modelSpec.costPerMillionReasoningTokens ?? this.modelSpec.costPerMillionOutputTokens) / 1000000;
 
     const input = inputTokens ? inputTokens * inputRate : undefined;
-    const cachedInput = cachedInputTokens
-      ? cachedInputTokens * cachedInputRate
-      : undefined;
+    const cachedInput = cachedInputTokens ? cachedInputTokens * cachedInputRate : undefined;
     const output = outputTokens ? outputTokens * outputRate : undefined;
-    const reasoning = reasoningTokens
-      ? reasoningTokens * reasoningRate
-      : undefined;
+    const reasoning = reasoningTokens ? reasoningTokens * reasoningRate : undefined;
 
-    return {
+    return stripUndefinedKeys({
       input,
       cachedInput,
       output,
       reasoning,
-      total:
-        (input ?? 0) + (cachedInput ?? 0) + (output ?? 0) + (reasoning ?? 0),
-    };
+      total: (input ?? 0) + (cachedInput ?? 0) + (output ?? 0) + (reasoning ?? 0),
+    });
   }
 
-  calculateTiming(
-    elapsedMs: number,
-    usage: LanguageModelV2Usage,
-  ): AIResponseTiming {
-    const totalTokens =
-      (usage.inputTokens ?? 0) +
-      (usage.outputTokens ?? 0) +
-      (usage.cachedInputTokens ?? 0) +
-      (usage.reasoningTokens ?? 0);
+  calculateTiming(elapsedMs: number, usage: LanguageModelV2Usage): AIResponseTiming {
+    const totalTokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0) + (usage.cachedInputTokens ?? 0) + (usage.reasoningTokens ?? 0);
 
-    return {
+    return stripUndefinedKeys({
       elapsedMs,
-      tokensPerSec:
-        totalTokens > 0 ? totalTokens / (elapsedMs / 1000) : undefined,
+      tokensPerSec: totalTokens > 0 ? totalTokens / (elapsedMs / 1000) : undefined,
       totalTokens: totalTokens > 0 ? totalTokens : undefined,
-    };
+    });
   }
 
   /**
    * Streams a chat completion via `streamText`, relaying every delta
    * back to the `ChatService`.
    */
-  async streamChat(
-    request: ChatRequest &
-      Pick<
-        Parameters<typeof streamText>[0],
-        "prepareStep" | "stopWhen" | "onStepFinish"
-      >,
+  async streamChat<TOOLS extends ToolSet>(
+    request: ChatRequest<TOOLS> & Pick<Parameters<typeof streamText<TOOLS, never>>[0], "prepareStep" | "stopWhen" | "onStepFinish">,
     agent: Agent,
   ): Promise<AIResponse> {
     const signal = agent.getAbortSignal();
 
     if (this.modelSpec.mangleRequest) {
-      request = {...request};
+      request = { ...request };
       this.modelSpec.mangleRequest(request, this.settings);
     }
 
     const isHot = this.modelSpec.isHot ? await this.modelSpec.isHot() : true;
 
     if (!isHot) {
-      agent.infoMessage(
-        "Model is not hot and will need to be cold started. Setting retries to 15...",
-      );
+      agent.infoMessage("Model is not hot and will need to be cold started. Setting retries to 15...");
     }
 
     const start = Date.now();
@@ -271,7 +218,7 @@ export default class AIChatClient {
       maxRetries: 15,
       model: this.modelSpec.impl,
       abortSignal: signal,
-      experimental_context: {agent},
+      experimental_context: { agent },
       onError: () => {
         //TODO: If we don't have this here, errors get stupidly barfed out as unhandled rejections in the main event loop
       },
@@ -312,24 +259,27 @@ export default class AIChatClient {
     try {
       for await (const part of stream) {
         switch (part.type) {
-          case "file": {
-            flushBuffer(true);
-            const mimeType = BaseAttachmentSchema.shape.mimeType.parse(part.file.mediaType);
-            try {
-              agent.artifactOutput({
-                name: "Generated File",
-                encoding: "base64",
-                mimeType,
-                body: part.file.base64,
-              });
-            } catch {
-              agent.errorMessage(`The LLM generated a file with ${mimeType} output type, which is unsupported, and has been dropped`);
+          case "file":
+            {
+              flushBuffer(true);
+              const mimeType = BaseAttachmentSchema.shape.mimeType.parse(part.file.mediaType);
+              try {
+                agent.artifactOutput({
+                  name: "Generated File",
+                  encoding: "base64",
+                  mimeType,
+                  body: part.file.base64,
+                });
+              } catch {
+                agent.errorMessage(`The LLM generated a file with ${mimeType} output type, which is unsupported, and has been dropped`);
+              }
             }
-          } break;
+            break;
           case "text-end":
-          case "reasoning-end": {
-            flushBuffer(true);
-          }
+          case "reasoning-end":
+            {
+              flushBuffer(true);
+            }
             break;
           case "text-delta": {
             if (chunkType === "chat") {
@@ -380,13 +330,7 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent
-      .getServiceByType(MetricsService)
-      ?.addCost(
-        `Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
-        response.cost.total ?? 0,
-        agent,
-      );
+    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
 
     return response;
   }
@@ -394,16 +338,12 @@ export default class AIChatClient {
   /**
    * Sends a chat completion request and returns the full text response.
    */
-  async textChat(
-    request: ChatRequest &
-      Pick<
-        Parameters<typeof generateText>[0],
-        "prepareStep" | "stopWhen" | "onStepFinish"
-      >,
+  async textChat<TOOLS extends ToolSet>(
+    request: ChatRequest<TOOLS> & Pick<Parameters<typeof generateText<TOOLS, never>>[0], "prepareStep" | "stopWhen" | "onStepFinish">,
     agent: Agent,
   ): Promise<[string, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
-      request = {...request};
+      request = { ...request };
       this.modelSpec.mangleRequest(request, this.settings);
     }
 
@@ -418,13 +358,7 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent
-      .getServiceByType(MetricsService)
-      ?.addCost(
-        `Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
-        response.cost.total ?? 0,
-        agent,
-      );
+    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
 
     return [response.text ?? "", response];
   }
@@ -432,12 +366,9 @@ export default class AIChatClient {
   /**
    * Sends a chat completion request and returns the generated object response.
    */
-  async generateObject<T extends ZodObject>(
-    request: ChatRequest & { schema: T },
-    agent: Agent,
-  ): Promise<[z.infer<typeof request.schema>, AIResponse]> {
+  async generateObject<T extends ZodObject>(request: ChatRequest & { schema: T }, agent: Agent): Promise<[z.infer<typeof request.schema>, AIResponse]> {
     if (this.modelSpec.mangleRequest) {
-      request = {...request};
+      request = { ...request };
       this.modelSpec.mangleRequest(request, this.settings);
     }
 
@@ -460,11 +391,7 @@ export default class AIChatClient {
     const response = await this.generateResponseObject(result, elapsedMs);
     agent
       .getServiceByType(MetricsService)
-      ?.addCost(
-        `GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
-        response.cost.total ?? 0,
-        agent,
-      );
+      ?.addCost(`GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
 
     return [result.output as z.infer<typeof request.schema>, response];
   }
@@ -473,17 +400,15 @@ export default class AIChatClient {
    * Generates a response object from the result.
    */
   async generateResponseObject(
-    result:
-      | StreamTextResult<Record<string, Tool>, never>
-      | GenerateTextResult<Record<string, Tool>, never>
-      | GenerateObjectResult<any>,
+    result: StreamTextResult<any, never> | GenerateTextResult<any, never> | GenerateObjectResult<any>,
     elapsedMs: number,
   ): Promise<AIResponse> {
     const responseData = await result.response;
 
-    const totalUsage =
-      "totalUsage" in result ? await result.totalUsage : result.usage;
+    const totalUsage = "totalUsage" in result ? await result.totalUsage : result.usage;
     const lastStepUsage = await result.usage;
+
+    const warnings = await result.warnings;
 
     return {
       timestamp: responseData.timestamp.getTime(),
@@ -494,9 +419,13 @@ export default class AIChatClient {
       totalUsage,
       cost: this.calculateCost(totalUsage),
       timing: this.calculateTiming(elapsedMs, totalUsage),
-      sources: "sources" in result ? await result.sources : undefined,
-      text: "text" in result ? await result.text : undefined,
-      warnings: await result.warnings,
+      ...("sources" in result && {
+        sources: await result.sources,
+      }),
+      ...("text" in result && {
+        text: await result.text,
+      }),
+      ...(warnings && { warnings }),
       providerMetadata: await result.providerMetadata,
     };
   }
@@ -505,14 +434,9 @@ export default class AIChatClient {
     return this.modelSpec;
   }
 
-  async rerank(
-    {query, documents, topN}: RerankRequest,
-    agent: Agent,
-  ): Promise<z.infer<typeof rerankSchema>> {
+  async rerank({ query, documents, topN }: RerankRequest, agent: Agent): Promise<z.infer<typeof rerankSchema>> {
     // Format documents with indices
-    const documentsText = documents
-      .map((doc, idx) => `[${idx}] ${doc}`)
-      .join("\n\n");
+    const documentsText = documents.map((doc, idx) => `[${idx}] ${doc}`).join("\n\n");
 
     const userPrompt = `Query: ${query}
 
@@ -549,9 +473,7 @@ Be objective and precise in your scoring.`.trim(),
     const [result] = await this.generateObject(req, agent);
 
     // Sort rankings by score (descending)
-    const sortedRankings = result.rankings.sort(
-      (a: any, b: any) => b.score - a.score,
-    );
+    const sortedRankings = result.rankings.sort((a: any, b: any) => b.score - a.score);
 
     // Apply topK if specified
     const finalRankings = topN ? sortedRankings.slice(0, topN) : sortedRankings;

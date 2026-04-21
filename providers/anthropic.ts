@@ -1,11 +1,11 @@
-import {createAnthropic} from "@ai-sdk/anthropic";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import {ChatModelRegistry} from "../ModelRegistry.ts";
-import modelConfigs from "../models/anthropic.yaml" with {type: "yaml"};
-import type {AIModelProvider} from "../schema.ts";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ChatModelRegistry } from "../ModelRegistry.ts";
+import modelConfigs from "../models/anthropic.yaml" with { type: "yaml" };
+import type { AIModelProvider } from "../schema.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string(),
@@ -39,11 +39,7 @@ interface ModelsResponse {
   last_id: string;
 }
 
-function init(
-  providerDisplayName: string,
-  config: z.output<typeof AnthropicModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
+function init(providerDisplayName: string, config: z.output<typeof AnthropicModelProviderConfigSchema>, app: TokenRingApp) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Anthropic provider.");
   }
@@ -62,15 +58,7 @@ function init(
   function generateModelSpec(
     modelId: string,
     anthropicModelId: string,
-    modelSpec: Omit<
-      ChatModelSpec,
-      | "isAvailable"
-      | "providerDisplayName"
-      | "impl"
-      | "modelId"
-      | "settings"
-      | "mangleRequest"
-    >,
+    modelSpec: Omit<ChatModelSpec, "isAvailable" | "providerDisplayName" | "impl" | "modelId" | "settings" | "mangleRequest">,
   ): ChatModelSpec {
     return {
       modelId,
@@ -78,21 +66,19 @@ function init(
       impl: anthropicClient(anthropicModelId),
       async isAvailable() {
         const modelList = await getModels();
-        return !!modelList?.data.some((model) => model.id === anthropicModelId);
+        return !!modelList?.data.some(model => model.id === anthropicModelId);
       },
       mangleRequest(req, settings) {
-        const anthropicProvider = ((req.providerOptions ??= {}).anthropic ??=
-          {});
+        const anthropicProvider = ((req.providerOptions ??= {}).anthropic ??= {});
         if (settings.get("caching") as boolean) {
-          anthropicProvider.cacheControl = {type: "ephemeral"};
+          anthropicProvider.cacheControl = { type: "ephemeral" };
         }
 
         // Add web search tool if enabled
         if (settings.get("websearch") as boolean) {
-          (req.tools ??= {}).web_search =
-            anthropicClient.tools.webSearch_20250305({
-              maxUses: (settings.get("maxSearchUses") as number) ?? 5,
-            });
+          (req.tools ??= {}).web_search = anthropicClient.tools.webSearch_20250305({
+            maxUses: (settings.get("maxSearchUses") as number) ?? 5,
+          });
         }
       },
       settings: {
@@ -107,8 +93,7 @@ function init(
           type: "boolean",
         },
         maxSearchUses: {
-          description:
-            "Maximum number of web searches Claude can perform (0 to disable)",
+          description: "Maximum number of web searches Claude can perform (0 to disable)",
           defaultValue: 5,
           type: "number",
           min: 1,

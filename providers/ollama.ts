@@ -1,11 +1,11 @@
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import {createOllama} from "ollama-ai-provider-v2";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
-import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
-import type {AIModelProvider} from "../schema.ts";
+import { createOllama } from "ollama-ai-provider-v2";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
+import { ChatModelRegistry, EmbeddingModelRegistry } from "../ModelRegistry.ts";
+import type { AIModelProvider } from "../schema.ts";
 
 const OllamaModelProviderConfigSchema = z.object({
   provider: z.literal("ollama"),
@@ -14,20 +14,18 @@ const OllamaModelProviderConfigSchema = z.object({
     input: z.tuple([z.any()]),
     output: z.object({
       type: z.string(),
-      capabilities: z.any().optional(),
+      capabilities: z.any().exactOptional(),
     }),
   }),
 });
 
-function defaultModelSpecGenerator(
-  modelInfo: OllamaModelTagItem,
-): ModelConfigResults {
-  const {model} = modelInfo;
+function defaultModelSpecGenerator(modelInfo: OllamaModelTagItem): ModelConfigResults {
+  const { model } = modelInfo;
   let type = "chat";
   if (model.match(/embed/i)) {
     type = "embedding";
   }
-  return {type};
+  return { type };
 }
 
 type ModelConfigResults = {
@@ -71,12 +69,8 @@ type ModelPsResponse = {
   models: ModelPsItem[];
 };
 
-async function init(
-  providerDisplayName: string,
-  config: z.output<typeof OllamaModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
-  let {baseURL, generateModelSpec} = config;
+async function init(providerDisplayName: string, config: z.output<typeof OllamaModelProviderConfigSchema>, app: TokenRingApp) {
+  let { baseURL, generateModelSpec } = config;
   if (!baseURL) {
     throw new Error("No config.baseURL provided for Ollama provider.");
   }
@@ -86,7 +80,7 @@ async function init(
   const chatModelSpecs: ChatModelSpec[] = [];
   const embeddingModelSpecs: EmbeddingModelSpec[] = [];
 
-  const ollama = createOllama({baseURL});
+  const ollama = createOllama({ baseURL });
   const getModelList = cachedDataRetriever(`${baseURL}/tags`, {
     headers: {},
     cacheTime: 60000,
@@ -104,23 +98,15 @@ async function init(
   if (!modelList?.models) return;
 
   for (const modelInfo of modelList.models) {
-    const {type, capabilities = {}} = generateModelSpec(modelInfo);
+    const { type, capabilities = {} } = generateModelSpec(modelInfo);
 
     if (type === "chat") {
       chatModelSpecs.push({
         modelId: modelInfo.model,
         providerDisplayName: providerDisplayName,
         impl: ollama.chat(modelInfo.model),
-        isAvailable: () => getModelList().then((data) => !!data),
-        isHot: () =>
-          capabilities.alwaysHot
-            ? true
-            : getRunningModels().then(
-              (result) =>
-                !!result?.models?.find(
-                  (row) => modelInfo.model === row.model,
-                ),
-            ),
+        isAvailable: () => getModelList().then(data => !!data),
+        isHot: () => (capabilities.alwaysHot ? true : getRunningModels().then(result => !!result?.models?.find(row => modelInfo.model === row.model))),
         ...capabilities,
       });
     } else if (type === "embedding") {
@@ -130,25 +116,17 @@ async function init(
         impl: ollama.embedding(modelInfo.model),
         contextLength: 2048,
         costPerMillionInputTokens: 0,
-        isAvailable: () => getModelList().then((data) => !!data),
-        isHot: () =>
-          capabilities.alwaysHot
-            ? true
-            : getRunningModels().then(
-              (result) =>
-                !!result?.models?.find(
-                  (row) => modelInfo.model === row.model,
-                ),
-            ),
+        isAvailable: () => getModelList().then(data => !!data),
+        isHot: () => (capabilities.alwaysHot ? true : getRunningModels().then(result => !!result?.models?.find(row => modelInfo.model === row.model))),
       });
     }
   }
 
-  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
     chatModelRegistry.registerAllModelSpecs(chatModelSpecs);
   });
 
-  app.waitForService(EmbeddingModelRegistry, (embeddingModelRegistry) => {
+  app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
     embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
   });
 }

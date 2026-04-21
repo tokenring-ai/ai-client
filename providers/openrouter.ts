@@ -1,11 +1,11 @@
-import type {JSONArray} from "@ai-sdk/provider";
-import {openrouter} from "@openrouter/ai-sdk-provider";
+import type { JSONArray } from "@ai-sdk/provider";
+import { openrouter } from "@openrouter/ai-sdk-provider";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import {ChatModelRegistry} from "../ModelRegistry.ts";
-import type {AIModelProvider} from "../schema.ts";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ChatModelRegistry } from "../ModelRegistry.ts";
+import type { AIModelProvider } from "../schema.ts";
 
 const OpenRouterModelProviderConfigSchema = z.object({
   provider: z.literal("openrouter"),
@@ -15,7 +15,7 @@ const OpenRouterModelProviderConfigSchema = z.object({
       input: z.tuple([z.any()]),
       output: z.boolean(),
     })
-    .optional(),
+    .exactOptional(),
 });
 
 interface ModelData {
@@ -57,22 +57,14 @@ interface ApiResponse {
 
 // Function to safely convert pricing string to number (cost per million tokens)
 function parsePricing(priceString: string | null | undefined): number {
-  if (
-    priceString === null ||
-    priceString === undefined ||
-    priceString === "0"
-  ) {
+  if (priceString === null || priceString === undefined || priceString === "0") {
     return 0;
   }
   const price = Number.parseFloat(priceString);
   return Number.isNaN(price) ? 0 : price * 1000000;
 }
 
-async function fetchAndRegisterOpenRouterModels(
-  providerDisplayName: string,
-  config: z.output<typeof OpenRouterModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
+async function fetchAndRegisterOpenRouterModels(providerDisplayName: string, config: z.output<typeof OpenRouterModelProviderConfigSchema>, app: TokenRingApp) {
   const getModels = cachedDataRetriever("https://openrouter.ai/api/v1/models", {
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
@@ -97,9 +89,7 @@ async function fetchAndRegisterOpenRouterModels(
       }
     }
 
-    const isChatModel =
-      model.architecture?.output_modalities?.includes("text") &&
-      model.architecture?.input_modalities?.includes("text");
+    const isChatModel = model.architecture?.output_modalities?.includes("text") && model.architecture?.input_modalities?.includes("text");
 
     if (isChatModel) {
       chatModelsSpec.push({
@@ -107,10 +97,10 @@ async function fetchAndRegisterOpenRouterModels(
         providerDisplayName: providerDisplayName,
         impl: openrouter(model.id),
         isAvailable,
-        maxContextLength:
-          model.context_length || model.topProvider?.context_length || 4096,
-        maxCompletionTokens:
-          model.topProvider?.max_completion_tokens ?? undefined,
+        maxContextLength: model.context_length || model.topProvider?.context_length || 4096,
+        ...(model.topProvider?.max_completion_tokens && {
+          maxCompletionTokens: model.topProvider.max_completion_tokens,
+        }),
         costPerMillionInputTokens: parsePricing(model.pricing?.prompt),
         costPerMillionOutputTokens: parsePricing(model.pricing?.completion),
         inputCapabilities: {
@@ -123,9 +113,8 @@ async function fetchAndRegisterOpenRouterModels(
           const supported = model.supported_parameters || [];
 
           if (settings.has("websearch")) {
-            const plugins = (((req.providerOptions ??= {}).openrouter ??=
-              {}).plugins ??= []) as JSONArray;
-            const webPlugin: any = {id: "web"};
+            const plugins = (((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= []) as JSONArray;
+            const webPlugin: any = { id: "web" };
 
             if (settings.has("searchEngine")) {
               webPlugin.engine = settings.get("searchEngine");
@@ -141,52 +130,24 @@ async function fetchAndRegisterOpenRouterModels(
           }
 
           if (settings.has("searchContextSize")) {
-            const webSearchOptions = ((req.providerOptions ??=
-              {}).web_search_options ??= {});
-            webSearchOptions.search_context_size = settings.get(
-              "searchContextSize",
-            ) as number;
+            const webSearchOptions = ((req.providerOptions ??= {}).web_search_options ??= {});
+            webSearchOptions.search_context_size = settings.get("searchContextSize") as number;
           }
 
           const params: Record<string, any> = {};
-          if (
-            supported.includes("frequency_penalty") &&
-            settings.has("frequencyPenalty")
-          )
-            params.frequency_penalty = settings.get("frequencyPenalty");
-          if (supported.includes("max_tokens") && settings.has("maxTokens"))
-            params.max_tokens = settings.get("maxTokens");
-          if (supported.includes("min_p") && settings.has("minP"))
-            params.min_p = settings.get("minP");
-          if (
-            supported.includes("presence_penalty") &&
-            settings.has("presencePenalty")
-          )
-            params.presence_penalty = settings.get("presencePenalty");
-          if (
-            supported.includes("repetition_penalty") &&
-            settings.has("repetitionPenalty")
-          )
-            params.repetition_penalty = settings.get("repetitionPenalty");
-          if (supported.includes("temperature") && settings.has("temperature"))
-            params.temperature = settings.get("temperature");
-          if (supported.includes("top_k") && settings.has("topK"))
-            params.top_k = settings.get("topK");
-          if (supported.includes("top_p") && settings.has("topP"))
-            params.top_p = settings.get("topP");
-          if (
-            supported.includes("include_reasoning") &&
-            settings.has("includeReasoning")
-          )
-            params.include_reasoning = settings.get("includeReasoning");
-          if (supported.includes("reasoning") && settings.has("reasoning"))
-            params.reasoning = settings.get("reasoning");
+          if (supported.includes("frequency_penalty") && settings.has("frequencyPenalty")) params.frequency_penalty = settings.get("frequencyPenalty");
+          if (supported.includes("max_tokens") && settings.has("maxTokens")) params.max_tokens = settings.get("maxTokens");
+          if (supported.includes("min_p") && settings.has("minP")) params.min_p = settings.get("minP");
+          if (supported.includes("presence_penalty") && settings.has("presencePenalty")) params.presence_penalty = settings.get("presencePenalty");
+          if (supported.includes("repetition_penalty") && settings.has("repetitionPenalty")) params.repetition_penalty = settings.get("repetitionPenalty");
+          if (supported.includes("temperature") && settings.has("temperature")) params.temperature = settings.get("temperature");
+          if (supported.includes("top_k") && settings.has("topK")) params.top_k = settings.get("topK");
+          if (supported.includes("top_p") && settings.has("topP")) params.top_p = settings.get("topP");
+          if (supported.includes("include_reasoning") && settings.has("includeReasoning")) params.include_reasoning = settings.get("includeReasoning");
+          if (supported.includes("reasoning") && settings.has("reasoning")) params.reasoning = settings.get("reasoning");
 
           if (Object.keys(params).length > 0) {
-            Object.assign(
-              ((req.providerOptions ??= {}).openrouter ??= {}),
-              params,
-            );
+            Object.assign(((req.providerOptions ??= {}).openrouter ??= {}), params);
           }
         },
         settings: {
@@ -223,7 +184,7 @@ async function fetchAndRegisterOpenRouterModels(
             },
           }),
           ...(model.supported_parameters?.includes("max_tokens") && {
-            maxTokens: {description: "Max tokens", type: "number", min: 1},
+            maxTokens: { description: "Max tokens", type: "number", min: 1 },
           }),
           ...(model.supported_parameters?.includes("min_p") && {
             minP: {
@@ -258,7 +219,7 @@ async function fetchAndRegisterOpenRouterModels(
             },
           }),
           ...(model.supported_parameters?.includes("top_k") && {
-            topK: {description: "Top K sampling", type: "number", min: 0},
+            topK: { description: "Top K sampling", type: "number", min: 0 },
           }),
           ...(model.supported_parameters?.includes("top_p") && {
             topP: {
@@ -275,7 +236,7 @@ async function fetchAndRegisterOpenRouterModels(
             },
           }),
           ...(model.supported_parameters?.includes("reasoning") && {
-            reasoning: {description: "Reasoning mode", type: "string"},
+            reasoning: { description: "Reasoning mode", type: "string" },
           }),
         },
         //reasoning: model.supported_parameters?.includes('include_reasoning') ? 2 : 0,
@@ -286,17 +247,13 @@ async function fetchAndRegisterOpenRouterModels(
   }
 
   if (chatModelsSpec.length > 0) {
-    app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
+    app.waitForService(ChatModelRegistry, chatModelRegistry => {
       chatModelRegistry.registerAllModelSpecs(chatModelsSpec);
     });
   }
 }
 
-async function init(
-  providerDisplayName: string,
-  config: z.output<typeof OpenRouterModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
+async function init(providerDisplayName: string, config: z.output<typeof OpenRouterModelProviderConfigSchema>, app: TokenRingApp) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for OpenRouter provider.");
   }

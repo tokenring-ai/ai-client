@@ -1,5 +1,5 @@
 import type TokenRingApp from "@tokenring-ai/app";
-import {z} from "zod";
+import { z } from "zod";
 
 import anthropic from "./providers/anthropic.ts";
 import azure from "./providers/azure.ts";
@@ -38,22 +38,12 @@ const providers = {
 /**
  * Registers a key: value object of model specs
  */
-export async function registerProviders(
-  config: Record<string, AIProviderConfig>,
-  app: TokenRingApp,
-): Promise<void> {
+export async function registerProviders(config: Record<string, AIProviderConfig>, app: TokenRingApp): Promise<void> {
   await Promise.all(
     Object.entries(config)
-      .filter(
-        ([_providerDisplayName, providerConfig]) =>
-          providerConfig.provider in providers,
-      )
+      .filter(([_providerDisplayName, providerConfig]) => providerConfig.provider in providers)
       .map(([providerDisplayName, providerConfig]) =>
-        Promise.resolve(providers[providerConfig.provider].init(
-          providerDisplayName,
-          {...providerConfig} as any,
-          app,
-        )),
+        Promise.resolve(providers[providerConfig.provider].init(providerDisplayName, { ...providerConfig } as any, app)),
       ),
   );
 }

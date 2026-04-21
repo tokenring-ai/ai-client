@@ -1,10 +1,10 @@
-import {createOpenAI} from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import {ChatModelRegistry} from "../ModelRegistry.ts";
-import type {AIModelProvider} from "../schema.ts";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ChatModelRegistry } from "../ModelRegistry.ts";
+import type { AIModelProvider } from "../schema.ts";
 
 const LlamaModelProviderConfigSchema = z.object({
   provider: z.literal("llama"),
@@ -22,49 +22,36 @@ interface ModelList {
   data: Model[];
 }
 
-function init(
-  providerDisplayName: string,
-  config: z.output<typeof LlamaModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
+function init(providerDisplayName: string, config: z.output<typeof LlamaModelProviderConfigSchema>, app: TokenRingApp) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Llama provider.");
   }
 
-  const getModels = cachedDataRetriever(
-    "https://api.llama.com/compat/v1/models",
-    {
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-      },
+  const getModels = cachedDataRetriever("https://api.llama.com/compat/v1/models", {
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
     },
-  ) as () => Promise<ModelList | null>;
+  }) as () => Promise<ModelList | null>;
 
   const openai = createOpenAI({
     apiKey: config.apiKey,
     baseURL: "https://api.llama.com/compat/v1",
   });
 
-  function generateModelSpec(
-    modelId: string,
-    modelSpec: Omit<
-      ChatModelSpec,
-      "isAvailable" | "providerDisplayName" | "impl" | "modelId"
-    >,
-  ): ChatModelSpec {
+  function generateModelSpec(modelId: string, modelSpec: Omit<ChatModelSpec, "isAvailable" | "providerDisplayName" | "impl" | "modelId">): ChatModelSpec {
     return {
       modelId,
       providerDisplayName: providerDisplayName,
       impl: openai(modelId),
       async isAvailable() {
         const modelList = await getModels();
-        return !!modelList?.data.some((model) => model.id === modelId);
+        return !!modelList?.data.some(model => model.id === modelId);
       },
       ...modelSpec,
     } satisfies ChatModelSpec;
   }
 
-  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
     chatModelRegistry.registerAllModelSpecs([
       generateModelSpec("Llama-3.3-70B-Instruct", {
         maxContextLength: 131072,

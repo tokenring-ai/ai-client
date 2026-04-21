@@ -1,41 +1,42 @@
-import {createAnthropic} from "@ai-sdk/anthropic";
-import {createOpenResponses} from "@ai-sdk/open-responses";
-import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
-import type {EmbeddingModelV3, LanguageModelV3} from "@ai-sdk/provider";
+import { setTimeout as delay } from "node:timers/promises";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createOpenResponses } from "@ai-sdk/open-responses";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import type { EmbeddingModelV3, LanguageModelV3 } from "@ai-sdk/provider";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import type {MaybePromise} from "bun";
-import {setTimeout as delay} from "node:timers/promises";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import type {EmbeddingModelSpec} from "../client/AIEmbeddingClient.ts";
-import {ChatModelRegistry, EmbeddingModelRegistry} from "../ModelRegistry.ts";
-import type {SettingDefinition} from "../ModelTypeRegistry.ts";
-import type {AIModelProvider} from "../schema.ts";
+import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
+import type { MaybePromise } from "bun";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
+import { ChatModelRegistry, EmbeddingModelRegistry } from "../ModelRegistry.ts";
+import type { SettingDefinition } from "../ModelTypeRegistry.ts";
+import type { AIModelProvider } from "../schema.ts";
 
 const GenericModelConfigSchema = z.object({
   provider: z.literal("generic"),
   endpointType: z.enum(["openai", "anthropic", "responses"]).default("openai"),
-  apiKey: z.string().optional(),
+  apiKey: z.string().exactOptional(),
   baseURL: z.string(),
-  chatEndpointURL: z.string().optional(),
-  modelListUrl: z.string().optional(),
-  modelPropsUrl: z.string().optional(),
-  headers: z.record(z.string(), z.string()).optional(),
-  queryParams: z.record(z.string(), z.string()).optional(),
-  includeUsage: z.boolean().optional(),
-  supportsStructuredOutputs: z.boolean().optional(),
+  chatEndpointURL: z.string().exactOptional(),
+  modelListUrl: z.string().exactOptional(),
+  modelPropsUrl: z.string().exactOptional(),
+  headers: z.record(z.string(), z.string()).exactOptional(),
+  queryParams: z.record(z.string(), z.string()).exactOptional(),
+  includeUsage: z.boolean().exactOptional(),
+  supportsStructuredOutputs: z.boolean().exactOptional(),
   defaultContextLength: z.number().default(32000),
   generateModelSpec: z
     .function({
       input: z.tuple([z.any()]),
       output: z.object({
         type: z.string(),
-        capabilities: z.record(z.string(), z.any()).optional(),
+        capabilities: z.record(z.string(), z.any()).exactOptional(),
       }),
     })
-    .optional(),
-  staticModelList: z.any().optional(),
+    .exactOptional(),
+  staticModelList: z.any().exactOptional(),
 });
 
 type EndpointType = "openai" | "anthropic" | "responses";
@@ -47,25 +48,20 @@ interface UnderlyingProvider {
 
   getEmbeddingModel(modelId: string): EmbeddingModelV3 | null;
 
-  buildSettings(
-    modelInfo: GenericModelListData,
-    propsResponse: PropsResponse | null,
-  ): Record<string, SettingDefinition>;
+  buildSettings(modelInfo: GenericModelListData, propsResponse: PropsResponse | null): Record<string, SettingDefinition>;
 
   mangleRequest: (req: any, settings: Map<string, unknown>) => void;
 
   inputCapabilities?: { image?: boolean; file?: boolean };
 }
 
-function defaultModelSpecGenerator(
-  modelInfo: GenericModelListData,
-): GenericModelConfigResults {
-  const {id} = modelInfo;
+function defaultModelSpecGenerator(modelInfo: GenericModelListData): GenericModelConfigResults {
+  const { id } = modelInfo;
   let type = "chat";
   if (id.match(/embed/i)) {
     type = "embedding";
   }
-  return {type};
+  return { type };
 }
 
 export type GenericModelConfigResults = {
@@ -80,7 +76,7 @@ export type GenericModelListData = {
   created: number;
   display_name?: string;
   max_model_len?: number;
-  permission?: { allow_sampling?: boolean }[];
+  permission?: { allow_sampling?: boolean | undefined }[];
   meta?: {
     n_ctx_train?: number;
   };
@@ -110,11 +106,7 @@ type PropsResponse = {
 /**
  * Resolves the chat endpoint URL based on the endpoint type and base URL.
  */
-function resolveChatEndpointURL(
-  baseURL: string,
-  endpointType: EndpointType,
-  chatEndpointURL?: string,
-): string {
+function resolveChatEndpointURL(baseURL: string, endpointType: EndpointType, chatEndpointURL?: string): string {
   if (chatEndpointURL) return chatEndpointURL;
 
   const base = baseURL.replace(/\/+$/, "");
@@ -132,10 +124,7 @@ function resolveChatEndpointURL(
 /**
  * Builds OpenAI-compatible settings based on model info and props response.
  */
-function buildOpenAISettings(
-  modelInfo: GenericModelListData,
-  propsResponse: PropsResponse | null,
-): Record<string, SettingDefinition> {
+function buildOpenAISettings(modelInfo: GenericModelListData, propsResponse: PropsResponse | null): Record<string, SettingDefinition> {
   const allowsSampling = modelInfo.permission?.[0]?.allow_sampling;
 
   const settings: Record<string, SettingDefinition> = {
@@ -168,16 +157,12 @@ function buildOpenAISettings(
       max: 2,
     },
     seed: {
-      description:
-        "Seed for the model generation. Setting this value allows consistent results across API calls.",
+      description: "Seed for the model generation. Setting this value allows consistent results across API calls.",
       type: "number",
     },
   };
 
-  if (
-    allowsSampling ||
-    propsResponse?.default_generation_settings?.params?.top_k
-  ) {
+  if (allowsSampling || propsResponse?.default_generation_settings?.params?.top_k) {
     settings.top_k = {
       description:
         "Reduces the probability of generating nonsense. A higher value (e.g. 100) will give more diverse answers, while a lower value (e.g. 10) will be more conservative.",
@@ -186,49 +171,33 @@ function buildOpenAISettings(
       max: 100,
     };
   }
-  if (
-    allowsSampling ||
-    propsResponse?.default_generation_settings?.params?.min_p
-  ) {
+  if (allowsSampling || propsResponse?.default_generation_settings?.params?.min_p) {
     settings.min_p = {
-      description:
-        "Sets a minimum probability threshold for tokens relative to the most likely token. Helps filter out low-probability noise.",
+      description: "Sets a minimum probability threshold for tokens relative to the most likely token. Helps filter out low-probability noise.",
       type: "number",
       min: 0,
       max: 1,
     };
   }
-  if (
-    allowsSampling ||
-    propsResponse?.default_generation_settings?.params?.repetition_penalty
-  ) {
+  if (allowsSampling || propsResponse?.default_generation_settings?.params?.repetition_penalty) {
     settings.repetition_penalty = {
-      description:
-        "Sets how strongly to penalize tokens based on their existing presence in the text. 1.0 is neutral, higher values discourage repetition.",
+      description: "Sets how strongly to penalize tokens based on their existing presence in the text. 1.0 is neutral, higher values discourage repetition.",
       type: "number",
       min: 1,
       max: 2,
     };
   }
-  if (
-    allowsSampling ||
-    propsResponse?.default_generation_settings?.params?.length_penalty
-  ) {
+  if (allowsSampling || propsResponse?.default_generation_settings?.params?.length_penalty) {
     settings.length_penalty = {
-      description:
-        "Adjusts the probability of shorter or longer completions. Values > 1.0 favor longer sequences.",
+      description: "Adjusts the probability of shorter or longer completions. Values > 1.0 favor longer sequences.",
       type: "number",
       min: 0,
       max: 5,
     };
   }
-  if (
-    allowsSampling ||
-    propsResponse?.default_generation_settings?.params?.min_tokens
-  ) {
+  if (allowsSampling || propsResponse?.default_generation_settings?.params?.min_tokens) {
     settings.min_tokens = {
-      description:
-        "The minimum number of tokens the model must generate before it can stop.",
+      description: "The minimum number of tokens the model must generate before it can stop.",
       type: "number",
       min: 0,
     };
@@ -236,8 +205,7 @@ function buildOpenAISettings(
 
   if (modelInfo.owned_by === "vllm") {
     settings.enable_thinking = {
-      description:
-        "Enables thinking mode, which allows the model to generate longer sequences by leveraging the context it has seen so far.",
+      description: "Enables thinking mode, which allows the model to generate longer sequences by leveraging the context it has seen so far.",
       type: "boolean",
     };
   }
@@ -253,122 +221,93 @@ function createUnderlyingProvider(
   endpointType: EndpointType,
   config: z.output<typeof GenericModelConfigSchema>,
 ): UnderlyingProvider {
-  const {
-    baseURL,
-    apiKey,
-    headers,
-    queryParams,
-    includeUsage = true,
-    supportsStructuredOutputs = true,
-  } = config;
-  const chatEndpointURL = resolveChatEndpointURL(
-    baseURL,
-    endpointType,
-    config.chatEndpointURL,
-  );
+  const { baseURL, apiKey, headers, queryParams, includeUsage = true, supportsStructuredOutputs = true } = config;
+  const chatEndpointURL = resolveChatEndpointURL(baseURL, endpointType, config.chatEndpointURL);
 
   switch (endpointType) {
     case "openai": {
-      const provider = createOpenAICompatible({
-        name: providerDisplayName,
-        baseURL,
-        apiKey,
-        supportsStructuredOutputs,
-        queryParams,
-        includeUsage,
-        headers,
-      });
+      const provider = createOpenAICompatible(
+        stripUndefinedKeys({
+          name: providerDisplayName,
+          baseURL,
+          apiKey,
+          supportsStructuredOutputs,
+          queryParams,
+          includeUsage,
+          headers,
+        }),
+      );
 
       return {
         type: "openai",
-        getLanguageModel: (modelId) => provider.chatModel(modelId),
-        getEmbeddingModel: (modelId) => provider.embeddingModel(modelId),
+        getLanguageModel: modelId => provider.chatModel(modelId),
+        getEmbeddingModel: modelId => provider.embeddingModel(modelId),
         buildSettings: buildOpenAISettings,
         mangleRequest(req, settings) {
           const providerOptions = (req.providerOptions ??= {});
           const ourOptions = (providerOptions[providerDisplayName] ??= {});
-          if (settings.has("temperature"))
-            req.temperature = settings.get("temperature") as number;
+          if (settings.has("temperature")) req.temperature = settings.get("temperature") as number;
           if (settings.has("top_p")) req.topP = settings.get("top_p") as number;
-          if (settings.has("presence_penalty"))
-            req.presencePenalty = settings.get("presence_penalty") as number;
-          if (settings.has("frequency_penalty"))
-            req.frequencyPenalty = settings.get("frequency_penalty") as number;
+          if (settings.has("presence_penalty")) req.presencePenalty = settings.get("presence_penalty") as number;
+          if (settings.has("frequency_penalty")) req.frequencyPenalty = settings.get("frequency_penalty") as number;
           if (settings.has("seed")) req.seed = settings.get("seed") as number;
           if (settings.has("top_k")) req.topK = settings.get("top_k") as number;
-          if (settings.has("min_p"))
-            ourOptions.min_p = settings.get("min_p") as number;
-          if (settings.has("repetition_penalty"))
-            ourOptions.repetition_penalty = settings.get(
-              "repetition_penalty",
-            ) as number;
-          if (settings.has("length_penalty"))
-            ourOptions.length_penalty = settings.get(
-              "length_penalty",
-            ) as number;
-          if (settings.has("min_tokens"))
-            ourOptions.min_tokens = settings.get("min_tokens") as number;
-          if (settings.has("enable_thinking"))
-            ourOptions.enable_thinking = !!settings.get("enable_thinking");
+          if (settings.has("min_p")) ourOptions.min_p = settings.get("min_p") as number;
+          if (settings.has("repetition_penalty")) ourOptions.repetition_penalty = settings.get("repetition_penalty") as number;
+          if (settings.has("length_penalty")) ourOptions.length_penalty = settings.get("length_penalty") as number;
+          if (settings.has("min_tokens")) ourOptions.min_tokens = settings.get("min_tokens") as number;
+          if (settings.has("enable_thinking")) ourOptions.enable_thinking = !!settings.get("enable_thinking");
         },
       };
     }
 
     case "responses": {
-      const provider = createOpenResponses({
-        name: providerDisplayName,
-        url: chatEndpointURL,
-        apiKey,
-        headers,
-      });
+      const provider = createOpenResponses(
+        stripUndefinedKeys({
+          name: providerDisplayName,
+          url: chatEndpointURL,
+          apiKey,
+          headers,
+        }),
+      );
 
       return {
         type: "responses",
-        getLanguageModel: (modelId) => provider.languageModel(modelId),
+        getLanguageModel: modelId => provider.languageModel(modelId),
         getEmbeddingModel: () => null,
         buildSettings: buildOpenAISettings,
         mangleRequest(req, settings) {
           const providerOptions = (req.providerOptions ??= {});
           const ourOptions = (providerOptions[providerDisplayName] ??= {});
-          if (settings.has("temperature"))
-            req.temperature = settings.get("temperature") as number;
+          if (settings.has("temperature")) req.temperature = settings.get("temperature") as number;
           if (settings.has("top_p")) req.topP = settings.get("top_p") as number;
-          if (settings.has("presence_penalty"))
-            req.presencePenalty = settings.get("presence_penalty") as number;
-          if (settings.has("frequency_penalty"))
-            req.frequencyPenalty = settings.get("frequency_penalty") as number;
+          if (settings.has("presence_penalty")) req.presencePenalty = settings.get("presence_penalty") as number;
+          if (settings.has("frequency_penalty")) req.frequencyPenalty = settings.get("frequency_penalty") as number;
           if (settings.has("seed")) req.seed = settings.get("seed") as number;
           if (settings.has("top_k")) req.topK = settings.get("top_k") as number;
-          if (settings.has("min_p"))
-            ourOptions.min_p = settings.get("min_p") as number;
-          if (settings.has("repetition_penalty"))
-            ourOptions.repetition_penalty = settings.get(
-              "repetition_penalty",
-            ) as number;
-          if (settings.has("length_penalty"))
-            ourOptions.length_penalty = settings.get(
-              "length_penalty",
-            ) as number;
-          if (settings.has("min_tokens"))
-            ourOptions.min_tokens = settings.get("min_tokens") as number;
-          if (settings.has("enable_thinking"))
-            ourOptions.enable_thinking = !!settings.get("enable_thinking");
+          if (settings.has("min_p")) ourOptions.min_p = settings.get("min_p") as number;
+          if (settings.has("repetition_penalty")) ourOptions.repetition_penalty = settings.get("repetition_penalty") as number;
+          if (settings.has("length_penalty")) ourOptions.length_penalty = settings.get("length_penalty") as number;
+          if (settings.has("min_tokens")) ourOptions.min_tokens = settings.get("min_tokens") as number;
+          if (settings.has("enable_thinking")) ourOptions.enable_thinking = !!settings.get("enable_thinking");
         },
       };
     }
 
     case "anthropic": {
-      const provider = createAnthropic({
-        apiKey,
-        baseURL: chatEndpointURL.replace(/\/messages$/, ""),
-        headers,
-      });
+      const provider = createAnthropic(
+        stripUndefinedKeys({
+          apiKey,
+          baseURL: chatEndpointURL.replace(/\/messages$/, ""),
+          headers,
+        }),
+      );
 
       return {
         type: "anthropic",
-        getLanguageModel: (modelId) => provider(modelId),
+        getLanguageModel: modelId => provider(modelId),
         getEmbeddingModel: () => null,
-        inputCapabilities: {image: true, file: true},
+        inputCapabilities: { image: true, file: true },
         buildSettings() {
           return {
             caching: {
@@ -382,8 +321,7 @@ function createUnderlyingProvider(
               type: "boolean",
             },
             maxSearchUses: {
-              description:
-                "Maximum number of web searches Claude can perform (0 to disable)",
+              description: "Maximum number of web searches Claude can perform (0 to disable)",
               defaultValue: 5,
               type: "number",
               min: 1,
@@ -392,10 +330,9 @@ function createUnderlyingProvider(
           };
         },
         mangleRequest(req, settings) {
-          const anthropicOptions = ((req.providerOptions ??= {}).anthropic ??=
-            {});
+          const anthropicOptions = ((req.providerOptions ??= {}).anthropic ??= {});
           if (settings.get("caching") as boolean) {
-            anthropicOptions.cacheControl = {type: "ephemeral"};
+            anthropicOptions.cacheControl = { type: "ephemeral" };
           }
           if (settings.get("websearch") as boolean) {
             (req.tools ??= {}).web_search = provider.tools.webSearch_20250305({
@@ -408,10 +345,7 @@ function createUnderlyingProvider(
   }
 }
 
-function createModelRegistryKey(
-  providerDisplayName: string,
-  modelId: string,
-): string {
+function createModelRegistryKey(providerDisplayName: string, modelId: string): string {
   return `${providerDisplayName}:${modelId}`.toLowerCase();
 }
 
@@ -425,20 +359,15 @@ function buildChatModelSpec(
   getModelList: () => MaybePromise<GenericModelListResponse | null>,
   propsResponse: PropsResponse | null,
   config: z.output<typeof GenericModelConfigSchema>,
-  generateModelSpec: (
-    modelInfo: GenericModelListData,
-  ) => GenericModelConfigResults,
+  generateModelSpec: (modelInfo: GenericModelListData) => GenericModelConfigResults,
 ): ChatModelSpec | null {
-  const {type, capabilities = {}} = generateModelSpec(modelInfo);
+  const { type, capabilities = {} } = generateModelSpec(modelInfo);
 
   if (type !== "chat") {
     return null;
   }
 
-  const maxContextLength =
-    modelInfo.max_model_len ??
-    propsResponse?.default_generation_settings?.n_ctx ??
-    config.defaultContextLength;
+  const maxContextLength = modelInfo.max_model_len ?? propsResponse?.default_generation_settings?.n_ctx ?? config.defaultContextLength;
 
   const impl = underlyingProvider.getLanguageModel(modelInfo.id);
   if (!impl) return null;
@@ -449,7 +378,7 @@ function buildChatModelSpec(
     impl,
     isAvailable: async () => {
       const data = await getModelList();
-      return !!data?.data?.some((m) => m.id === modelInfo.id);
+      return !!data?.data?.some(m => m.id === modelInfo.id);
     },
     isHot: () => true,
     costPerMillionInputTokens: 0,
@@ -457,7 +386,9 @@ function buildChatModelSpec(
     maxContextLength,
     settings: underlyingProvider.buildSettings(modelInfo, propsResponse),
     mangleRequest: underlyingProvider.mangleRequest,
-    inputCapabilities: underlyingProvider.inputCapabilities,
+    ...(underlyingProvider.inputCapabilities && {
+      inputCapabilities: underlyingProvider.inputCapabilities,
+    }),
     ...capabilities,
   };
 }
@@ -470,11 +401,9 @@ function buildEmbeddingModelSpec(
   providerDisplayName: string,
   underlyingProvider: UnderlyingProvider,
   getModelList: () => MaybePromise<GenericModelListResponse | null>,
-  generateModelSpec: (
-    modelInfo: GenericModelListData,
-  ) => GenericModelConfigResults,
+  generateModelSpec: (modelInfo: GenericModelListData) => GenericModelConfigResults,
 ): EmbeddingModelSpec | null {
-  const {type, capabilities = {}} = generateModelSpec(modelInfo);
+  const { type, capabilities = {} } = generateModelSpec(modelInfo);
 
   if (type !== "embedding") {
     return null;
@@ -497,36 +426,17 @@ function buildEmbeddingModelSpec(
   };
 }
 
-async function init(
-  providerDisplayName: string,
-  config: z.output<typeof GenericModelConfigSchema>,
-  app: TokenRingApp,
-) {
-  let {
-    baseURL,
-    apiKey,
-    endpointType,
-    generateModelSpec,
-    headers,
-    staticModelList,
-    modelListUrl,
-    modelPropsUrl,
-  } = config;
+async function init(providerDisplayName: string, config: z.output<typeof GenericModelConfigSchema>, app: TokenRingApp) {
+  let { baseURL, apiKey, endpointType, generateModelSpec, headers, staticModelList, modelListUrl, modelPropsUrl } = config;
 
   if (!baseURL) {
-    throw new Error(
-      `No config.baseURL provided for ${providerDisplayName} provider.`,
-    );
+    throw new Error(`No config.baseURL provided for ${providerDisplayName} provider.`);
   }
 
   endpointType ??= "openai";
   generateModelSpec ??= defaultModelSpecGenerator;
 
-  const underlyingProvider = createUnderlyingProvider(
-    providerDisplayName,
-    endpointType,
-    config,
-  );
+  const underlyingProvider = createUnderlyingProvider(providerDisplayName, endpointType, config);
 
   // --- Model list retrieval ---
   let getModelList: () => MaybePromise<GenericModelListResponse | null>;
@@ -577,7 +487,7 @@ async function init(
     if (modelPropsUrl) {
       getProps = cachedDataRetriever(modelPropsUrl, {
         headers: {
-          ...(apiKey && {Authorization: `Bearer ${apiKey}`}),
+          ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
           ...headers,
           "Content-Type": "application/json",
         },
@@ -590,9 +500,7 @@ async function init(
   const modelList = await getModelList();
   if (!modelList?.data) return;
 
-  const propsResponse = getProps
-    ? await Promise.resolve(getProps()).catch(() => undefined)
-    : undefined;
+  const propsResponse = getProps ? await Promise.resolve(getProps()).catch(() => undefined) : undefined;
 
   const chatModelSpecs: ChatModelSpec[] = [];
   const embeddingModelSpecs: EmbeddingModelSpec[] = [];
@@ -600,47 +508,29 @@ async function init(
   const registeredEmbeddingModels = new Set<string>();
 
   for (const modelInfo of modelList.data) {
-    const chatSpec = buildChatModelSpec(
-      modelInfo,
-      providerDisplayName,
-      underlyingProvider,
-      getModelList,
-      propsResponse ?? null,
-      config,
-      generateModelSpec,
-    );
+    const chatSpec = buildChatModelSpec(modelInfo, providerDisplayName, underlyingProvider, getModelList, propsResponse ?? null, config, generateModelSpec);
 
     if (chatSpec) {
       chatModelSpecs.push(chatSpec);
-      registeredChatModels.add(
-        createModelRegistryKey(providerDisplayName, modelInfo.id),
-      );
+      registeredChatModels.add(createModelRegistryKey(providerDisplayName, modelInfo.id));
     }
 
     if (underlyingProvider.type === "openai") {
-      const embeddingSpec = buildEmbeddingModelSpec(
-        modelInfo,
-        providerDisplayName,
-        underlyingProvider,
-        getModelList,
-        generateModelSpec,
-      );
+      const embeddingSpec = buildEmbeddingModelSpec(modelInfo, providerDisplayName, underlyingProvider, getModelList, generateModelSpec);
 
       if (embeddingSpec) {
         embeddingModelSpecs.push(embeddingSpec);
-        registeredEmbeddingModels.add(
-          createModelRegistryKey(providerDisplayName, modelInfo.id),
-        );
+        registeredEmbeddingModels.add(createModelRegistryKey(providerDisplayName, modelInfo.id));
       }
     }
   }
 
-  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
     chatModelRegistry.registerAllModelSpecs(chatModelSpecs);
   });
 
   if (embeddingModelSpecs.length > 0) {
-    app.waitForService(EmbeddingModelRegistry, (embeddingModelRegistry) => {
+    app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
       embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
     });
   }
@@ -650,20 +540,12 @@ async function init(
     const freshModelList = await getModelList();
     if (!freshModelList?.data) return;
 
-    const freshPropsResponse = getProps
-      ? await Promise.resolve(getProps()).catch(() => undefined)
-      : undefined;
+    const freshPropsResponse = getProps ? await Promise.resolve(getProps()).catch(() => undefined) : undefined;
 
     for (const modelInfo of freshModelList.data) {
-      const modelKey = createModelRegistryKey(
-        providerDisplayName,
-        modelInfo.id,
-      );
+      const modelKey = createModelRegistryKey(providerDisplayName, modelInfo.id);
 
-      if (
-        registeredChatModels.has(modelKey) ||
-        registeredEmbeddingModels.has(modelKey)
-      ) {
+      if (registeredChatModels.has(modelKey) || registeredEmbeddingModels.has(modelKey)) {
         continue;
       }
 
@@ -679,47 +561,34 @@ async function init(
 
       if (chatSpec) {
         registeredChatModels.add(modelKey);
-        app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
+        app.waitForService(ChatModelRegistry, chatModelRegistry => {
           chatModelRegistry.registerModelSpec(modelKey, chatSpec);
         });
       }
 
       if (underlyingProvider.type === "openai") {
-        const embeddingSpec = buildEmbeddingModelSpec(
-          modelInfo,
-          providerDisplayName,
-          underlyingProvider,
-          getModelList,
-          generateModelSpec,
-        );
+        const embeddingSpec = buildEmbeddingModelSpec(modelInfo, providerDisplayName, underlyingProvider, getModelList, generateModelSpec);
 
         if (embeddingSpec) {
           registeredEmbeddingModels.add(modelKey);
-          app.waitForService(
-            EmbeddingModelRegistry,
-            (embeddingModelRegistry) => {
-              embeddingModelRegistry.registerModelSpec(modelKey, embeddingSpec);
-            },
-          );
+          app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
+            embeddingModelRegistry.registerModelSpec(modelKey, embeddingSpec);
+          });
         }
       }
     }
   };
 
   const modelRegistry = app.requireService(ChatModelRegistry);
-  app.runBackgroundTask(modelRegistry, async (signal) => {
+  app.runBackgroundTask(modelRegistry, async signal => {
     while (!signal.aborted) {
       try {
         await checkForNewModels();
       } catch (err: unknown) {
-        app.serviceError(
-          modelRegistry,
-          `Error while checking for new models: `,
-          err as Error,
-        );
+        app.serviceError(modelRegistry, `Error while checking for new models: `, err as Error);
       }
 
-      await delay(60000, null, {signal});
+      await delay(60000, null, { signal });
     }
   });
 }

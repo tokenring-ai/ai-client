@@ -1,8 +1,8 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import {experimental_generateSpeech as generateSpeech, type Experimental_SpeechResult, type SpeechModel} from "ai";
-import {z} from "zod";
-import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
-import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
+import { type Experimental_SpeechResult, experimental_generateSpeech as generateSpeech, type SpeechModel } from "ai";
+import { z } from "zod";
+import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
+import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
 export type SpeechRequest = {
   text: string;
@@ -19,15 +19,11 @@ export type SpeechModelSpec = ModelSpec & {
   mangleRequest?: (req: SpeechRequest, settings?: Record<string, any>) => void;
 };
 
-export const SpeechModelSpecSchema = createModelSpecSchema(
-  ModelInputCapabilitiesSchema,
-).extend({
-  costPerMillionCharacters: z.number().optional(),
+export const SpeechModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+  costPerMillionCharacters: z.number().exactOptional(),
 });
 
-export function normalizeSpeechModelSpec(
-  modelSpec: SpeechModelSpec,
-): SpeechModelSpec {
+export function normalizeSpeechModelSpec(modelSpec: SpeechModelSpec): SpeechModelSpec {
   return SpeechModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -38,8 +34,7 @@ export default class AISpeechClient {
   constructor(
     private modelSpec: SpeechModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.
@@ -55,15 +50,12 @@ export default class AISpeechClient {
     return new Map(this.settings.entries());
   }
 
-  async generateSpeech(
-    request: SpeechRequest,
-    agent: Agent,
-  ): Promise<[Uint8Array, Experimental_SpeechResult]> {
+  async generateSpeech(request: SpeechRequest, agent: Agent): Promise<[Uint8Array, Experimental_SpeechResult]> {
     const signal = agent.getAbortSignal();
 
     try {
       if (this.modelSpec.mangleRequest) {
-        request = {...request};
+        request = { ...request };
         this.modelSpec.mangleRequest(request, this.settings);
       }
       const result = await generateSpeech({

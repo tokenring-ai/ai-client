@@ -1,10 +1,10 @@
-import {createFal} from "@ai-sdk/fal";
+import { createFal } from "@ai-sdk/fal";
 import type TokenRingApp from "@tokenring-ai/app";
-import {z} from "zod";
-import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import {ImageGenerationModelRegistry} from "../ModelRegistry.ts";
-import modelConfigs from "../models/fal.yaml" with {type: "yaml"};
-import type {AIModelProvider} from "../schema.ts";
+import { z } from "zod";
+import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
+import { ImageGenerationModelRegistry } from "../ModelRegistry.ts";
+import modelConfigs from "../models/fal.yaml" with { type: "yaml" };
+import type { AIModelProvider } from "../schema.ts";
 
 const ImageGenerationModelSchema = z.object({
   costPerMegapixel: z.number(),
@@ -21,27 +21,16 @@ const FalModelProviderConfigSchema = z.object({
   apiKey: z.string(),
 });
 
-function init(
-  providerDisplayName: string,
-  config: z.output<typeof FalModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
-  const {apiKey} = config;
+function init(providerDisplayName: string, config: z.output<typeof FalModelProviderConfigSchema>, app: TokenRingApp) {
+  const { apiKey } = config;
   if (!apiKey) {
     throw new Error("No config.apiKey provided for Fal provider.");
   }
 
-  const fal = createFal({apiKey});
+  const fal = createFal({ apiKey });
 
   function generateImageModelSpec(
-    modelSpec: Omit<
-      ImageModelSpec,
-      | "isAvailable"
-      | "provider"
-      | "providerDisplayName"
-      | "impl"
-      | "calculateImageCost"
-    >,
+    modelSpec: Omit<ImageModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "calculateImageCost">,
     costPerMegapixel: number,
   ): ImageModelSpec {
     return {
@@ -60,16 +49,11 @@ function init(
     };
   }
 
-  app.waitForService(
-    ImageGenerationModelRegistry,
-    (imageGenerationModelRegistry) => {
-      imageGenerationModelRegistry.registerAllModelSpecs(
-        Object.entries(parsedModelConfigs.imageGeneration).map(([modelId, config]) =>
-          generateImageModelSpec({modelId}, config.costPerMegapixel),
-        ),
-      );
-    },
-  );
+  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
+    imageGenerationModelRegistry.registerAllModelSpecs(
+      Object.entries(parsedModelConfigs.imageGeneration).map(([modelId, config]) => generateImageModelSpec({ modelId }, config.costPerMegapixel)),
+    );
+  });
 }
 
 export default {

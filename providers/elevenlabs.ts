@@ -1,9 +1,9 @@
-import {createElevenLabs} from "@ai-sdk/elevenlabs";
+import { createElevenLabs } from "@ai-sdk/elevenlabs";
 import type TokenRingApp from "@tokenring-ai/app";
-import {z} from "zod";
-import {SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
-import modelConfigs from "../models/elevenlabs.yaml" with {type: "yaml"};
-import type {AIModelProvider} from "../schema.ts";
+import { z } from "zod";
+import { SpeechModelRegistry, TranscriptionModelRegistry } from "../ModelRegistry.ts";
+import modelConfigs from "../models/elevenlabs.yaml" with { type: "yaml" };
+import type { AIModelProvider } from "../schema.ts";
 
 const SpeechModelSchema = z.object({
   costPerMillionCharacters: z.number(),
@@ -26,19 +26,15 @@ const ElevenLabsModelProviderConfigSchema = z.object({
   apiKey: z.string(),
 });
 
-function init(
-  providerDisplayName: string,
-  config: z.output<typeof ElevenLabsModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
-  const {apiKey} = config;
+function init(providerDisplayName: string, config: z.output<typeof ElevenLabsModelProviderConfigSchema>, app: TokenRingApp) {
+  const { apiKey } = config;
   if (!apiKey) {
     throw new Error("No config.apiKey provided for ElevenLabs provider.");
   }
 
-  const elevenlabs = createElevenLabs({apiKey});
+  const elevenlabs = createElevenLabs({ apiKey });
 
-  app.waitForService(SpeechModelRegistry, (speechModelRegistry) => {
+  app.waitForService(SpeechModelRegistry, speechModelRegistry => {
     speechModelRegistry.registerAllModelSpecs(
       Object.entries(parsedModelConfigs.speech).map(([modelId, config]) => ({
         modelId,
@@ -86,56 +82,53 @@ function init(
     );
   });
 
-  app.waitForService(
-    TranscriptionModelRegistry,
-    (transcriptionModelRegistry) => {
-      transcriptionModelRegistry.registerAllModelSpecs(
-        Object.entries(parsedModelConfigs.transcription).map(([modelId, config]) => ({
-          modelId,
-          providerDisplayName,
-          impl: elevenlabs.transcription(modelId),
-          isAvailable() {
-            return true;
+  app.waitForService(TranscriptionModelRegistry, transcriptionModelRegistry => {
+    transcriptionModelRegistry.registerAllModelSpecs(
+      Object.entries(parsedModelConfigs.transcription).map(([modelId, config]) => ({
+        modelId,
+        providerDisplayName,
+        impl: elevenlabs.transcription(modelId),
+        isAvailable() {
+          return true;
+        },
+        costPerMinute: config.costPerMinute,
+        settings: {
+          languageCode: {
+            description: "Language code (ISO 639-1 or ISO 639-3)",
+            defaultValue: undefined,
+            type: "string",
           },
-          costPerMinute: config.costPerMinute,
-          settings: {
-            languageCode: {
-              description: "Language code (ISO 639-1 or ISO 639-3)",
-              defaultValue: undefined,
-              type: "string",
-            },
-            tagAudioEvents: {
-              description: "Tag audio events like laughter and footsteps",
-              defaultValue: true,
-              type: "boolean",
-            },
-            numSpeakers: {
-              description: "Maximum number of speakers (1-32)",
-              defaultValue: undefined,
-              type: "number",
-            },
-            timestampsGranularity: {
-              description: "Timestamp granularity",
-              defaultValue: "word",
-              type: "enum",
-              values: ["none", "word", "character"],
-            },
-            diarize: {
-              description: "Annotate which speaker is talking",
-              defaultValue: true,
-              type: "boolean",
-            },
-            fileFormat: {
-              description: "Input audio format",
-              defaultValue: "other",
-              type: "enum",
-              values: ["pcm_s16le_16", "other"],
-            },
+          tagAudioEvents: {
+            description: "Tag audio events like laughter and footsteps",
+            defaultValue: true,
+            type: "boolean",
           },
-        })),
-      );
-    },
-  );
+          numSpeakers: {
+            description: "Maximum number of speakers (1-32)",
+            defaultValue: undefined,
+            type: "number",
+          },
+          timestampsGranularity: {
+            description: "Timestamp granularity",
+            defaultValue: "word",
+            type: "enum",
+            values: ["none", "word", "character"],
+          },
+          diarize: {
+            description: "Annotate which speaker is talking",
+            defaultValue: true,
+            type: "boolean",
+          },
+          fileFormat: {
+            description: "Input audio format",
+            defaultValue: "other",
+            type: "enum",
+            values: ["pcm_s16le_16", "other"],
+          },
+        },
+      })),
+    );
+  });
 }
 
 export default {

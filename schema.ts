@@ -1,20 +1,20 @@
 import type TokenRingApp from "@tokenring-ai/app";
-import type {MaybePromise} from "bun";
-import {z} from "zod";
-import type {ModelInputCapability} from "./client/modelCapabilities.ts";
-import {type AIProviderConfig, AIProviderConfigSchema} from "./providers.ts";
-import type {GenericModelListResponse} from "./providers/generic.ts";
+import type { MaybePromise } from "bun";
+import { z } from "zod";
+import type { ModelInputCapability } from "./client/modelCapabilities.ts";
+import type { GenericModelListResponse } from "./providers/generic.ts";
+import { type AIProviderConfig, AIProviderConfigSchema } from "./providers.ts";
 
-export type {FilePart, ImagePart, TextPart, UserModelMessage} from "ai";
-export type {ModelInputCapability} from "./client/modelCapabilities.ts";
+export type { FilePart, ImagePart, TextPart, UserModelMessage } from "ai";
+export type { ModelInputCapability } from "./client/modelCapabilities.ts";
 
-import minimaxConfig from "./models/minimax.yaml" with {type: "yaml"};
+import minimaxConfig from "./models/minimax.yaml" with { type: "yaml" };
 
 export type ModelRequirements = {
   /**
    * The name of the provider and model, possibly including wildcards
    */
-  nameLike?: string;
+  nameLike?: string | undefined;
 };
 
 export type ChatModelRequirements = ModelRequirements & {
@@ -71,11 +71,7 @@ export interface AIModelProvider<T> {
 
   autoConfigure?: () => MaybePromise<z.output<T> | null>;
 
-  init(
-    providerDisplayName: string,
-    config: z.output<T>,
-    app: TokenRingApp,
-  ): MaybePromise<void>;
+  init(providerDisplayName: string, config: z.output<T>, app: TokenRingApp): MaybePromise<void>;
 }
 
 export const AIClientConfigSchema = z.object({
@@ -174,8 +170,7 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
     if (match) {
       const n = match[2];
       const name = process.env[`LLAMA_NAME${n}`] ?? `LlamaCPP${n}`;
-      const baseURL =
-        process.env[`LLAMA_BASE_URL${n}`] ?? "http://127.0.0.1:11434/v1";
+      const baseURL = process.env[`LLAMA_BASE_URL${n}`] ?? "http://127.0.0.1:11434/v1";
       const apiKey = process.env[`LLAMA_API_KEY${n}`] ?? undefined;
       const endpointType = process.env[`LLAMA_ENDPOINT_TYPE${n}`] ?? "openai";
       switch (endpointType) {
@@ -184,22 +179,18 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
         case "responses":
           break;
         default:
-          throw new Error(
-            `Invalid endpoint type for LlamaCPP${n}: ${endpointType}`,
-          );
+          throw new Error(`Invalid endpoint type for LlamaCPP${n}: ${endpointType}`);
       }
       const defaultContextLength = parseInt(process.env[`LLAMA_CONTEXT_LENGTH${n}`] ?? "128000", 10);
       if (Number.isNaN(defaultContextLength)) {
-        throw new Error(
-          `Invalid context length for LlamaCPP${n}: ${process.env[`LLAMA_CONTEXT_LENGTH${n}`]}`,
-        );
+        throw new Error(`Invalid context length for LlamaCPP${n}: ${process.env[`LLAMA_CONTEXT_LENGTH${n}`]}`);
       }
 
       config[name] ??= {
         provider: "generic",
         endpointType,
         baseURL,
-        ...(apiKey && {apiKey}),
+        ...(apiKey && { apiKey }),
         defaultContextLength,
       };
     }
@@ -265,14 +256,12 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
       defaultContextLength: 204800,
       staticModelList: {
         object: "list",
-        data: Object.entries(minimaxConfig.models.minimax.chat).map(([modelName, _modelConfig]) => (
-          {
-            id: modelName,
-            object: "model",
-            owned_by: "organization",
-            created: Date.now(),
-          }
-        )),
+        data: Object.entries(minimaxConfig.models.minimax.chat).map(([modelName, _modelConfig]) => ({
+          id: modelName,
+          object: "model",
+          owned_by: "organization",
+          created: Date.now(),
+        })),
       } satisfies GenericModelListResponse,
     };
   }

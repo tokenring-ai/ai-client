@@ -1,4 +1,4 @@
-import type {ChatModelSettings} from "@tokenring-ai/ai-client/ModelTypeRegistry";
+import type { ChatModelSettings } from "@tokenring-ai/ai-client/ModelTypeRegistry";
 
 export function parseModelAndSettings(model: string): {
   base: string;
@@ -11,13 +11,10 @@ export function parseModelAndSettings(model: string): {
     for (const part of model.substring(qIndex + 1).split("&")) {
       if (!part) continue;
       const [rawK, rawV] = part.split("=");
-      settings.set(
-        decodeURIComponent(rawK),
-        coerceFeatureValue(rawV === undefined ? "1" : decodeURIComponent(rawV)),
-      );
+      settings.set(decodeURIComponent(rawK), coerceFeatureValue(rawV === undefined ? "1" : decodeURIComponent(rawV)));
     }
   }
-  return {base, settings};
+  return { base, settings };
 }
 
 export function coerceFeatureValue(v: string): true | false | number | string {
@@ -25,27 +22,13 @@ export function coerceFeatureValue(v: string): true | false | number | string {
   if (v === "1" || lower === "true") return true;
   if (v === "0" || lower === "false") return false;
   const asNum = Number(v);
-  if (
-    !Number.isNaN(asNum) &&
-    String(asNum) === v.replace(/(?<=\d)\.0+$/, (m) => m)
-  )
-    return asNum;
+  if (!Number.isNaN(asNum) && String(asNum) === v.replace(/(?<=\d)\.0+$/, m => m)) return asNum;
   return v;
 }
 
-export function serializeModel(
-  base: string,
-  settings: ChatModelSettings,
-): string {
-  const entries = Array.from(settings.entries()).filter(
-    ([, v]) => v !== undefined,
-  );
+export function serializeModel(base: string, settings: ChatModelSettings): string {
+  const entries = Array.from(settings.entries()).filter(([, v]) => v !== undefined);
   if (entries.length === 0) return base;
-  const query = entries
-    .map(
-      ([k, v]) =>
-        `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "boolean" ? (v ? "1" : "0") : String(v))}`,
-    )
-    .join("&");
+  const query = entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "boolean" ? (v ? "1" : "0") : String(v))}`).join("&");
   return `${base}?${query}`;
 }

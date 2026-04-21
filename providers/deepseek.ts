@@ -1,15 +1,15 @@
-import {createDeepSeek} from "@ai-sdk/deepseek";
+import { createDeepSeek } from "@ai-sdk/deepseek";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import {ChatModelRegistry} from "../ModelRegistry.ts";
-import modelConfigs from "../models/deepseek.yaml" with {type: "yaml"};
-import type {AIModelProvider} from "../schema.ts";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ChatModelRegistry } from "../ModelRegistry.ts";
+import modelConfigs from "../models/deepseek.yaml" with { type: "yaml" };
+import type { AIModelProvider } from "../schema.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),
-  costPerMillionCachedInputTokens: z.number().optional(),
+  costPerMillionCachedInputTokens: z.number().exactOptional(),
   costPerMillionOutputTokens: z.number(),
   maxContextLength: z.number(),
 });
@@ -36,11 +36,7 @@ interface ModelsListResponse {
   data: Model[];
 }
 
-function init(
-  providerDisplayName: string,
-  config: z.output<typeof DeepSeekModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
+function init(providerDisplayName: string, config: z.output<typeof DeepSeekModelProviderConfigSchema>, app: TokenRingApp) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for DeepSeek provider.");
   }
@@ -57,10 +53,7 @@ function init(
 
   function generateModelSpecs(
     modelId: string,
-    modelSpec: Omit<
-      ChatModelSpec,
-      "impl" | "isAvailable" | "provider" | "providerDisplayName" | "modelId"
-    >,
+    modelSpec: Omit<ChatModelSpec, "impl" | "isAvailable" | "provider" | "providerDisplayName" | "modelId">,
   ): ChatModelSpec {
     return {
       modelId,
@@ -68,18 +61,14 @@ function init(
       providerDisplayName: providerDisplayName,
       async isAvailable() {
         const modelList = await getModels();
-        return !!modelList?.data.some((model) => model.id === modelId);
+        return !!modelList?.data.some(model => model.id === modelId);
       },
       ...modelSpec,
     } satisfies ChatModelSpec;
   }
 
-  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
-    chatModelRegistry.registerAllModelSpecs(
-      Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
-        generateModelSpecs(modelId, config),
-      ),
-    );
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs(Object.entries(parsedModelConfigs.chat).map(([modelId, config]) => generateModelSpecs(modelId, config)));
   });
 }
 

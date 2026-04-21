@@ -1,16 +1,17 @@
-import {xai} from "@ai-sdk/xai";
+import { xai } from "@ai-sdk/xai";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry} from "../ModelRegistry.ts";
-import modelConfigs from "../models/xai.yaml" with {type: "yaml"};
-import type {AIModelProvider} from "../schema.ts";
+import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry } from "../ModelRegistry.ts";
+import modelConfigs from "../models/xai.yaml" with { type: "yaml" };
+import type { AIModelProvider } from "../schema.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number(),
-  costPerMillionCachedInputTokens: z.number().optional(),
+  costPerMillionCachedInputTokens: z.number().exactOptional(),
   maxContextLength: z.number(),
 });
 
@@ -46,11 +47,7 @@ interface ModelList {
   data: Model[];
 }
 
-export function init(
-  providerDisplayName: string,
-  config: z.output<typeof XAIModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
+export function init(providerDisplayName: string, config: z.output<typeof XAIModelProviderConfigSchema>, app: TokenRingApp) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for xAI provider.");
   }
@@ -63,16 +60,7 @@ export function init(
 
   function generateModelSpec(
     modelId: string,
-    modelSpec: Omit<
-      ChatModelSpec,
-      | "isAvailable"
-      | "provider"
-      | "providerDisplayName"
-      | "impl"
-      | "modelId"
-      | "settings"
-      | "mangleRequest"
-    >,
+    modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId" | "settings" | "mangleRequest">,
   ): ChatModelSpec {
     return {
       ...modelSpec,
@@ -81,31 +69,25 @@ export function init(
       impl: xai.responses(modelId),
       async isAvailable() {
         const modelList = await getModels();
-        return !!modelList?.data.some((model) => model.id === modelId);
+        return !!modelList?.data.some(model => model.id === modelId);
       },
       mangleRequest(req, settings) {
         if (settings.has("websearch")) {
           req.tools.web_search = xai.tools.webSearch({
-            enableImageUnderstanding: settings.get(
-              "webImageUnderstanding",
-            ) as boolean,
+            enableImageUnderstanding: settings.get("webImageUnderstanding") as boolean,
           });
         }
 
         if (settings.has("XSearch")) {
-          req.tools.x_search = xai.tools.xSearch({
-            allowedXHandles: (
-              settings.get("XAllowedHandles") as string | undefined
-            )?.split(","),
-            fromDate: settings.get("XFromDate") as string | undefined,
-            toDate: settings.get("XToDate") as string | undefined,
-            enableImageUnderstanding: settings.get(
-              "XImageUnderstanding",
-            ) as boolean,
-            enableVideoUnderstanding: settings.get(
-              "XVideoUnderstanding",
-            ) as boolean,
-          });
+          req.tools.x_search = xai.tools.xSearch(
+            stripUndefinedKeys({
+              allowedXHandles: (settings.get("XAllowedHandles") as string | undefined)?.split(","),
+              fromDate: settings.get("XFromDate") as string | undefined,
+              toDate: settings.get("XToDate") as string | undefined,
+              enableImageUnderstanding: settings.get("XImageUnderstanding") as boolean,
+              enableVideoUnderstanding: settings.get("XVideoUnderstanding") as boolean,
+            }),
+          );
         }
       },
       settings: {
@@ -153,54 +135,44 @@ export function init(
     };
   }
 
-  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
-    chatModelRegistry.registerAllModelSpecs(
-      Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
-        generateModelSpec(modelId, config),
-      ),
-    );
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
+    chatModelRegistry.registerAllModelSpecs(Object.entries(parsedModelConfigs.chat).map(([modelId, config]) => generateModelSpec(modelId, config)));
   });
 
-  app.waitForService(
-    ImageGenerationModelRegistry,
-    (imageGenerationModelRegistry) => {
-      imageGenerationModelRegistry.registerAllModelSpecs(
-        Object.entries(parsedModelConfigs.imageGeneration).map(([modelId, config]) => ({
+  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
+    imageGenerationModelRegistry.registerAllModelSpecs(
+      Object.entries(parsedModelConfigs.imageGeneration).map(([modelId, config]) => ({
+        modelId,
+        providerDisplayName,
+        impl: xai.imageModel(modelId),
+        async isAvailable() {
+          const modelList = await getModels();
+          return !!modelList?.data.some(model => model.id === modelId);
+        },
+        calculateImageCost() {
+          return config.costPerImage;
+        },
+      })),
+    );
+
+    app.waitForService(VideoGenerationModelRegistry, videoGenerationModelRegistry => {
+      videoGenerationModelRegistry.registerAllModelSpecs(
+        Object.entries(parsedModelConfigs.videoGeneration).map(([modelId, config]) => ({
           modelId,
           providerDisplayName,
-          impl: xai.imageModel(modelId),
+          impl: xai.videoModel(modelId),
+          inputCapabilities: { image: true },
           async isAvailable() {
             const modelList = await getModels();
-            return !!modelList?.data.some((model) => model.id === modelId);
+            return !!modelList?.data.some(model => model.id === modelId);
           },
-          calculateImageCost() {
-            return config.costPerImage;
+          calculateVideoCost(request: { duration?: number }) {
+            return request.duration ? request.duration * config.costPerSecond : NaN;
           },
         })),
       );
-
-      app.waitForService(
-        VideoGenerationModelRegistry,
-        (videoGenerationModelRegistry) => {
-          videoGenerationModelRegistry.registerAllModelSpecs(
-            Object.entries(parsedModelConfigs.videoGeneration).map(([modelId, config]) => ({
-              modelId,
-              providerDisplayName,
-              impl: xai.videoModel(modelId),
-              inputCapabilities: {image: true},
-              async isAvailable() {
-                const modelList = await getModels();
-                return !!modelList?.data.some((model) => model.id === modelId);
-              },
-              calculateVideoCost(request: { duration?: number }) {
-                return request.duration ? request.duration * config.costPerSecond : NaN;
-              },
-            })),
-          );
-        },
-      );
-    },
-  );
+    });
+  });
 }
 
 export default {

@@ -1,10 +1,10 @@
-import {createAzure} from "@ai-sdk/azure";
+import { createAzure } from "@ai-sdk/azure";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import {ChatModelRegistry} from "../ModelRegistry.ts";
-import type {AIModelProvider} from "../schema.ts";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ChatModelRegistry } from "../ModelRegistry.ts";
+import type { AIModelProvider } from "../schema.ts";
 
 const AzureModelProviderConfigSchema = z.object({
   provider: z.literal("azure"),
@@ -22,11 +22,7 @@ interface DeploymentList {
   data: Deployment[];
 }
 
-function init(
-  providerDisplayName: string,
-  config: z.output<typeof AzureModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
+function init(providerDisplayName: string, config: z.output<typeof AzureModelProviderConfigSchema>, app: TokenRingApp) {
   if (!config.apiKey) {
     throw new Error("No config.apiKey provided for Azure provider.");
   }
@@ -35,14 +31,11 @@ function init(
     throw new Error("config.baseURL must be provided for Azure provider.");
   }
 
-  const getModels = cachedDataRetriever(
-    `${config.baseURL}/openai/deployments?api-version=2023-05-15`,
-    {
-      headers: {
-        "api-key": config.apiKey,
-      },
+  const getModels = cachedDataRetriever(`${config.baseURL}/openai/deployments?api-version=2023-05-15`, {
+    headers: {
+      "api-key": config.apiKey,
     },
-  ) as () => Promise<DeploymentList | null>;
+  }) as () => Promise<DeploymentList | null>;
 
   const azureProvider = createAzure({
     apiKey: config.apiKey,
@@ -51,10 +44,7 @@ function init(
 
   function generateModelSpec(
     deploymentName: string,
-    modelSpec: Omit<
-      ChatModelSpec,
-      "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"
-    >,
+    modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId">,
   ): ChatModelSpec {
     return {
       modelId: deploymentName,
@@ -62,17 +52,13 @@ function init(
       impl: azureProvider(deploymentName),
       async isAvailable() {
         const deploymentList = await getModels();
-        return !!deploymentList?.data.some(
-          (deployment) =>
-            deployment.id === deploymentName &&
-            deployment.status === "succeeded",
-        );
+        return !!deploymentList?.data.some(deployment => deployment.id === deploymentName && deployment.status === "succeeded");
       },
       ...modelSpec,
     } satisfies ChatModelSpec;
   }
 
-  app.waitForService(ChatModelRegistry, (chatModelRegistry) => {
+  app.waitForService(ChatModelRegistry, chatModelRegistry => {
     chatModelRegistry.registerAllModelSpecs([
       generateModelSpec("deepseek-v3-0324", {
         costPerMillionInputTokens: 0.0,

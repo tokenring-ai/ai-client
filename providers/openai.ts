@@ -1,26 +1,27 @@
-import {createOpenAI, type OpenAIResponsesProviderOptions} from "@ai-sdk/openai";
+import { createOpenAI, type OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import {z} from "zod";
-import type {ChatModelSpec} from "../client/AIChatClient.ts";
-import type {ImageModelSpec} from "../client/AIImageGenerationClient.ts";
-import {ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry} from "../ModelRegistry.ts";
-import modelConfigs from "../models/openai.yaml" with {type: "yaml"};
-import type {AIModelProvider} from "../schema.ts";
+import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
+import { z } from "zod";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
+import { ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry } from "../ModelRegistry.ts";
+import modelConfigs from "../models/openai.yaml" with { type: "yaml" };
+import type { AIModelProvider } from "../schema.ts";
 
 const ChatModelSchema = z.object({
-  providerModelId: z.string().optional(),
-  providerOptions: z.record(z.string(), z.unknown()).optional(),
+  providerModelId: z.string().exactOptional(),
+  providerOptions: z.record(z.string(), z.unknown()).exactOptional(),
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number(),
-  costPerMillionCachedInputTokens: z.number().optional(),
+  costPerMillionCachedInputTokens: z.number().exactOptional(),
   maxContextLength: z.number(),
-  features: z.array(z.string()).optional(),
+  features: z.array(z.string()).exactOptional(),
 });
 
 const ImageGenerationModelSchema = z.object({
-  providerModelId: z.string().optional(),
-  providerOptions: z.record(z.string(), z.unknown()).optional(),
+  providerModelId: z.string().exactOptional(),
+  providerOptions: z.record(z.string(), z.unknown()).exactOptional(),
   costPerMegapixel: z.number(),
 });
 
@@ -58,17 +59,13 @@ type ModelList = {
   data: ModelListData[];
 };
 
-function init(
-  providerDisplayName: string,
-  config: z.output<typeof OpenAIModelProviderConfigSchema>,
-  app: TokenRingApp,
-) {
-  const {apiKey} = config;
+function init(providerDisplayName: string, config: z.output<typeof OpenAIModelProviderConfigSchema>, app: TokenRingApp) {
+  const { apiKey } = config;
   if (!apiKey) {
     throw new Error("No config.apiKey provided for OpenAI provider.");
   }
 
-  const openai = createOpenAI({apiKey});
+  const openai = createOpenAI({ apiKey });
 
   const getModels = cachedDataRetriever(`https://api.openai.com/v1/models`, {
     headers: {
@@ -78,21 +75,13 @@ function init(
 
   function generateModelSpec(
     modelId: string,
-    modelSpec: Omit<
-      ChatModelSpec,
-      "isAvailable" | "providerDisplayName" | "impl" | "modelId"
-    > & { providerModelId?: string },
+    modelSpec: Omit<ChatModelSpec, "isAvailable" | "providerDisplayName" | "impl" | "modelId"> & { providerModelId?: string | undefined },
   ): ChatModelSpec {
     const providerModelId = modelSpec.providerModelId ?? modelId;
-    const isReasoningModel =
-      providerModelId.startsWith("gpt-5") || providerModelId.startsWith("o");
-    const isGpt51 =
-      providerModelId === "gpt-5.1" || providerModelId.startsWith("gpt-5.1-");
-    const supportsImageInput =
-      /^(gpt-(4\.1|4o|5)|o[134])/.test(providerModelId) ||
-      providerModelId === "computer-use-preview";
-    const supportsAudioInput =
-      providerModelId.includes("audio") || providerModelId.includes("realtime");
+    const isReasoningModel = providerModelId.startsWith("gpt-5") || providerModelId.startsWith("o");
+    const isGpt51 = providerModelId === "gpt-5.1" || providerModelId.startsWith("gpt-5.1-");
+    const supportsImageInput = /^(gpt-(4\.1|4o|5)|o[134])/.test(providerModelId) || providerModelId === "computer-use-preview";
+    const supportsAudioInput = providerModelId.includes("audio") || providerModelId.includes("realtime");
 
     const baseSettings: any = {
       websearch: {
@@ -133,9 +122,7 @@ function init(
         description: `Reasoning effort (${isGpt51 ? "none, " : ""}minimal, low, medium, high)`,
         defaultValue: "medium",
         type: "enum",
-        values: isGpt51
-          ? ["none", "minimal", "low", "medium", "high"]
-          : ["minimal", "low", "medium", "high"],
+        values: isGpt51 ? ["none", "minimal", "low", "medium", "high"] : ["minimal", "low", "medium", "high"],
       };
       baseSettings.reasoningSummary = {
         description: "Reasoning summary mode (auto, detailed)",
@@ -151,30 +138,23 @@ function init(
       impl: openai(providerModelId),
       async isAvailable() {
         const modelList = await getModels();
-        return !!modelList?.data.some((model) => model.id === providerModelId);
+        return !!modelList?.data.some(model => model.id === providerModelId);
       },
       mangleRequest(req, settings) {
         if (settings.has("websearch")) {
           (req.tools ??= {}).web_search = openai.tools.webSearch({});
         }
 
-        const openaiOptions: OpenAIResponsesProviderOptions =
-          ((req.providerOptions ??= {}).openai ??= {});
+        const openaiOptions: OpenAIResponsesProviderOptions = ((req.providerOptions ??= {}).openai ??= {});
 
         if (settings.has("reasoningEffort")) {
-          openaiOptions.reasoningEffort = settings.get(
-            "reasoningEffort",
-          ) as string;
+          openaiOptions.reasoningEffort = settings.get("reasoningEffort") as string;
         }
         if (settings.has("reasoningSummary")) {
-          openaiOptions.reasoningSummary = settings.get(
-            "reasoningSummary",
-          ) as string;
+          openaiOptions.reasoningSummary = settings.get("reasoningSummary") as string;
         }
         if (settings.has("strictJsonSchema")) {
-          openaiOptions.strictJsonSchema = settings.get(
-            "strictJsonSchema",
-          ) as boolean;
+          openaiOptions.strictJsonSchema = settings.get("strictJsonSchema") as boolean;
         }
         if (settings.has("serviceTier")) {
           openaiOptions.serviceTier = settings.get("serviceTier") as any;
@@ -183,9 +163,7 @@ function init(
           openaiOptions.textVerbosity = settings.get("textVerbosity") as any;
         }
         if (settings.has("promptCacheRetention")) {
-          openaiOptions.promptCacheRetention = settings.get(
-            "promptCacheRetention",
-          ) as any;
+          openaiOptions.promptCacheRetention = settings.get("promptCacheRetention") as any;
         }
 
         return undefined;
@@ -195,7 +173,7 @@ function init(
         audio: supportsAudioInput,
         file: supportsImageInput || supportsAudioInput,
       },
-      settings: {...baseSettings, ...modelSpec.settings},
+      settings: { ...baseSettings, ...modelSpec.settings },
       ...modelSpec,
     } satisfies ChatModelSpec;
   }
@@ -203,15 +181,7 @@ function init(
   function generateImageModelSpec(
     modelId: string,
     variantId: string,
-    modelSpec: Omit<
-      ImageModelSpec,
-      | "isAvailable"
-      | "provider"
-      | "providerDisplayName"
-      | "impl"
-      | "modelId"
-      | "calculateImageCost"
-    >,
+    modelSpec: Omit<ImageModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId" | "calculateImageCost">,
     costPerMegapixel: number,
   ): ImageModelSpec {
     return {
@@ -220,7 +190,7 @@ function init(
       impl: openai.imageModel(modelId),
       async isAvailable() {
         const modelList = await getModels();
-        return !!modelList?.data.some((model) => model.id === modelId);
+        return !!modelList?.data.some(model => model.id === modelId);
       },
       calculateImageCost(req) {
         const size = req.size.split("x").map(Number);
@@ -234,20 +204,21 @@ function init(
   const chatModelRegistry = app.requireService(ChatModelRegistry);
   chatModelRegistry.registerAllModelSpecs(
     Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
-      generateModelSpec(modelId, {
-        providerModelId: config.providerModelId,
-        costPerMillionInputTokens: config.costPerMillionInputTokens,
-        costPerMillionOutputTokens: config.costPerMillionOutputTokens,
-        costPerMillionCachedInputTokens: config.costPerMillionCachedInputTokens,
-        maxContextLength: config.maxContextLength,
-      }),
+      generateModelSpec(
+        modelId,
+        stripUndefinedKeys({
+          providerModelId: config.providerModelId,
+          costPerMillionInputTokens: config.costPerMillionInputTokens,
+          costPerMillionOutputTokens: config.costPerMillionOutputTokens,
+          costPerMillionCachedInputTokens: config.costPerMillionCachedInputTokens,
+          maxContextLength: config.maxContextLength,
+        }),
+      ),
     ),
   );
 
   // Register image generation models from parsed YAML config
-  const imageGenerationModelRegistry = app.requireService(
-    ImageGenerationModelRegistry,
-  );
+  const imageGenerationModelRegistry = app.requireService(ImageGenerationModelRegistry);
   imageGenerationModelRegistry.registerAllModelSpecs(
     Object.entries(parsedModelConfigs.imageGeneration).map(([variantId, config]) => {
       const baseModelId = config.providerModelId ?? variantId;
@@ -255,9 +226,7 @@ function init(
         baseModelId,
         variantId,
         {
-          providerOptions: config.providerOptions
-            ? {openai: config.providerOptions}
-            : undefined,
+          providerOptions: config.providerOptions ? { openai: config.providerOptions } : undefined,
         },
         config.costPerMegapixel,
       );
@@ -279,9 +248,7 @@ function init(
   );
 
   // Register speech-to-text models from parsed YAML config
-  const transcriptionModelRegistry = app.requireService(
-    TranscriptionModelRegistry,
-  );
+  const transcriptionModelRegistry = app.requireService(TranscriptionModelRegistry);
   transcriptionModelRegistry.registerAllModelSpecs(
     Object.entries(parsedModelConfigs.speechToText).map(([modelId, config]) => ({
       modelId,

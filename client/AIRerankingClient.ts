@@ -1,27 +1,21 @@
-import {rerank, type RerankingModel, type RerankResult} from "ai";
-import {z} from "zod";
-import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
-import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
+import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
+import { type RerankingModel, type RerankResult, rerank } from "ai";
+import { z } from "zod";
+import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
+import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
 export type RerankingModelSpec = ModelSpec & {
   costPerMillionInputTokens?: number;
   impl: Exclude<RerankingModel, string>;
   inputCapabilities?: Partial<ModelInputCapabilities>;
-  mangleRequest?: (
-    req: { query: string; documents: string[] },
-    settings?: Record<string, any>,
-  ) => void;
+  mangleRequest?: (req: { query: string; documents: string[] }, settings?: Record<string, any>) => void;
 };
 
-export const RerankingModelSpecSchema = createModelSpecSchema(
-  ModelInputCapabilitiesSchema,
-).extend({
-  costPerMillionInputTokens: z.number().optional(),
+export const RerankingModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+  costPerMillionInputTokens: z.number().exactOptional(),
 });
 
-export function normalizeRerankingModelSpec(
-  modelSpec: RerankingModelSpec,
-): RerankingModelSpec {
+export function normalizeRerankingModelSpec(modelSpec: RerankingModelSpec): RerankingModelSpec {
   return RerankingModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -32,8 +26,7 @@ export default class AIRerankingClient {
   constructor(
     private readonly modelSpec: RerankingModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.
@@ -53,27 +46,21 @@ export default class AIRerankingClient {
     return this.modelSpec.impl.modelId;
   }
 
-  rerank({
-           query,
-           documents,
-           topN,
-         }: {
-    query: string;
-    documents: string[];
-    topN?: number;
-  }): Promise<RerankResult<string>> {
+  rerank({ query, documents, topN }: { query: string; documents: string[]; topN?: number }): Promise<RerankResult<string>> {
     if (this.modelSpec.mangleRequest) {
-      const req = {query, documents};
+      const req = { query, documents };
       this.modelSpec.mangleRequest(req, this.settings);
       query = req.query;
       documents = req.documents;
     }
 
-    return rerank({
-      model: this.modelSpec.impl,
-      query,
-      documents,
-      topN,
-    });
+    return rerank(
+      stripUndefinedKeys({
+        model: this.modelSpec.impl,
+        query,
+        documents,
+        topN,
+      }),
+    );
   }
 }

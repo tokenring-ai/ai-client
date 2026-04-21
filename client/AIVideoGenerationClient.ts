@@ -1,11 +1,11 @@
-import type {Experimental_VideoModelV3} from "@ai-sdk/provider";
+import type { Experimental_VideoModelV3 } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
-import {MetricsService} from "@tokenring-ai/metrics";
-import {experimental_generateVideo as generateVideo, type GeneratedFile, type GenerateVideoResult} from "ai";
-import {z} from "zod";
+import { MetricsService } from "@tokenring-ai/metrics";
+import { type GeneratedFile, type GenerateVideoResult, experimental_generateVideo as generateVideo } from "ai";
+import { z } from "zod";
 
-import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
-import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
+import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
+import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
 export type VideoModel = Experimental_VideoModelV3;
 export type VideoRequest = {
@@ -41,18 +41,14 @@ export type VideoModelSpec = ModelSpec & {
   mangleRequest?: (req: VideoRequest, settings?: ChatModelSettings) => void;
 };
 
-export const VideoModelSpecSchema = createModelSpecSchema(
-  ModelInputCapabilitiesSchema,
-).extend({
+export const VideoModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
   calculateVideoCost: z.function({
     input: z.tuple([z.any(), z.any()]),
     output: z.number(),
   }),
 });
 
-export function normalizeVideoModelSpec(
-  modelSpec: VideoModelSpec,
-): VideoModelSpec {
+export function normalizeVideoModelSpec(modelSpec: VideoModelSpec): VideoModelSpec {
   return VideoModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -66,8 +62,7 @@ export default class AIVideoGenerationClient {
   constructor(
     private modelSpec: VideoModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.
@@ -93,14 +88,11 @@ export default class AIVideoGenerationClient {
   /**
    * Generates a video based on a prompt or image using the specified model.
    */
-  async generateVideo(
-    request: VideoRequest,
-    agent: Agent,
-  ): Promise<[GeneratedFile, GenerateVideoResult]> {
+  async generateVideo(request: VideoRequest, agent: Agent): Promise<[GeneratedFile, GenerateVideoResult]> {
     const signal = agent.getAbortSignal();
 
     try {
-      const finalRequest = {...request};
+      const finalRequest = { ...request };
 
       if (this.modelSpec.mangleRequest) {
         this.modelSpec.mangleRequest(finalRequest, this.settings);
@@ -115,13 +107,7 @@ export default class AIVideoGenerationClient {
 
       const cost = this.modelSpec.calculateVideoCost(finalRequest, result);
 
-      agent
-        .getServiceByType(MetricsService)
-        ?.addCost(
-          `Video Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
-          cost,
-          agent,
-        );
+      agent.getServiceByType(MetricsService)?.addCost(`Video Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost, agent);
 
       return [result.video, result];
     } catch (error: unknown) {

@@ -1,35 +1,26 @@
-import type {ChatInputMessage, ChatRequest} from "../client/AIChatClient.ts";
-import type {TextPart} from "../schema.ts";
+import type { ChatInputMessage, ChatRequest } from "../client/AIChatClient.ts";
+import type { TextPart } from "../schema.ts";
 
 export function resequenceMessages(request: ChatRequest) {
-  const {messages} = request;
+  const { messages } = request;
   if (!messages || messages.length === 0) return;
 
-  const combinedMessages = messages.reduce(
-    (acc: ChatInputMessage[], current: ChatInputMessage) => {
-      const lastMessage = acc.length === 0 ? null : acc[acc.length - 1];
-      if (lastMessage?.role === 'user' && current.role === 'user') {
-        lastMessage.content = [
-          ...(Array.isArray(lastMessage.content) ? lastMessage.content : [{type: 'text', text: lastMessage.content} satisfies TextPart]),
-          ...(Array.isArray(current.content) ? current.content : [{type: 'text', text: current.content} satisfies TextPart]),
-        ];
-      } else {
-        acc.push({...current});
-      }
-      return acc;
-    },
-    [],
-  );
+  const combinedMessages = messages.reduce((acc: ChatInputMessage[], current: ChatInputMessage) => {
+    const lastMessage = acc.length === 0 ? null : acc[acc.length - 1];
+    if (lastMessage?.role === "user" && current.role === "user") {
+      lastMessage.content = [
+        ...(Array.isArray(lastMessage.content) ? lastMessage.content : [{ type: "text", text: lastMessage.content } satisfies TextPart]),
+        ...(Array.isArray(current.content) ? current.content : [{ type: "text", text: current.content } satisfies TextPart]),
+      ];
+    } else {
+      acc.push({ ...current });
+    }
+    return acc;
+  }, []);
 
   // Handle system messages separately as they can appear at the beginning
-  const systemMessages = combinedMessages.filter(
-    (msg): msg is Extract<ChatInputMessage, { role: "system" }> =>
-      msg.role === "system",
-  );
-  const nonSystemMessages = combinedMessages.filter(
-    (msg): msg is Exclude<ChatInputMessage, { role: "system" }> =>
-      msg.role !== "system",
-  );
+  const systemMessages = combinedMessages.filter((msg): msg is Extract<ChatInputMessage, { role: "system" }> => msg.role === "system");
+  const nonSystemMessages = combinedMessages.filter((msg): msg is Exclude<ChatInputMessage, { role: "system" }> => msg.role !== "system");
 
   // If there are no non-system messages, just return what we have
   if (nonSystemMessages.length === 0) {

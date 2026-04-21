@@ -1,13 +1,13 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import {MetricsService} from "@tokenring-ai/metrics";
-import {type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel} from "ai";
-import {z} from "zod";
-import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
-import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
+import { MetricsService } from "@tokenring-ai/metrics";
+import { type GeneratedFile, type GenerateImageResult, generateImage, type ImageModel } from "ai";
+import { z } from "zod";
+import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
+import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
 export type ImageRequest = {
   prompt: string;
-  quality?: string;
+  quality?: string | undefined;
   size: `${number}x${number}`;
   n: number;
 };
@@ -16,7 +16,7 @@ export type ImageModelSpec = ModelSpec & {
   /**
    * - Maximum context length in tokens
    */
-  contextLength?: number;
+  contextLength?: number | undefined;
   /**
    * - Cost per million input tokens
    */
@@ -52,19 +52,15 @@ export type ImageModelSpec = ModelSpec & {
   mangleRequest?: (req: ImageRequest, settings?: Record<string, any>) => void;
 };
 
-export const ImageModelSpecSchema = createModelSpecSchema(
-  ModelInputCapabilitiesSchema,
-).extend({
-  contextLength: z.number().optional(),
+export const ImageModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+  contextLength: z.number().exactOptional(),
   calculateImageCost: z.function({
     input: z.tuple([z.any(), z.any()]),
     output: z.number(),
   }),
 });
 
-export function normalizeImageModelSpec(
-  modelSpec: ImageModelSpec,
-): ImageModelSpec {
+export function normalizeImageModelSpec(modelSpec: ImageModelSpec): ImageModelSpec {
   return ImageModelSpecSchema.parse({
     ...modelSpec,
     inputCapabilities: modelSpec.inputCapabilities ?? {},
@@ -78,8 +74,7 @@ export default class AIImageGenerationClient {
   constructor(
     private modelSpec: ImageModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.
@@ -105,15 +100,12 @@ export default class AIImageGenerationClient {
   /**
    * Generates an image based on a prompt using the specified model.
    */
-  async generateImage(
-    request: ImageRequest,
-    agent: Agent,
-  ): Promise<[GeneratedFile, GenerateImageResult]> {
+  async generateImage(request: ImageRequest, agent: Agent): Promise<[GeneratedFile, GenerateImageResult]> {
     const signal = agent.getAbortSignal();
 
     try {
       if (this.modelSpec.mangleRequest) {
-        request = {...request};
+        request = { ...request };
         this.modelSpec.mangleRequest(request, this.settings);
       }
       const result = await generateImage({
@@ -126,13 +118,7 @@ export default class AIImageGenerationClient {
 
       const cost = this.modelSpec.calculateImageCost(request, result);
 
-      agent
-        .getServiceByType(MetricsService)
-        ?.addCost(
-          `Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`,
-          cost,
-          agent,
-        );
+      agent.getServiceByType(MetricsService)?.addCost(`Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost, agent);
 
       return [result.image, result];
     } catch (error: unknown) {
