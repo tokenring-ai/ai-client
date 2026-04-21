@@ -1,4 +1,4 @@
-import {embed, type EmbeddingModel, type EmbedResult} from "ai";
+import {type EmbeddingModel, embedMany, type EmbedManyResult} from "ai";
 import {z} from "zod";
 import type {ChatModelSettings, ModelSpec} from "../ModelTypeRegistry.ts";
 import {createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema} from "./modelCapabilities.ts";
@@ -14,7 +14,7 @@ export type EmbeddingModelSpec = ModelSpec & {
    * Receives the runtime feature flags as the second parameter.
    */
   mangleRequest?: (
-    req: { value: string },
+    req: { values: string[] },
     settings?: Record<string, any>,
   ) => void;
 };
@@ -71,27 +71,18 @@ export default class AIEmbeddingClient {
    * Generates embeddings for an array of input strings.
    * Each result includes the embedding vector and usage statistics for that input.
    */
-  getEmbeddings({input}: { input: string[] }): Promise<Array<EmbedResult>> {
-    if (!Array.isArray(input)) {
-      throw new Error("Input must be an array of strings.");
+  async getEmbeddings({input}: { input: string[] }): Promise<EmbedManyResult> {
+    const req = {
+      values: input
+    };
+
+    if (this.modelSpec.mangleRequest) {
+      this.modelSpec.mangleRequest(req, this.settings);
     }
-    return Promise.all(
-      input.map((value) =>
-        embed(
-          (() => {
-            // Allow providers to mangle per-item request
-            if (this.modelSpec.mangleRequest) {
-              const req = {value};
-              this.modelSpec.mangleRequest(req, this.settings);
-              value = req.value;
-            }
-            return {
-              model: this.modelSpec.impl,
-              value,
-            };
-          })(),
-        ),
-      ),
-    );
+
+    return await embedMany({
+      model: this.modelSpec.impl,
+      ...req
+    });
   }
 }
