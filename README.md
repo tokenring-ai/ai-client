@@ -1,26 +1,40 @@
 # @tokenring-ai/ai-client
 
-Multi-provider AI integration client for the Token Ring ecosystem. Provides unified access to various AI models through a consistent interface, supporting chat, embeddings, image generation, reranking, speech synthesis, and transcription capabilities.
+Multi-provider AI integration client for the Token Ring ecosystem. Provides unified access to various AI models through
+a consistent interface, supporting chat, embeddings, image generation, video generation, reranking, speech synthesis,
+and transcription capabilities.
 
 ## Overview
 
-The AI Client package acts as a unified interface to multiple AI providers, abstracting away provider-specific differences while maintaining full access to provider capabilities. It integrates with the Token Ring agent system through seven model registry classes that manage model specifications and provide client instances. Models are automatically discovered and registered from each provider, with background processes checking availability and updating status.
+The AI Client package acts as a unified interface to multiple AI providers, abstracting away provider-specific
+differences while maintaining full access to provider capabilities. It integrates with the Token Ring agent system
+through seven model registry classes that manage model specifications and provide client instances. Models are
+automatically discovered and registered from each provider, with background processes checking availability and updating
+status.
 
 ### Key Features
 
-- **15 Native AI Providers**: Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter, Perplexity, Azure, Ollama, Llama (via Meta API), plus generic providers for OpenAI/Anthropic/Responses-compatible APIs
-- **Generic Provider Support**: Configure custom providers via OpenAI-compatible, Anthropic-compatible, or Responses-compatible endpoints with dynamic model discovery
+- **16 Native AI Providers**: Anthropic, OpenAI, Google, Groq, Cerebras, DeepSeek, ElevenLabs, Fal, xAI, OpenRouter,
+  Perplexity, Azure, Ollama, Llama (via Meta API), Minimax, plus generic providers for
+  OpenAI/Anthropic/Responses-compatible APIs
+- **Generic Provider Support**: Configure custom providers via OpenAI-compatible, Anthropic-compatible, or
+  Responses-compatible endpoints with dynamic model discovery
 - **Seven AI Capabilities**: Chat, Embeddings, Image Generation, Video Generation, Reranking, Speech, and Transcription
-- **Seven Model Registry Classes**: Dedicated registries for managing model specifications and capabilities (ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry, EmbeddingModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry, and RerankingModelRegistry)
+- **Seven Model Registry Classes**: Dedicated registries for managing model specifications and capabilities (
+  ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry, EmbeddingModelRegistry,
+  SpeechModelRegistry, TranscriptionModelRegistry, and RerankingModelRegistry)
 - **Dynamic Model Registration**: Register custom models with availability checks and background discovery
 - **Model Status Tracking**: Monitor model online, cold, and offline status with automatic availability checking
-- **Auto-Configuration**: Automatic provider setup from environment variables with fallback to manual configuration (defaults to `autoConfigure: true`)
+- **Auto-Configuration**: Automatic provider setup from environment variables with fallback to manual configuration (
+  defaults to `autoConfigure: true`)
 - **JSON-RPC API**: Remote procedure call endpoints for programmatic access via plugin registration at `/rpc/ai-client`
 - **Streaming Support**: Real-time streaming responses with delta handling for text and reasoning output
 - **Agent Integration**: Seamless integration with Token Ring agent system through services with automatic cost tracking
-- **Feature System**: Rich feature specification system supporting boolean, number, string, enum, and array types with validation
+- **Feature System**: Rich feature specification system supporting boolean, number, string, enum, and array types with
+  validation
 - **Cost Tracking**: Automatic cost calculation and metrics integration with detailed cost breakdowns
-- **Model Querying**: Query models by name pattern with optional feature settings and wildcard support (e.g., `openai:*` for all OpenAI models)
+- **Model Querying**: Query models by name pattern with optional feature settings and wildcard support (e.g., `openai:*`
+  for all OpenAI models)
 - **Vercel AI SDK Integration**: Built on the Vercel AI SDK for consistent provider interfaces and streaming support
 
 ## Installation
@@ -33,25 +47,27 @@ bun add @tokenring-ai/ai-client
 
 The package supports the following AI providers through dedicated integrations:
 
-| Provider | SDK/Model Support | Key Features |
-|----------|-------------------|--------------|
-| Anthropic | Claude models | Reasoning, analysis, web search, context caching, image input, file input |
-| OpenAI | GPT models, Whisper, TTS, Image Generation | Reasoning, multimodal, real-time audio, image generation, web search, deep research, audio input/output |
-| Google | Gemini, Imagen | Thinking, multimodal, image generation, web search, video input, audio input |
-| Groq | LLaMA-based models | High-speed inference, Llama, Qwen, Kimi models |
-| Cerebras | Cerebras models | High performance inference |
-| DeepSeek | DeepSeek models | Reasoning capabilities, chat and reasoner |
-| ElevenLabs | Speech synthesis and transcription | Multilingual voice generation, speaker diarization |
-| Fal | Image generation | Fast image generation, Flux models |
-| xAI | Grok models | Reasoning and analysis, image generation, video generation |
-| OpenRouter | Aggregated access | Multiple provider access, dynamic model discovery |
-| Perplexity | Perplexity models | Web search integration, deep research |
-| Azure | Azure OpenAI | Enterprise deployment |
-| Ollama | Self-hosted models | Local inference, chat and embedding models |
-| Llama | Meta Llama models (via Meta API) | Remote inference via Meta API |
-| Generic | OpenAI/Anthropic/Responses-compatible | Custom providers, llama.cpp, any compatible API |
+| Provider   | SDK/Model Support                          | Key Features                                                                                            |
+|------------|--------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| Anthropic  | Claude models                              | Reasoning, analysis, web search, context caching, image input, file input                               |
+| OpenAI     | GPT models, Whisper, TTS, Image Generation | Reasoning, multimodal, real-time audio, image generation, web search, deep research, audio input/output |
+| Google     | Gemini, Imagen                             | Thinking, multimodal, image generation, web search, video input, audio input                            |
+| Groq       | LLaMA-based models                         | High-speed inference, Llama, Qwen, Kimi models                                                          |
+| Cerebras   | Cerebras models                            | High performance inference                                                                              |
+| DeepSeek   | DeepSeek models                            | Reasoning capabilities, chat and reasoner                                                               |
+| ElevenLabs | Speech synthesis and transcription         | Multilingual voice generation, speaker diarization                                                      |
+| Fal        | Image generation                           | Fast image generation, Flux models                                                                      |
+| xAI        | Grok models                                | Reasoning and analysis, image generation, video generation                                              |
+| OpenRouter | Aggregated access                          | Multiple provider access, dynamic model discovery                                                       |
+| Perplexity | Perplexity models                          | Web search integration, deep research                                                                   |
+| Azure      | Azure OpenAI                               | Enterprise deployment                                                                                   |
+| Ollama     | Self-hosted models                         | Local inference, chat and embedding models                                                              |
+| Llama      | Meta Llama models (via Meta API)           | Remote inference via Meta API                                                                           |
+| Minimax    | Minimax models                             | Chat and reasoning models                                                                               |
+| Generic    | OpenAI/Anthropic/Responses-compatible      | Custom providers, llama.cpp, any compatible API                                                         |
 
-Additional providers like NVIDIA NIM, Qwen (DashScope), Chutes, Minimax, MiMo, and zAI can be configured using the `generic` provider with OpenAI-compatible or Anthropic-compatible endpoints.
+Additional providers like NVIDIA NIM, Qwen (DashScope), Chutes, MiMo, and zAI can be configured using the `generic`
+provider with OpenAI-compatible or Anthropic-compatible endpoints.
 
 ## Model Specifications by Provider
 
@@ -59,216 +75,218 @@ Additional providers like NVIDIA NIM, Qwen (DashScope), Chutes, Minimax, MiMo, a
 
 **Chat Models:**
 
-| Model ID | Context Length | Input Cost ($/M) | Output Cost ($/M) | Cached Input Cost ($/M) | Features |
-|----------|---------------|------------------|-------------------|------------------------|----------|
-| gpt-4.1 | 1,000,000 | 2.0 | 8.0 | 0.5 | websearch, serviceTier, textVerbosity, strictJsonSchema |
-| gpt-4.1-mini | 1,000,000 | 0.4 | 1.6 | 0.1 | websearch, serviceTier, textVerbosity, strictJsonSchema |
-| gpt-4.1-nano | 1,000,000 | 0.1 | 0.4 | 0.025 | websearch, serviceTier, textVerbosity, strictJsonSchema |
-| gpt-5 | 400,000 | 1.25 | 10 | 0.125 | websearch, reasoningEffort, reasoningSummary, serviceTier, textVerbosity, strictJsonSchema |
-| gpt-5.1 | 400,000 | 1.25 | 10 | 0.125 | websearch, reasoningEffort (none/minimal/low/medium/high), reasoningSummary, promptCacheRetention |
-| gpt-5.2 | 400,000 | 1.75 | 14 | 0.175 | websearch, reasoningEffort, reasoningSummary |
-| gpt-5.4 | 272,000 | 2.5 | 15.0 | 0.25 | websearch, reasoningEffort, reasoningSummary |
-| gpt-5.4-mini | 400,000 | 0.75 | 4.5 | 0.075 | websearch, reasoningEffort, reasoningSummary |
-| gpt-5.4-nano | 400,000 | 0.2 | 1.25 | 0.02 | websearch, reasoningEffort, reasoningSummary |
-| gpt-5.4-long-context | 1,000,000 | 5.0 | 22.5 | 0.5 | websearch, reasoningEffort, reasoningSummary |
-| gpt-5.4-pro | 272,000 | 30.0 | 180.0 | - | websearch, reasoningEffort, reasoningSummary |
-| gpt-5.4-pro-long-context | 1,000,000 | 60.0 | 270.0 | - | websearch, reasoningEffort, reasoningSummary |
-| gpt-5-codex | 400,000 | 1.25 | 10 | 0.125 | websearch |
-| gpt-5.1-codex | 400,000 | 1.25 | 10 | 0.125 | websearch |
-| gpt-5-mini | 400,000 | 0.25 | 2 | 0.025 | websearch |
-| gpt-5-nano | 400,000 | 0.05 | 0.4 | 0.005 | websearch |
-| o4-mini | 200,000 | 1.1 | 4.4 | 0.275 | websearch, reasoningEffort |
-| o3 | 200,000 | 2.0 | 8.0 | 0.5 | websearch, reasoningEffort |
-| o3-mini | 200,000 | 1.1 | 4.4 | 0.55 | websearch, reasoningEffort |
-| o3-pro | 200,000 | 20.0 | 80.0 | - | websearch, reasoningEffort |
-| o3-deep-research | 200,000 | 10.0 | 40.0 | 2.5 | websearch, reasoningEffort |
-| o4-mini-deep-research | 200,000 | 2.0 | 8.0 | 0.5 | websearch, reasoningEffort |
-| o1 | 200,000 | 15.0 | 60.0 | 7.5 | websearch, reasoningEffort |
-| o1-pro | 200,000 | 150.0 | 600.0 | - | websearch, reasoningEffort |
-| gpt-5-pro | 400,000 | 15.0 | 120.0 | - | websearch, reasoningEffort |
-| gpt-5-chat-latest | 400,000 | 1.25 | 10 | 0.125 | websearch |
-| gpt-5.1-chat-latest | 400,000 | 1.25 | 10 | 0.125 | websearch |
-| gpt-5.1-codex-mini | 400,000 | 0.25 | 2 | 0.025 | websearch |
-| gpt-5-search-api | 400,000 | 1.25 | 10 | 0.125 | websearch (default: true) |
-| gpt-4o | 128,000 | 2.5 | 10 | 1.25 | image input, audio input |
-| gpt-4o-2024-05-13 | 128,000 | 5.0 | 15.0 | - | image input, audio input |
-| gpt-4o-mini | 128,000 | 0.15 | 0.6 | 0.075 | image input, audio input |
-| gpt-4o-mini-search-preview | 128,000 | 0.15 | 0.6 | - | websearch (default: true), image input |
-| gpt-4o-search-preview | 128,000 | 2.5 | 10 | - | websearch (default: true), image input |
-| gpt-realtime | 128,000 | 4.0 | 16.0 | 0.4 | real-time audio, image input |
-| gpt-realtime-mini | 128,000 | 0.6 | 2.4 | 0.06 | real-time audio, image input |
-| gpt-4o-realtime-preview | 128,000 | 5.0 | 20.0 | 2.5 | real-time audio, image input |
-| gpt-4o-mini-realtime-preview | 128,000 | 0.6 | 2.4 | 0.3 | real-time audio, image input |
-| gpt-audio | 128,000 | 2.5 | 10.0 | - | audio input/output |
-| gpt-audio-mini | 128,000 | 0.6 | 2.4 | - | audio input/output |
-| gpt-4o-audio-preview | 128,000 | 2.5 | 10.0 | - | audio input/output |
-| gpt-4o-mini-audio-preview | 128,000 | 0.15 | 0.6 | - | audio input/output |
-| computer-use-preview | 128,000 | 3.0 | 12.0 | - | image input, file input |
+| Model ID                     | Context Length | Input Cost ($/M) | Output Cost ($/M) | Cached Input Cost ($/M) | Features                                                                                          |
+|------------------------------|----------------|------------------|-------------------|-------------------------|---------------------------------------------------------------------------------------------------|
+| gpt-4.1                      | 1,000,000      | 2.0              | 8.0               | 0.5                     | websearch, serviceTier, textVerbosity, strictJsonSchema                                           |
+| gpt-4.1-mini                 | 1,000,000      | 0.4              | 1.6               | 0.1                     | websearch, serviceTier, textVerbosity, strictJsonSchema                                           |
+| gpt-4.1-nano                 | 1,000,000      | 0.1              | 0.4               | 0.025                   | websearch, serviceTier, textVerbosity, strictJsonSchema                                           |
+| gpt-5                        | 400,000        | 1.25             | 10                | 0.125                   | websearch, reasoningEffort, reasoningSummary, serviceTier, textVerbosity, strictJsonSchema        |
+| gpt-5.1                      | 400,000        | 1.25             | 10                | 0.125                   | websearch, reasoningEffort (none/minimal/low/medium/high), reasoningSummary, promptCacheRetention |
+| gpt-5.2                      | 400,000        | 1.75             | 14                | 0.175                   | websearch, reasoningEffort, reasoningSummary                                                      |
+| gpt-5.4                      | 272,000        | 2.5              | 15.0              | 0.25                    | websearch, reasoningEffort, reasoningSummary                                                      |
+| gpt-5.4-mini                 | 400,000        | 0.75             | 4.5               | 0.075                   | websearch, reasoningEffort, reasoningSummary                                                      |
+| gpt-5.4-nano                 | 400,000        | 0.2              | 1.25              | 0.02                    | websearch, reasoningEffort, reasoningSummary                                                      |
+| gpt-5.4-long-context         | 1,000,000      | 5.0              | 22.5              | 0.5                     | websearch, reasoningEffort, reasoningSummary                                                      |
+| gpt-5.4-pro                  | 272,000        | 30.0             | 180.0             | -                       | websearch, reasoningEffort, reasoningSummary                                                      |
+| gpt-5.4-pro-long-context     | 1,000,000      | 60.0             | 270.0             | -                       | websearch, reasoningEffort, reasoningSummary                                                      |
+| gpt-5-codex                  | 400,000        | 1.25             | 10                | 0.125                   | websearch                                                                                         |
+| gpt-5.1-codex                | 400,000        | 1.25             | 10                | 0.125                   | websearch                                                                                         |
+| gpt-5-mini                   | 400,000        | 0.25             | 2                 | 0.025                   | websearch                                                                                         |
+| gpt-5-nano                   | 400,000        | 0.05             | 0.4               | 0.005                   | websearch                                                                                         |
+| o4-mini                      | 200,000        | 1.1              | 4.4               | 0.275                   | websearch, reasoningEffort                                                                        |
+| o3                           | 200,000        | 2.0              | 8.0               | 0.5                     | websearch, reasoningEffort                                                                        |
+| o3-mini                      | 200,000        | 1.1              | 4.4               | 0.55                    | websearch, reasoningEffort                                                                        |
+| o3-pro                       | 200,000        | 20.0             | 80.0              | -                       | websearch, reasoningEffort                                                                        |
+| o3-deep-research             | 200,000        | 10.0             | 40.0              | 2.5                     | websearch, reasoningEffort                                                                        |
+| o4-mini-deep-research        | 200,000        | 2.0              | 8.0               | 0.5                     | websearch, reasoningEffort                                                                        |
+| o1                           | 200,000        | 15.0             | 60.0              | 7.5                     | websearch, reasoningEffort                                                                        |
+| o1-pro                       | 200,000        | 150.0            | 600.0             | -                       | websearch, reasoningEffort                                                                        |
+| gpt-5-pro                    | 400,000        | 15.0             | 120.0             | -                       | websearch, reasoningEffort                                                                        |
+| gpt-5-chat-latest            | 400,000        | 1.25             | 10                | 0.125                   | websearch                                                                                         |
+| gpt-5.1-chat-latest          | 400,000        | 1.25             | 10                | 0.125                   | websearch                                                                                         |
+| gpt-5.1-codex-mini           | 400,000        | 0.25             | 2                 | 0.025                   | websearch                                                                                         |
+| gpt-5-search-api             | 400,000        | 1.25             | 10                | 0.125                   | websearch (default: true)                                                                         |
+| gpt-4o                       | 128,000        | 2.5              | 10                | 1.25                    | image input, audio input                                                                          |
+| gpt-4o-2024-05-13            | 128,000        | 5.0              | 15.0              | -                       | image input, audio input                                                                          |
+| gpt-4o-mini                  | 128,000        | 0.15             | 0.6               | 0.075                   | image input, audio input                                                                          |
+| gpt-4o-mini-search-preview   | 128,000        | 0.15             | 0.6               | -                       | websearch (default: true), image input                                                            |
+| gpt-4o-search-preview        | 128,000        | 2.5              | 10                | -                       | websearch (default: true), image input                                                            |
+| gpt-realtime                 | 128,000        | 4.0              | 16.0              | 0.4                     | real-time audio, image input                                                                      |
+| gpt-realtime-mini            | 128,000        | 0.6              | 2.4               | 0.06                    | real-time audio, image input                                                                      |
+| gpt-4o-realtime-preview      | 128,000        | 5.0              | 20.0              | 2.5                     | real-time audio, image input                                                                      |
+| gpt-4o-mini-realtime-preview | 128,000        | 0.6              | 2.4               | 0.3                     | real-time audio, image input                                                                      |
+| gpt-audio                    | 128,000        | 2.5              | 10.0              | -                       | audio input/output                                                                                |
+| gpt-audio-mini               | 128,000        | 0.6              | 2.4               | -                       | audio input/output                                                                                |
+| gpt-4o-audio-preview         | 128,000        | 2.5              | 10.0              | -                       | audio input/output                                                                                |
+| gpt-4o-mini-audio-preview    | 128,000        | 0.15             | 0.6               | -                       | audio input/output                                                                                |
+| computer-use-preview         | 128,000        | 3.0              | 12.0              | -                       | image input, file input                                                                           |
 
 **Image Generation Models:**
 
-| Model ID | Quality | Cost per Megapixel |
-|----------|---------|-------------------|
-| gpt-image-1-mini-high | high | 0.036 |
-| gpt-image-1-mini-medium | medium | 0.011 |
-| gpt-image-1-mini-low | low | 0.005 |
-| gpt-image-1-high | high | 0.167 |
-| gpt-image-1-medium | medium | 0.042 |
-| gpt-image-1-low | low | 0.011 |
-| gpt-image-1.5-high | high | 0.133 |
-| gpt-image-1.5-medium | medium | 0.034 |
-| gpt-image-1.5-low | low | 0.009 |
+| Model ID                | Quality | Cost per Megapixel |
+|-------------------------|---------|--------------------|
+| gpt-image-1-mini-high   | high    | 0.036              |
+| gpt-image-1-mini-medium | medium  | 0.011              |
+| gpt-image-1-mini-low    | low     | 0.005              |
+| gpt-image-1-high        | high    | 0.167              |
+| gpt-image-1-medium      | medium  | 0.042              |
+| gpt-image-1-low         | low     | 0.011              |
+| gpt-image-1.5-high      | high    | 0.133              |
+| gpt-image-1.5-medium    | medium  | 0.034              |
+| gpt-image-1.5-low       | low     | 0.009              |
 
 **Speech Models:**
 
 | Model ID | Cost per Million Characters |
-|----------|----------------------------|
-| tts-1 | 15 |
-| tts-1-hd | 30 |
+|----------|-----------------------------|
+| tts-1    | 15                          |
+| tts-1-hd | 30                          |
 
 **Transcription Models:**
 
-| Model ID | Cost per Minute |
-|----------|----------------|
-| whisper-1 | 0.006 |
+| Model ID  | Cost per Minute |
+|-----------|-----------------|
+| whisper-1 | 0.006           |
 
 ### Anthropic Models
 
 **Chat Models:**
 
-| Model ID | Context Length | Input Cost ($/M) | Output Cost ($/M) | Features |
-|----------|---------------|------------------|-------------------|----------|
-| claude-4.6-opus | 1,000,000 | 5 | 25 | caching, websearch, maxSearchUses, image input, file input |
-| claude-4.5-opus | 200,000 | 5 | 25 | caching, websearch, maxSearchUses, image input, file input |
-| claude-4.5-haiku | 200,000 | 1 | 5.0 | caching, websearch, maxSearchUses, image input, file input |
-| claude-4.1-opus | 200,000 | 15 | 75 | caching, websearch, maxSearchUses, image input, file input |
-| claude-4.6-sonnet-long-context | 1,000,000 | 6.0 | 22.5 | caching, websearch, maxSearchUses, image input, file input |
-| claude-4.6-sonnet | 200,000 | 3.0 | 15.0 | caching, websearch, maxSearchUses, image input, file input |
-| claude-4.5-sonnet-long-context | 1,000,000 | 6.0 | 22.5 | caching, websearch, maxSearchUses, image input, file input |
-| claude-4.5-sonnet | 200,000 | 3.0 | 15.0 | caching, websearch, maxSearchUses, image input, file input |
+| Model ID                       | Context Length | Input Cost ($/M) | Output Cost ($/M) | Features                                                   |
+|--------------------------------|----------------|------------------|-------------------|------------------------------------------------------------|
+| claude-4.6-opus                | 1,000,000      | 5                | 25                | caching, websearch, maxSearchUses, image input, file input |
+| claude-4.5-opus                | 200,000        | 5                | 25                | caching, websearch, maxSearchUses, image input, file input |
+| claude-4.5-haiku               | 200,000        | 1                | 5.0               | caching, websearch, maxSearchUses, image input, file input |
+| claude-4.1-opus                | 200,000        | 15               | 75                | caching, websearch, maxSearchUses, image input, file input |
+| claude-4.6-sonnet-long-context | 1,000,000      | 6.0              | 22.5              | caching, websearch, maxSearchUses, image input, file input |
+| claude-4.6-sonnet              | 200,000        | 3.0              | 15.0              | caching, websearch, maxSearchUses, image input, file input |
+| claude-4.5-sonnet-long-context | 1,000,000      | 6.0              | 22.5              | caching, websearch, maxSearchUses, image input, file input |
+| claude-4.5-sonnet              | 200,000        | 3.0              | 15.0              | caching, websearch, maxSearchUses, image input, file input |
 
 ### Google Models
 
 **Chat Models:**
 
-| Model ID | Context Length | Input Cost ($/M) | Output Cost ($/M) | Features |
-|----------|---------------|------------------|-------------------|----------|
-| gemini-3.1-pro-long-context | 2,000,000 | 4.0 | 18.0 | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
-| gemini-3.1-pro | 200,000 | 2.0 | 12.0 | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
-| gemini-3-pro | 1,000,000 | 4.0 | 18.0 | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
-| gemini-2.5-pro | 1,000,000 | 2.5 | 15.0 | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
-| gemini-2.5-flash | 1,000,000 | 0.3 | 2.5 | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
-| gemini-3-flash | 1,000,000 | 0.5 | 3 | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
-| gemini-2.5-flash-lite | 1,000,000 | 0.1 | 0.4 | responseModalities, thinkingBudget, image/video/audio/file input |
+| Model ID                    | Context Length | Input Cost ($/M) | Output Cost ($/M) | Features                                                                                     |
+|-----------------------------|----------------|------------------|-------------------|----------------------------------------------------------------------------------------------|
+| gemini-3.1-pro-long-context | 2,000,000      | 4.0              | 18.0              | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
+| gemini-3.1-pro              | 200,000        | 2.0              | 12.0              | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
+| gemini-3-pro                | 1,000,000      | 4.0              | 18.0              | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
+| gemini-2.5-pro              | 1,000,000      | 2.5              | 15.0              | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
+| gemini-2.5-flash            | 1,000,000      | 0.3              | 2.5               | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
+| gemini-3-flash              | 1,000,000      | 0.5              | 3                 | websearch, responseModalities, thinkingBudget, includeThoughts, image/video/audio/file input |
+| gemini-2.5-flash-lite       | 1,000,000      | 0.1              | 0.4               | responseModalities, thinkingBudget, image/video/audio/file input                             |
 
 **Image Generation Models:**
 
-| Model ID | Cost per Image |
-|----------|---------------|
-| gemini-3-pro-image-preview | 0.135 |
-| imagen-4.0-ultra-generate-001 | 0.06 |
-| imagen-4.0-generate-001 | 0.04 |
-| imagen-4.0-fast-generate-001 | 0.02 |
+| Model ID                      | Cost per Image |
+|-------------------------------|----------------|
+| gemini-3-pro-image-preview    | 0.135          |
+| imagen-4.0-ultra-generate-001 | 0.06           |
+| imagen-4.0-generate-001       | 0.04           |
+| imagen-4.0-fast-generate-001  | 0.02           |
 
 ### Groq Models
 
 **Chat Models:**
 
-| Model ID | Context Length | Completion Tokens | Input Cost ($/M) | Output Cost ($/M) |
-|----------|---------------|-------------------|------------------|-------------------|
-| llama-3.1-8b-instant | 131,072 | 131,072 | 0.05 | 0.08 |
-| llama-3.3-70b-versatile | 131,072 | 32,768 | 0.59 | 0.79 |
-| openai/gpt-oss-120b | 131,072 | 65,536 | 0.15 | 0.6 |
-| openai/gpt-oss-20b | 131,072 | 65,536 | 0.075 | 0.3 |
-| meta-llama/llama-4-scout-17b-16e-instruct | 131,072 | 8,192 | 0.11 | 0.34 |
-| meta-llama/llama-prompt-guard-2-22m | 512 | 512 | 0.03 | 0.03 |
-| meta-llama/llama-prompt-guard-2-86m | 512 | 512 | 0.04 | 0.04 |
-| moonshotai/kimi-k2-instruct-0905 | 262,144 | 16,384 | 1.0 | 3.0 |
-| openai/gpt-oss-safeguard-20b | 131,072 | 65,536 | 0.075 | 0.3 |
-| qwen/qwen3-32b | 131,072 | 40,960 | 0.29 | 0.59 |
+| Model ID                                  | Context Length | Completion Tokens | Input Cost ($/M) | Output Cost ($/M) |
+|-------------------------------------------|----------------|-------------------|------------------|-------------------|
+| llama-3.1-8b-instant                      | 131,072        | 131,072           | 0.05             | 0.08              |
+| llama-3.3-70b-versatile                   | 131,072        | 32,768            | 0.59             | 0.79              |
+| openai/gpt-oss-120b                       | 131,072        | 65,536            | 0.15             | 0.6               |
+| openai/gpt-oss-20b                        | 131,072        | 65,536            | 0.075            | 0.3               |
+| meta-llama/llama-4-scout-17b-16e-instruct | 131,072        | 8,192             | 0.11             | 0.34              |
+| meta-llama/llama-prompt-guard-2-22m       | 512            | 512               | 0.03             | 0.03              |
+| meta-llama/llama-prompt-guard-2-86m       | 512            | 512               | 0.04             | 0.04              |
+| moonshotai/kimi-k2-instruct-0905          | 262,144        | 16,384            | 1.0              | 3.0               |
+| openai/gpt-oss-safeguard-20b              | 131,072        | 65,536            | 0.075            | 0.3               |
+| qwen/qwen3-32b                            | 131,072        | 40,960            | 0.29             | 0.59              |
 
 ### Cerebras Models
 
 **Chat Models:**
 
-| Model ID | Context Length | Input Cost ($/M) | Output Cost ($/M) |
-|----------|---------------|------------------|-------------------|
-| llama3.1-8b | 32,000 | 0.1 | 0.1 |
-| qwen-3-235b-a22b-instruct-2507 | 131,000 | 0.6 | 1.2 |
-| zai-glm-4.7 | 131,000 | 2.25 | 2.75 |
-| gpt-oss-120b | 131,000 | 0.35 | 0.75 |
+| Model ID                       | Context Length | Input Cost ($/M) | Output Cost ($/M) |
+|--------------------------------|----------------|------------------|-------------------|
+| llama3.1-8b                    | 32,000         | 0.1              | 0.1               |
+| qwen-3-235b-a22b-instruct-2507 | 131,000        | 0.6              | 1.2               |
+| zai-glm-4.7                    | 131,000        | 2.25             | 2.75              |
+| gpt-oss-120b                   | 131,000        | 0.35             | 0.75              |
 
 ### DeepSeek Models
 
 **Chat Models:**
 
-| Model ID | Context Length | Input Cost ($/M) | Cached Input Cost ($/M) | Output Cost ($/M) |
-|----------|---------------|------------------|------------------------|-------------------|
-| deepseek-chat | 128,000 | 0.28 | 0.028 | 0.42 |
-| deepseek-reasoner | 128,000 | 0.28 | 0.028 | 0.42 |
+| Model ID          | Context Length | Input Cost ($/M) | Cached Input Cost ($/M) | Output Cost ($/M) |
+|-------------------|----------------|------------------|-------------------------|-------------------|
+| deepseek-chat     | 128,000        | 0.28             | 0.028                   | 0.42              |
+| deepseek-reasoner | 128,000        | 0.28             | 0.028                   | 0.42              |
 
 ### ElevenLabs Models
 
 **Speech Models:**
 
-| Model ID | Cost per Million Characters | Features |
-|----------|----------------------------|----------|
-| eleven_v3 | 100 | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
-| eleven_multilingual_v2 | 60 | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
-| eleven_flash_v2_5 | 30 | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
-| eleven_flash_v2 | 30 | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
-| eleven_turbo_v2_5 | 45 | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
-| eleven_turbo_v2 | 45 | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
-| eleven_monolingual_v1 | 50 | voice, stability, similarity_boost |
-| eleven_multilingual_v1 | 50 | voice, language_code, stability, similarity_boost |
+| Model ID               | Cost per Million Characters | Features                                                                    |
+|------------------------|-----------------------------|-----------------------------------------------------------------------------|
+| eleven_v3              | 100                         | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
+| eleven_multilingual_v2 | 60                          | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
+| eleven_flash_v2_5      | 30                          | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
+| eleven_flash_v2        | 30                          | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
+| eleven_turbo_v2_5      | 45                          | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
+| eleven_turbo_v2        | 45                          | voice, language_code, stability, similarity_boost, style, use_speaker_boost |
+| eleven_monolingual_v1  | 50                          | voice, stability, similarity_boost                                          |
+| eleven_multilingual_v1 | 50                          | voice, language_code, stability, similarity_boost                           |
 
 **Transcription Models:**
 
-| Model ID | Cost per Minute | Features |
-|----------|----------------|----------|
-| scribe_v1 | 0.034 | languageCode, tagAudioEvents, numSpeakers, timestampsGranularity, diarize, fileFormat |
-| scribe_v1_experimental | 0.034 | languageCode, tagAudioEvents, numSpeakers, timestampsGranularity, diarize, fileFormat |
+| Model ID               | Cost per Minute | Features                                                                              |
+|------------------------|-----------------|---------------------------------------------------------------------------------------|
+| scribe_v1              | 0.034           | languageCode, tagAudioEvents, numSpeakers, timestampsGranularity, diarize, fileFormat |
+| scribe_v1_experimental | 0.034           | languageCode, tagAudioEvents, numSpeakers, timestampsGranularity, diarize, fileFormat |
 
 ### Fal Models
 
 **Image Generation Models:**
 
-| Model ID | Cost per Megapixel |
-|----------|-------------------|
-| fal-ai/qwen-image | 0.02 |
-| fal-ai/flux-pro/v1.1-ultra | 0.06 |
-| fal-ai/flux-pro/v1.1 | 0.04 |
+| Model ID                   | Cost per Megapixel |
+|----------------------------|--------------------|
+| fal-ai/qwen-image          | 0.02               |
+| fal-ai/flux-pro/v1.1-ultra | 0.06               |
+| fal-ai/flux-pro/v1.1       | 0.04               |
 
 ### xAI Models
 
 **Chat Models:**
 
-| Model ID | Context Length | Input Cost ($/M) | Cached Input Cost ($/M) | Output Cost ($/M) | Features |
-|----------|---------------|------------------|------------------------|-------------------|----------|
-| grok-code-fast-1 | 256,000 | 0.2 | 0.02 | 1.5 | websearch, webImageUnderstanding, XSearch |
-| grok-4-1-fast-reasoning | 2,000,000 | 0.2 | 0.05 | 0.5 | websearch, webImageUnderstanding, XSearch |
-| grok-4-1-fast-non-reasoning | 2,000,000 | 0.2 | 0.05 | 0.5 | websearch, webImageUnderstanding, XSearch |
-| grok-4.20-0309-reasoning | 2,000,000 | 2.0 | - | 6.0 | websearch, webImageUnderstanding, XSearch |
-| grok-4.20-0309-non-reasoning | 2,000,000 | 2.0 | - | 6.0 | websearch, webImageUnderstanding, XSearch |
-| grok-4.20-multi-agent-0309 | 2,000,000 | 2.0 | - | 6.0 | websearch, webImageUnderstanding, XSearch |
+| Model ID                     | Context Length | Input Cost ($/M) | Cached Input Cost ($/M) | Output Cost ($/M) | Features                                  |
+|------------------------------|----------------|------------------|-------------------------|-------------------|-------------------------------------------|
+| grok-code-fast-1             | 256,000        | 0.2              | 0.02                    | 1.5               | websearch, webImageUnderstanding, XSearch |
+| grok-4-1-fast-reasoning      | 2,000,000      | 0.2              | 0.05                    | 0.5               | websearch, webImageUnderstanding, XSearch |
+| grok-4-1-fast-non-reasoning  | 2,000,000      | 0.2              | 0.05                    | 0.5               | websearch, webImageUnderstanding, XSearch |
+| grok-4.20-0309-reasoning     | 2,000,000      | 2.0              | -                       | 6.0               | websearch, webImageUnderstanding, XSearch |
+| grok-4.20-0309-non-reasoning | 2,000,000      | 2.0              | -                       | 6.0               | websearch, webImageUnderstanding, XSearch |
+| grok-4.20-multi-agent-0309   | 2,000,000      | 2.0              | -                       | 6.0               | websearch, webImageUnderstanding, XSearch |
 
 **Image Generation Models:**
 
-| Model ID | Cost per Image |
-|----------|---------------|
-| grok-imagine-image-pro | 0.07 |
-| grok-imagine-image | 0.02 |
-| grok-2-image-1212 | 0.07 |
+| Model ID               | Cost per Image |
+|------------------------|----------------|
+| grok-imagine-image-pro | 0.07           |
+| grok-imagine-image     | 0.02           |
+| grok-2-image-1212      | 0.07           |
 
 **Video Generation Models:**
 
-| Model ID | Cost per Second | Input Capabilities |
-|----------|----------------|-------------------|
-| grok-imagine-video | 0.05 | image input |
+| Model ID           | Cost per Second | Input Capabilities |
+|--------------------|-----------------|--------------------|
+| grok-imagine-video | 0.05            | image input        |
 
 ### OpenRouter Models
 
-OpenRouter dynamically discovers and registers all available models from the OpenRouter API. Models are automatically registered with their pricing and capabilities. The provider supports extensive feature configuration including web search, sampling parameters, and more.
+OpenRouter dynamically discovers and registers all available models from the OpenRouter API. Models are automatically
+registered with their pricing and capabilities. The provider supports extensive feature configuration including web
+search, sampling parameters, and more.
 
 **Key Features:**
 
@@ -291,17 +309,18 @@ OpenRouter dynamically discovers and registers all available models from the Ope
 
 **Chat Models:**
 
-| Model ID | Context Length | Input Cost ($/M) | Output Cost ($/M) | Reasoning Cost ($/M) | Features |
-|----------|---------------|------------------|-------------------|---------------------|----------|
-| sonar | 128,000 | 1 | 1 | - | websearch (default: true), searchContextSize |
-| sonar-pro | 200,000 | 3 | 15 | - | websearch (default: true), searchContextSize |
-| sonar-reasoning | 128,000 | 1 | 5 | - | websearch (default: true), searchContextSize |
-| sonar-reasoning-pro | 128,000 | 2 | 8 | - | websearch (default: true), searchContextSize |
-| sonar-deep-research | 128,000 | 2 | 8 | 3 | websearch (default: true), searchContextSize |
+| Model ID            | Context Length | Input Cost ($/M) | Output Cost ($/M) | Reasoning Cost ($/M) | Features                                     |
+|---------------------|----------------|------------------|-------------------|----------------------|----------------------------------------------|
+| sonar               | 128,000        | 1                | 1                 | -                    | websearch (default: true), searchContextSize |
+| sonar-pro           | 200,000        | 3                | 15                | -                    | websearch (default: true), searchContextSize |
+| sonar-reasoning     | 128,000        | 1                | 5                 | -                    | websearch (default: true), searchContextSize |
+| sonar-reasoning-pro | 128,000        | 2                | 8                 | -                    | websearch (default: true), searchContextSize |
+| sonar-deep-research | 128,000        | 2                | 8                 | 3                    | websearch (default: true), searchContextSize |
 
 ### Ollama Models
 
-Ollama automatically discovers and registers all models available on your local Ollama instance. Models are detected based on their names:
+Ollama automatically discovers and registers all models available on your local Ollama instance. Models are detected
+based on their names:
 
 - **Chat models**: Any model not matching the embedding pattern
 - **Embedding models**: Models with "embed" in their name
@@ -314,7 +333,8 @@ Ollama automatically discovers and registers all models available on your local 
 
 ### Generic Provider Models
 
-The generic provider supports OpenAI-compatible, Anthropic-compatible, and Responses-compatible endpoints. It automatically discovers models from the provider's model list endpoint.
+The generic provider supports OpenAI-compatible, Anthropic-compatible, and Responses-compatible endpoints. It
+automatically discovers models from the provider's model list endpoint.
 
 **Configuration Options:**
 
@@ -361,17 +381,19 @@ Same features as OpenAI-compatible endpoints.
 
 The package provides seven model registry services, each implementing the `TokenRingService` interface:
 
-- **ChatModelRegistry**: Manages chat model specifications
+- **ChatModelRegistry**: Manages chat model specifications and provides chat completion capabilities
 - **ImageGenerationModelRegistry**: Manages image generation model specifications
 - **VideoGenerationModelRegistry**: Manages video generation model specifications
-- **EmbeddingModelRegistry**: Manages embedding model specifications
+- **EmbeddingModelRegistry**: Manages embedding model specifications for text vectorization
 - **SpeechModelRegistry**: Manages speech synthesis model specifications
 - **TranscriptionModelRegistry**: Manages speech-to-text transcription model specifications
 - **RerankingModelRegistry**: Manages document reranking model specifications
 
 ### Client Classes
 
-- **AIChatClient**: Chat completion and structured output generation
+The client classes are internal implementation details accessed through the model registries via `getClient()`:
+
+- **AIChatClient**: Chat completion and structured output generation with streaming support
 - **AIEmbeddingClient**: Text vectorization and embeddings
 - **AIImageGenerationClient**: Image generation from text prompts
 - **AIVideoGenerationClient**: Video generation from text or images
@@ -381,12 +403,19 @@ The package provides seven model registry services, each implementing the `Token
 
 ### Utilities
 
+The package exports utility functions from the `util/` directory:
+
 - **modelSettings**: Parses and serializes model names with feature settings
-- **resequenceMessages**: Resequences chat messages to maintain proper alternation
+ - `parseModelAndSettings(model)`: Parse model name and extract settings from query string
+ - `serializeModel(base, settings)`: Serialize model name and settings back to string format
+ - `coerceFeatureValue(value)`: Convert string values to appropriate types (boolean, number, string)
+- **resequenceMessages**: Resequences chat messages to maintain proper alternating user/assistant pattern
 
 ## Services
 
-The package registers seven service instances (registries) during plugin installation and initializes providers during the start phase. Each registry implements the `TokenRingService` interface and provides methods for managing model specifications and retrieving clients.
+The package registers seven service instances (registries) during plugin installation and initializes providers during
+the start phase. Each registry implements the `TokenRingService` interface and provides methods for managing model
+specifications and retrieving clients.
 
 ### ChatModelRegistry
 
@@ -396,12 +425,13 @@ Manages chat model specifications and provides access to chat completion capabil
 
 - `registerAllModelSpecs(specs)`: Register multiple chat model specifications
 - `getModelSpecsByRequirements(nameLike)`: Get models matching a name pattern (e.g., `"openai:gpt-5"` or `"openai:*"`)
-- `getModelsByProvider()`: Get all registered models grouped by provider
-- `getAllModelsWithOnlineStatus()`: Get all models with their online status
+- `getModelsByProvider()`: Get all registered models grouped by provider (async)
+- `getAllModelsWithOnlineStatus()`: Get all models with their online status (async)
 - `getClient(name)`: Get a client instance matching the model name (supports query parameters for features)
 - `getCheapestModelByRequirements(nameLike, estimatedContextLength)`: Find the cheapest model matching a name pattern
 
-**Note**: The `getModelSpecsByRequirements` method accepts a name pattern string (e.g., `"openai:gpt-5"` or `"openai:*"`) to filter models by name.
+**Note**: The `getModelSpecsByRequirements` method accepts a name pattern string (e.g., `"openai:gpt-5"` or
+`"openai:*"`) to filter models by name.
 The method returns all models matching the pattern that also support the features specified in the query string
 (e.g., `"openai:gpt-5?websearch=1"`).
 
@@ -759,7 +789,7 @@ app.addPlugin(aiClientPlugin, {
         apiKey: "...",
         baseURL: "https://api.minimax.io/anthropic/v1"
       },
-      "LlamaCPP": {
+      LlamaCPP: {
         provider: "generic",
         endpointType: "openai",
         baseURL: "http://127.0.0.1:11434/v1"
@@ -782,7 +812,9 @@ The plugin configuration schema is:
 }
 ```
 
-**Note**: The `provider` field in `AIProviderConfig` is a discriminator that matches provider names like "anthropic", "openai", "google", etc. (lowercase). The top-level keys (like "OpenAI", "Anthropic", "xAi") are display names that can be customized.
+**Note**: The `provider` field in `AIProviderConfig` is a discriminator that matches provider names like "anthropic", "
+openai", "google", etc. (lowercase). The top-level keys (like "OpenAI", "Anthropic", "xAi") are display names that can
+be customized.
 
 ## Client Usage
 
@@ -803,11 +835,9 @@ app.addPlugin(aiClientPlugin, {
 });
 
 // Wait for services to be registered
-await app.waitForService('ChatModelRegistry', chatRegistry => {
+await app.waitForService('ChatModelRegistry', async chatRegistry => {
   // Get models matching requirements
-  const models = chatRegistry.getModelSpecsByRequirements({
-    nameLike: "gpt-5"
-  });
+  const models = chatRegistry.getModelSpecsByRequirements("gpt-5");
 
   // Get all models with online status
   const allModels = await chatRegistry.getAllModelsWithOnlineStatus();
@@ -816,14 +846,15 @@ await app.waitForService('ChatModelRegistry', chatRegistry => {
   const byProvider = await chatRegistry.getModelsByProvider();
 
   // Get a client
-  const client = await chatRegistry.getClient("openai:gpt-5");
+  const client = chatRegistry.getClient("openai:gpt-5");
 
   // Use the client
   const [text, response] = await client.textChat(
     {
       messages: [
         { role: "user", content: "Hello" }
-      ]
+      ],
+      tools: {}
     },
     agent
   );
@@ -836,13 +867,13 @@ await app.waitForService('ChatModelRegistry', chatRegistry => {
 
 ```typescript
 // Embedding models
-await app.waitForService('EmbeddingModelRegistry', embeddingRegistry => {
+await app.waitForService('EmbeddingModelRegistry', async embeddingRegistry => {
   const client = embeddingRegistry.getClient("openai:text-embedding-3-small");
-  const embeddings = await client.getEmbeddings(["your text here"]);
+  const embeddings = await client.getEmbeddings({ input: ["your text here"] });
 });
 
 // Image generation
-await app.waitForService('ImageGenerationModelRegistry', imageRegistry => {
+await app.waitForService('ImageGenerationModelRegistry', async imageRegistry => {
   const client = imageRegistry.getClient("openai:gpt-image-1-high");
   const [image, result] = await client.generateImage({
     prompt: "A beautiful sunset over the ocean",
@@ -852,8 +883,8 @@ await app.waitForService('ImageGenerationModelRegistry', imageRegistry => {
 });
 
 // Video generation
-await app.waitForService('VideoGenerationModelRegistry', videoRegistry => {
-  const client = videoRegistry.getClient("video-model");
+await app.waitForService('VideoGenerationModelRegistry', async videoRegistry => {
+  const client = videoRegistry.getClient("xai:grok-imagine-video");
   const [video, result] = await client.generateVideo({
     prompt: "A beautiful sunset over the ocean",
     aspectRatio: "16:9",
@@ -862,7 +893,7 @@ await app.waitForService('VideoGenerationModelRegistry', videoRegistry => {
 });
 
 // Speech synthesis
-await app.waitForService('SpeechModelRegistry', speechRegistry => {
+await app.waitForService('SpeechModelRegistry', async speechRegistry => {
   const client = speechRegistry.getClient("openai:tts-1");
   const [audio, result] = await client.generateSpeech({
     text: "Hello, world!",
@@ -872,7 +903,7 @@ await app.waitForService('SpeechModelRegistry', speechRegistry => {
 });
 
 // Transcription
-await app.waitForService('TranscriptionModelRegistry', transcriptionRegistry => {
+await app.waitForService('TranscriptionModelRegistry', async transcriptionRegistry => {
   const client = transcriptionRegistry.getClient("openai:whisper-1");
   const [text, result] = await client.transcribe({
     audio: audioFile
@@ -899,20 +930,24 @@ chatRegistry.registerAllModelSpecs([
     }
   }
 ]);
+
+// Get a client for the custom model
+const client = chatRegistry.getClient("CustomProvider:custom-model");
 ```
 
 ### Using Feature Queries
 
 ```typescript
 // Get model with specific configuration
-const client = await chatRegistry.getClient("openai:gpt-5?websearch=1");
+const client = chatRegistry.getClient("openai:gpt-5?websearch=1");
 
 // Use the client
 const [result, response] = await client.textChat(
   {
     messages: [
       { role: "user", content: "Search the web for the latest AI news" }
-    ]
+    ],
+    tools: {}
   },
   agent
 );
@@ -922,13 +957,13 @@ const [result, response] = await client.textChat(
 
 ```typescript
 // Get model with multiple features
-const client = await chatRegistry.getClient("openai:gpt-5?websearch=1&reasoningEffort=high");
+const client = chatRegistry.getClient("openai:gpt-5?websearch=1&reasoningEffort=high");
 
 // Set features on client instance
-client.setSettings({
-  websearch: true,
-  reasoningEffort: "high"
-});
+client.setSettings(new Map([
+  ["websearch", true],
+  ["reasoningEffort", "high"]
+]));
 
 // Get current features
 const features = client.getSettings();
@@ -960,7 +995,8 @@ const [text, response] = await client.textChat(
   {
     messages: [
       { role: "user", content: "Hello" }
-    ]
+    ],
+    tools: {}
   },
   agent
 );
@@ -968,24 +1004,26 @@ const [text, response] = await client.textChat(
 // Calculate cost
 const cost = client.calculateCost({
   inputTokens: 100,
-  outputTokens: 50
+  outputTokens: 50,
+  cachedInputTokens: 0,
+  reasoningTokens: 0
 });
 
 // Calculate timing
 const timing = client.calculateTiming(1500, {
   inputTokens: 100,
-  outputTokens: 50
+  outputTokens: 50,
+  cachedInputTokens: 0,
+  reasoningTokens: 0
 });
 
-// Rerank documents
-const rankings = await client.rerank({
-  query: "What is machine learning?",
-  documents: [
-    "Machine learning is a subset of AI...",
-    "AI is a broad field...",
-    "Deep learning is a type of ML..."
+// Rerank documents (via generateObject with schema)
+const [rankings] = await client.generateObject({
+  messages: [
+    { role: "user", content: "Rank these documents..." }
   ],
-  topN: 3
+  tools: {},
+  schema: rerankSchema
 }, agent);
 ```
 
@@ -1119,26 +1157,27 @@ const result = await client.rerank({
 
 ## RPC Endpoints
 
-The AI Client exposes JSON-RPC endpoints for programmatic access via the RPC service. The endpoint is registered under the path `/rpc/ai-client`.
+The AI Client exposes JSON-RPC endpoints for programmatic access via the RPC service. The endpoint is registered under
+the path `/rpc/ai-client`.
 
 ### Available Endpoints
 
-| Method | Request Params | Response Params | Purpose |
-|--------|----------------|-----------------|---------|
-| `listChatModels` | `{}` | `{ models: {...} }` | Get all available chat models with their status |
-| `listChatModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get chat models grouped by provider |
-| `listEmbeddingModels` | `{}` | `{ models: {...} }` | Get all available embedding models |
-| `listEmbeddingModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get embedding models grouped by provider |
-| `listImageGenerationModels` | `{}` | `{ models: {...} }` | Get all available image generation models |
-| `listImageGenerationModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get image generation models grouped by provider |
-| `listVideoGenerationModels` | `{}` | `{ models: {...} }` | Get all available video generation models |
-| `listVideoGenerationModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get video generation models grouped by provider |
-| `listSpeechModels` | `{}` | `{ models: {...} }` | Get all available speech models |
-| `listSpeechModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get speech models grouped by provider |
-| `listTranscriptionModels` | `{}` | `{ models: {...} }` | Get all available transcription models |
-| `listTranscriptionModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get transcription models grouped by provider |
-| `listRerankingModels` | `{}` | `{ models: {...} }` | Get all available reranking models |
-| `listRerankingModelsByProvider` | `{}` | `{ modelsByProvider: {...} }` | Get reranking models grouped by provider |
+| Method                                | Request Params | Response Params               | Purpose                                         |
+|---------------------------------------|----------------|-------------------------------|-------------------------------------------------|
+| `listChatModels`                      | `{}`           | `{ models: {...} }`           | Get all available chat models with their status |
+| `listChatModelsByProvider`            | `{}`           | `{ modelsByProvider: {...} }` | Get chat models grouped by provider             |
+| `listEmbeddingModels`                 | `{}`           | `{ models: {...} }`           | Get all available embedding models              |
+| `listEmbeddingModelsByProvider`       | `{}`           | `{ modelsByProvider: {...} }` | Get embedding models grouped by provider        |
+| `listImageGenerationModels`           | `{}`           | `{ models: {...} }`           | Get all available image generation models       |
+| `listImageGenerationModelsByProvider` | `{}`           | `{ modelsByProvider: {...} }` | Get image generation models grouped by provider |
+| `listVideoGenerationModels`           | `{}`           | `{ models: {...} }`           | Get all available video generation models       |
+| `listVideoGenerationModelsByProvider` | `{}`           | `{ modelsByProvider: {...} }` | Get video generation models grouped by provider |
+| `listSpeechModels`                    | `{}`           | `{ models: {...} }`           | Get all available speech models                 |
+| `listSpeechModelsByProvider`          | `{}`           | `{ modelsByProvider: {...} }` | Get speech models grouped by provider           |
+| `listTranscriptionModels`             | `{}`           | `{ models: {...} }`           | Get all available transcription models          |
+| `listTranscriptionModelsByProvider`   | `{}`           | `{ modelsByProvider: {...} }` | Get transcription models grouped by provider    |
+| `listRerankingModels`                 | `{}`           | `{ models: {...} }`           | Get all available reranking models              |
+| `listRerankingModelsByProvider`       | `{}`           | `{ modelsByProvider: {...} }` | Get reranking models grouped by provider        |
 
 **Response Structure:**
 
@@ -1165,7 +1204,7 @@ The AI Client exposes JSON-RPC endpoints for programmatic access via the RPC ser
         status: "online" | "cold" | "offline",
         available: boolean,
         hot: boolean,
-        modelSpec: T  // ModelSpec type varies by registry
+        modelSpec: ModelSpec  // ModelSpec type varies by registry
       }
     }
   }
@@ -1180,61 +1219,69 @@ import {RpcService} from "@tokenring-ai/rpc";
 const rpcService = app.requireService(RpcService);
 
 // List all chat models
-const chatModels = await rpcService.call("listChatModels", {
-  agentId: "some-agent-id"
-});
+const chatModels = await rpcService.call("listChatModels", {});
 
 // Get models by provider
-const modelsByProvider = await rpcService.call("listChatModelsByProvider", {
-  agentId: "some-agent-id"
-});
+const modelsByProvider = await rpcService.call("listChatModelsByProvider", {});
 
 // List video generation models
-const videoModels = await rpcService.call("listVideoGenerationModels", {
-  agentId: "some-agent-id"
-});
+const videoModels = await rpcService.call("listVideoGenerationModels", {});
+
+// List embedding models
+const embeddingModels = await rpcService.call("listEmbeddingModels", {});
+
+// List image generation models
+const imageModels = await rpcService.call("listImageGenerationModels", {});
 ```
 
 ## Model Discovery
 
 The package automatically discovers and registers available models from each provider:
 
-1. **Plugin Installation**: `install()` method runs during plugin installation and registers the seven service registries (`ChatModelRegistry`, `ImageGenerationModelRegistry`, `VideoGenerationModelRegistry`, `EmbeddingModelRegistry`, `SpeechModelRegistry`, `TranscriptionModelRegistry`, `RerankingModelRegistry`)
+1. **Plugin Installation**: `install()` method runs during plugin installation and registers the seven service
+   registries (`ChatModelRegistry`, `ImageGenerationModelRegistry`, `VideoGenerationModelRegistry`,
+   `EmbeddingModelRegistry`, `SpeechModelRegistry`, `TranscriptionModelRegistry`, `RerankingModelRegistry`)
 2. **RPC Endpoint Registration**: The JSON-RPC endpoint is registered under `/rpc/ai-client` for programmatic access
-3. **Provider Configuration**: `start()` method runs after services are registered and registers providers based on configuration
-4. **Auto-Configuration**: If `autoConfigure` is `true` (default), the plugin automatically detects and configures providers from environment variables
+3. **Provider Configuration**: `start()` method runs after services are registered and registers providers based on
+   configuration
+4. **Auto-Configuration**: If `autoConfigure` is `true` (default), the plugin automatically detects and configures
+   providers from environment variables
 5. **Provider Registration**: Each provider's `init()` method is called with its configuration
 6. **Model Registration**: Providers add their available models to the appropriate registries
-7. **Availability Checking**: Background process checks `isAvailable()` to determine model status
+7. **Background Availability Checking**: A background process runs every 30 seconds to check model availability and
+   update status
 
-**Note**: The `autoConfigure` option defaults to `true`, which means providers will be automatically configured if their environment variables are set.
+**Note**: The `autoConfigure` option defaults to `true`, which means providers will be automatically configured if their
+environment variables are set.
 
 ### Model Status
 
-Models track their online status:
+Models track their online status based on availability and hot status:
 
-- **online**: Model is available and ready for use
-- **cold**: Model is available but needs to be warmed up
-- **offline**: Model is not available
+- **online**: Model is available (`isAvailable() === true`) and hot (`isHot() === true`)
+- **cold**: Model is available (`isAvailable() === true`) but not hot (`isHot() === false`)
+- **offline**: Model is not available (`isAvailable() === false`)
 
 ### Availability Checking
 
 Models check their availability in the background:
 
 ```typescript
-// All models are checked for availability shortly after startup
+// All models are checked for availability every 30 seconds
 // This automatically fills the online status cache
-getAllModelsWithOnlineStatus(): Promise<Record<string, ModelStatus<ChatModelSpec>>>
+getAllModelsWithOnlineStatus(): Promise<Record<string, ModelStatus<T>>>
 
 isAvailable(): Promise<boolean>  // Implement in ModelSpec
-isHot(): Promise<boolean>  // Implement in ModelSpec
+isHot(): Promise<boolean>  // Implement in ModelSpec (optional)
 ```
 
-**Note**: The actual client classes (`AIChatClient`, `AIEmbeddingClient`, etc.) are not included in this package's exports. They are part of the internal implementation and imported at runtime from the provider-specific SDKs.
+**Note**: The actual client classes (`AIChatClient`, `AIEmbeddingClient`, etc.) are not included in this package's
+exports. They are internal implementation details accessed through the model registries via `getClient()`.
 
 ## Feature System
 
-The package supports a rich feature specification system that allows you to configure models dynamically without creating multiple client instances.
+The package supports a rich feature specification system that allows you to configure models dynamically without
+creating multiple client instances.
 
 ### Feature Types
 
@@ -1407,7 +1454,8 @@ Different providers support different features:
 6. **Select Appropriate Models**: Choose models based on context length and cost requirements
 7. **Custom Registrations**: Add custom models when needed using `registerAllModelSpecs()`
 8. **Use RPC for Remote Access**: For programmatic access across processes, use the JSON-RPC endpoint
-9. **Set Settings**: Use `setSettings()` on client instances to enable specific features without creating multiple clients
+9. **Set Settings**: Use `setSettings()` on client instances to enable specific features without creating multiple
+   clients
 10. **Calculate Costs**: Use `calculateCost()` to estimate expenses before making requests
 11. **Use Cheapest Model**: Use `getCheapestModelByRequirements()` to find the most cost-effective model for your needs
 12. **Check Model Hot Status**: Use `isHot()` to determine if a model needs to be warmed up
@@ -1437,14 +1485,7 @@ bun run test:coverage
   "@tokenring-ai/utility": "0.2.0",
   "@tokenring-ai/metrics": "0.2.0",
   "ai": "^6.0.149",
-  "zod": "^4.3.6"
-}
-```
-
-### AI SDK Dependencies
-
-```json
-{
+  "zod": "^4.3.6",
   "@ai-sdk/anthropic": "^3.0.67",
   "@ai-sdk/azure": "^3.0.52",
   "@ai-sdk/cerebras": "^2.0.44",
@@ -1466,8 +1507,12 @@ bun run test:coverage
 
 ### Development Dependencies
 
-- `typescript`: ^6.0.2
-- `vitest`: ^4.1.1
+```json
+{
+  "typescript": "^6.0.2",
+  "vitest": "^4.1.1"
+}
+```
 
 ## Development
 
@@ -1478,12 +1523,19 @@ The package follows the Token Ring plugin pattern:
 
 The package exports the following from `index.ts`:
 
+```typescript
+export type { Tool, UserModelMessage } from "ai";
+export { stepCountIs, tool as chatTool } from "ai";
+```
+
 - `Tool`: Type from Vercel AI SDK
 - `UserModelMessage`: Type from Vercel AI SDK
 - `chatTool`: Tool creation function (`tool`) from Vercel AI SDK
 - `stepCountIs`: Step counting function from Vercel AI SDK
 
-**Note**: The actual client classes (`AIChatClient`, `AIEmbeddingClient`, `AIImageGenerationClient`, `AIVideoGenerationClient`, `AISpeechClient`, `AITranscriptionClient`, `AIRerankingClient`) are internal implementation details and are accessed through the model registries via `getClient()`.
+**Note**: The actual client classes (`AIChatClient`, `AIEmbeddingClient`, `AIImageGenerationClient`,
+`AIVideoGenerationClient`, `AISpeechClient`, `AITranscriptionClient`, `AIRerankingClient`) are internal implementation
+details and are accessed through the model registries via `getClient()`.
 
 ### Utility Functions
 
@@ -1498,12 +1550,11 @@ Provides functions for parsing and serializing model names with feature settings
 - `parseModelAndSettings(model)`: Parse model name and extract settings from query string
 - `serializeModel(base, settings)`: Serialize model name and settings back to string format
 - `coerceFeatureValue(value)`: Convert string values to appropriate types (boolean, number, string)
-- `getModelAndSettings(chatService, agent)`: Get current model from chat service and parse it
 
 **Usage:**
 
 ```typescript
-import {parseModelAndSettings, serializeModel} from "./util/modelSettings";
+import {parseModelAndSettings, serializeModel} from "@tokenring-ai/ai-client/util/modelSettings";
 
 // Parse model with settings
 const {base, settings} = parseModelAndSettings("openai:gpt-5?websearch=1&reasoningEffort=high");
@@ -1517,12 +1568,13 @@ const modelString = serializeModel("openai:gpt-5", settings);
 
 #### resequenceMessages
 
-Resequences chat messages to maintain proper alternating user/assistant pattern. This is useful when preparing messages for chat models that require strict alternation.
+Resequences chat messages to maintain proper alternating user/assistant pattern. This is useful when preparing messages
+for chat models that require strict alternation.
 
 **Usage:**
 
 ```typescript
-import {resequenceMessages} from "./util/resequenceMessages";
+import {resequenceMessages} from "@tokenring-ai/ai-client/util/resequenceMessages";
 
 const request = {
   messages: [
