@@ -41,7 +41,7 @@ jobs:
 
       - name: Upload models file to S3
         run: |
-          aws s3 cp models.yaml s3://${{ vars.S3_BUCKET_NAME || env.S3_BUCKET_NAME }}/models.yaml --acl public-read
+          aws s3 cp models.yaml s3://${{ vars.S3_BUCKET_NAME || env.S3_BUCKET_NAME }}/models.yaml
 
       - name: Upload artifact
         if: steps.check-change.outputs.changed == 'true'
