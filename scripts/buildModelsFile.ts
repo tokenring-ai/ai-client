@@ -1,4 +1,3 @@
-import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import { YAML } from "bun";
 import { writeFileSync } from "node:fs";
 import anthropic from "../models/anthropic.yaml";
@@ -13,7 +12,10 @@ import openai from "../models/openai.yaml";
 import perplexity from "../models/perplexity.yaml";
 import xai from "../models/xai.yaml";
 
-const models = deepMerge(anthropic, cerebras, deepseek, elevenlabs, fal, google, groq, minimax, openai, perplexity, xai);
+const merged = { models: {} };
+for (const data of [anthropic, cerebras, deepseek, elevenlabs, fal, google, groq, minimax, openai, perplexity, xai]) {
+  Object.assign(merged.models, data.models);
+}
 
 const modelsFile = process.argv[2];
 if (! modelsFile) {
@@ -21,4 +23,4 @@ if (! modelsFile) {
   process.exit(1);
 }
 
-writeFileSync(modelsFile, YAML.stringify(models, null, 2));
+writeFileSync(modelsFile, YAML.stringify(merged, null, 2));
