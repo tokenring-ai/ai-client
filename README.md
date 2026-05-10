@@ -406,9 +406,9 @@ The client classes are internal implementation details accessed through the mode
 The package exports utility functions from the `util/` directory:
 
 - **modelSettings**: Parses and serializes model names with feature settings
- - `parseModelAndSettings(model)`: Parse model name and extract settings from query string
- - `serializeModel(base, settings)`: Serialize model name and settings back to string format
- - `coerceFeatureValue(value)`: Convert string values to appropriate types (boolean, number, string)
+- `parseModelAndSettings(model)`: Parse model name and extract settings from query string
+- `serializeModel(base, settings)`: Serialize model name and settings back to string format
+- `coerceFeatureValue(value)`: Convert string values to appropriate types (boolean, number, string)
 - **resequenceMessages**: Resequences chat messages to maintain proper alternating user/assistant pattern
 
 ## Services

@@ -2,13 +2,12 @@ import type TokenRingApp from "@tokenring-ai/app";
 import type { MaybePromise } from "bun";
 import { z } from "zod";
 import type { ModelInputCapability } from "./client/modelCapabilities.ts";
+import minimaxConfig from "./models/minimax.yaml" with { type: "yaml" };
 import type { GenericModelListResponse } from "./providers/generic.ts";
 import { type AIProviderConfig, AIProviderConfigSchema } from "./providers.ts";
 
 export type { FilePart, ImagePart, TextPart, UserModelMessage } from "ai";
 export type { ModelInputCapability } from "./client/modelCapabilities.ts";
-
-import minimaxConfig from "./models/minimax.yaml" with { type: "yaml" };
 
 export type ModelRequirements = {
   /**

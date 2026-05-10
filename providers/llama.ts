@@ -10,6 +10,7 @@ const LlamaModelProviderConfigSchema = z.object({
   provider: z.literal("llama"),
   apiKey: z.string(),
 });
+
 interface Model {
   id: string;
   object: "model";

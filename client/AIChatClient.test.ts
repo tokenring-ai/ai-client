@@ -1,7 +1,7 @@
-import {describe, expect, it} from "vitest";
-import {type ChatModelSpec, normalizeChatModelSpec} from "./AIChatClient.ts";
-import {normalizeEmbeddingModelSpec} from "./AIEmbeddingClient.ts";
-import {normalizeTranscriptionModelSpec} from "./AITranscriptionClient.ts";
+import { describe, expect, it } from "vitest";
+import { type ChatModelSpec, normalizeChatModelSpec } from "./AIChatClient.ts";
+import { normalizeEmbeddingModelSpec } from "./AIEmbeddingClient.ts";
+import { normalizeTranscriptionModelSpec } from "./AITranscriptionClient.ts";
 
 describe("normalizeChatModelSpec", () => {
   it("applies default capability metadata", () => {

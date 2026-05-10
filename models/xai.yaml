@@ -28,7 +28,15 @@ models:
         costPerMillionInputTokens: 2.0
         costPerMillionOutputTokens: 6.0
         maxContextLength: 2000000
+      grok-4.3:
+        costPerMillionInputTokens: 1.25
+        costPerMillionCachedInputTokens: 0.20
+        costPerMillionOutputTokens: 2.50
+        maxContextLength: 1000000
+
     imageGeneration:
+      grok-imagine-image-quality:
+        costPerImage: 0.05
       grok-imagine-image-pro:
         costPerImage: 0.07
       grok-imagine-image:

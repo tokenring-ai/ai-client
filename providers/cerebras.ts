@@ -23,6 +23,7 @@ const CerebrasModelProviderConfigSchema = z.object({
   provider: z.literal("cerebras"),
   apiKey: z.string(),
 });
+
 interface Model {
   id: string;
   object: "model";

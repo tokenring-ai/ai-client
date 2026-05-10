@@ -1,0 +1,50 @@
+name: Upload Models File to S3
+
+on:
+  push:
+    paths:
+      - 'models/**'
+      - 'scripts/buildModelsFile.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET_NAME: dist.tokenring.ai
+
+jobs:
+  upload-models-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.3.5
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
+
+      - name: Build models file
+        run: bun run scripts/buildModelsFile.ts models.yaml
+
+      - name: Upload models file to S3
+        run: |
+          aws s3 cp models.yaml s3://${{ vars.S3_BUCKET_NAME }}/models.yaml --acl public-read
+
+      - name: Upload artifact
+        if: steps.check-change.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: models-file
+          path: models.yaml

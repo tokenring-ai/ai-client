@@ -43,16 +43,14 @@ type EndpointType = "openai" | "anthropic" | "responses";
 
 interface UnderlyingProvider {
   type: EndpointType;
+  mangleRequest: (req: any, settings: Map<string, unknown>) => void;
+  inputCapabilities?: { image?: boolean; file?: boolean };
 
   getLanguageModel(modelId: string): LanguageModelV3;
 
   getEmbeddingModel(modelId: string): EmbeddingModelV3 | null;
 
   buildSettings(modelInfo: GenericModelListData, propsResponse: PropsResponse | null): Record<string, SettingDefinition>;
-
-  mangleRequest: (req: any, settings: Map<string, unknown>) => void;
-
-  inputCapabilities?: { image?: boolean; file?: boolean };
 }
 
 function defaultModelSpecGenerator(modelInfo: GenericModelListData): GenericModelConfigResults {

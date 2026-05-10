@@ -8,18 +8,18 @@ import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import {
   type AssistantModelMessage,
   type GenerateObjectResult,
-  generateText,
   type GenerateTextResult,
+  generateText,
   type LanguageModel,
   Output,
-  streamText,
   type StreamTextResult,
   type SystemModelMessage,
+  streamText,
   type ToolModelMessage,
   type ToolSet,
   type UserModelMessage,
 } from "ai";
-import { z, type ZodObject } from "zod";
+import { type ZodObject, z } from "zod";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
@@ -132,8 +132,7 @@ export default class AIChatClient {
   constructor(
     private readonly modelSpec: ChatModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.
@@ -260,25 +259,27 @@ export default class AIChatClient {
     try {
       for await (const part of stream) {
         switch (part.type) {
-          case "file": {
-            flushBuffer(true);
-            const mimeType = BaseAttachmentSchema.shape.mimeType.parse(part.file.mediaType);
-            try {
-              agent.artifactOutput({
-                name: "Generated File",
-                encoding: "base64",
-                mimeType,
-                body: part.file.base64,
-              });
-            } catch {
-              agent.errorMessage(`The LLM generated a file with ${mimeType} output type, which is unsupported, and has been dropped`);
+          case "file":
+            {
+              flushBuffer(true);
+              const mimeType = BaseAttachmentSchema.shape.mimeType.parse(part.file.mediaType);
+              try {
+                agent.artifactOutput({
+                  name: "Generated File",
+                  encoding: "base64",
+                  mimeType,
+                  body: part.file.base64,
+                });
+              } catch {
+                agent.errorMessage(`The LLM generated a file with ${mimeType} output type, which is unsupported, and has been dropped`);
+              }
             }
-          }
             break;
           case "text-end":
-          case "reasoning-end": {
-            flushBuffer(true);
-          }
+          case "reasoning-end":
+            {
+              flushBuffer(true);
+            }
             break;
           case "text-delta": {
             if (chunkType === "chat") {

@@ -35,6 +35,7 @@ export const XAIModelProviderConfigSchema = z.object({
   provider: z.literal("xai"),
   apiKey: z.string(),
 });
+
 interface Model {
   id: string;
   object: "model";

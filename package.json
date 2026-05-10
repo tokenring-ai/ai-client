@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "Unified AI client for chat/embeddings/images via Vercel AI SDK, with model registry and request builders.",
   "dependencies": {
-    "@tokenring-ai/app": "0.2.0",
+    "@tokenring-ai/app": "workspace:*",
     "@ai-sdk/anthropic": "^3.0.67",
     "@ai-sdk/azure": "^3.0.52",
     "@ai-sdk/cerebras": "^2.0.44",
@@ -19,10 +19,10 @@
     "@ai-sdk/perplexity": "^3.0.28",
     "@ai-sdk/xai": "^3.0.79",
     "@openrouter/ai-sdk-provider": "^2.4.3",
-    "@tokenring-ai/agent": "0.2.0",
-    "@tokenring-ai/rpc": "0.2.0",
-    "@tokenring-ai/utility": "0.2.0",
-    "@tokenring-ai/metrics": "0.2.0",
+    "@tokenring-ai/agent": "workspace:*",
+    "@tokenring-ai/rpc": "workspace:*",
+    "@tokenring-ai/utility": "workspace:*",
+    "@tokenring-ai/metrics": "workspace:*",
     "ai": "^6.0.149",
     "ollama-ai-provider-v2": "^3.5.0",
     "zod": "^4.3.6"

@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import { describe, expect, it } from "vitest";
 import AIClientRpcSchema from "./schema.ts";
 
 describe("AI Client RPC Schema", () => {
