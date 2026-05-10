@@ -5,6 +5,7 @@ on:
     paths:
       - 'models/**'
       - 'scripts/buildModelsFile.ts'
+      - '.github/workflows/upload-models-file.yml'
   workflow_dispatch:
 
 permissions:
