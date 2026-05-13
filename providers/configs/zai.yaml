@@ -1,0 +1,6 @@
+Z.ai:
+  provider: generic
+  endpointType: openai
+  apiKeyFromEnv: ZAI_API_KEY
+  baseURL: https://api.z.ai/api/coding/paas/v4
+  defaultContextLength: 200000

@@ -3,10 +3,9 @@ import type { JSONObject } from "@ai-sdk/provider";
 import type TokenRingApp from "@tokenring-ai/app";
 import { z } from "zod";
 import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
+import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
 import type { ChatModelSettings } from "../ModelTypeRegistry.ts";
-import modelConfigs from "../models/perplexity.yaml" with { type: "yaml" };
-import type { AIModelProvider } from "../schema.ts";
 import { resequenceMessages } from "../util/resequenceMessages.ts";
 
 const ChatModelSchema = z.object({
@@ -16,35 +15,87 @@ const ChatModelSchema = z.object({
   maxContextLength: z.number(),
 });
 
-const PerplexitySchema = z.object({
+const PerplexityModelsSchema = z.object({
   chat: z.record(z.string(), ChatModelSchema),
 });
 
-const parsedModelConfigs = PerplexitySchema.parse(modelConfigs.models.perplexity);
-
 const PerplexityModelProviderConfigSchema = z.object({
   provider: z.literal("perplexity"),
-  apiKey: z.string(),
+  apiKeyFromEnv: z.string().default("PERPLEXITY_API_KEY"),
+  models: PerplexityModelsSchema,
 });
 
-/**
- * Initializes the Perplexity AI provider and registers its chat models with the model agent.
- *
- */
-function init(providerDisplayName: string, config: z.output<typeof PerplexityModelProviderConfigSchema>, app: TokenRingApp) {
-  if (!config.apiKey) {
-    throw new Error("No config.apiKey provided for Perplexity provider.");
+type PerplexityConfig = z.output<typeof PerplexityModelProviderConfigSchema>;
+
+function mangleRequest(request: ChatRequest, settings: ChatModelSettings): void {
+  const perplexityOptions = ((request.providerOptions ??= {}).perplexity ??= {});
+  const webSearchOptions = (perplexityOptions.web_search_options ??= {}) as JSONObject;
+
+  if (settings.has("searchContextSize")) {
+    webSearchOptions.search_context_size = settings.get("searchContextSize") as number;
   }
 
-  function generateModelSpec(
-    modelId: string,
-    modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "mangleRequest" | "modelId" | "settings">,
-  ): ChatModelSpec {
-    return {
+  if (!settings.has("websearch")) {
+    perplexityOptions.disable_search = true;
+  }
+
+  resequenceMessages(request);
+}
+
+export default class PerplexityProvider extends ModelProvider<PerplexityConfig> {
+  static readonly providerCode = "perplexity" as const;
+  static readonly configSchema = PerplexityModelProviderConfigSchema;
+
+  readonly name: string;
+  readonly description = "Perplexity AI provider";
+
+  private config!: PerplexityConfig;
+  private apiKey: string | undefined;
+
+  private chatRegistry: ChatModelRegistry | undefined;
+  private registeredChatKeys = new Set<string>();
+
+  constructor(
+    providerDisplayName: string,
+    config: PerplexityConfig,
+    private readonly app: TokenRingApp,
+  ) {
+    super();
+    this.name = providerDisplayName;
+    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.applyConfig(config);
+  }
+
+  async reconfigure(config: PerplexityConfig): Promise<void> {
+    this.applyConfig(config);
+  }
+
+  ready(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  private applyConfig(config: PerplexityConfig): void {
+    this.config = config;
+    this.apiKey = process.env[config.apiKeyFromEnv];
+
+    if (!this.apiKey) {
+      this.syncChatModels([]);
+      return;
+    }
+
+    this.syncChatModels(this.buildChatSpecs());
+  }
+
+  private buildChatSpecs(): ChatModelSpec[] {
+    if (!this.apiKey) return [];
+    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
       modelId,
-      providerDisplayName: providerDisplayName,
+      providerDisplayName: this.name,
       impl: perplexity(modelId),
       mangleRequest,
+      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+      maxContextLength: modelConfig.maxContextLength,
       isAvailable() {
         return true;
       },
@@ -61,36 +112,21 @@ function init(providerDisplayName: string, config: z.output<typeof PerplexityMod
           values: ["low", "medium", "high"],
         },
       },
-      ...modelSpec,
-    } satisfies ChatModelSpec;
+    } satisfies ChatModelSpec));
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
-    chatModelRegistry.registerAllModelSpecs(Object.entries(parsedModelConfigs.chat).map(([modelId, config]) => generateModelSpec(modelId, config)));
-  });
+  private syncChatModels(specs: ChatModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.chatRegistry) {
+      if (specs.length > 0) {
+        this.chatRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredChatKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.chatRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredChatKeys = newKeys;
+  }
 }
-
-/**
- * Mangles OpenAI-style chat input messages to ensure they follow the required alternating pattern.
- * This function combines consecutive messages from the same role and ensures user/assistant roles alternate.
- */
-function mangleRequest(request: ChatRequest, settings: ChatModelSettings): void {
-  const perplexityOptions = ((request.providerOptions ??= {}).perplexity ??= {});
-  const webSearchOptions = (perplexityOptions.web_search_options ??= {}) as JSONObject;
-
-  if (settings.has("searchContextSize")) {
-    webSearchOptions.search_context_size = settings.get("searchContextSize") as number;
-  }
-
-  if (!settings.has("websearch")) {
-    perplexityOptions.disable_search = true;
-  }
-
-  resequenceMessages(request);
-}
-
-export default {
-  providerCode: "perplexity",
-  configSchema: PerplexityModelProviderConfigSchema,
-  init,
-} satisfies AIModelProvider<typeof PerplexityModelProviderConfigSchema>;

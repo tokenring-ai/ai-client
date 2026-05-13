@@ -1,14 +1,12 @@
 import { createGoogleGenerativeAI, type GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import { z } from "zod";
 import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
+import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, ImageGenerationModelRegistry } from "../ModelRegistry.ts";
 import type { ChatModelSettings, SettingDefinition } from "../ModelTypeRegistry.ts";
-import modelConfigs from "../models/google.yaml" with { type: "yaml" };
-import type { AIModelProvider } from "../schema.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
@@ -23,17 +21,18 @@ const ImageGenerationModelSchema = z.object({
   costPerImage: z.number(),
 });
 
-const GoogleSchema = z.object({
+const GoogleModelsSchema = z.object({
   chat: z.record(z.string(), ChatModelSchema),
   imageGeneration: z.record(z.string(), ImageGenerationModelSchema),
 });
 
-const parsedModelConfigs = GoogleSchema.parse(modelConfigs.models.google);
-
 const GoogleModelProviderConfigSchema = z.object({
   provider: z.literal("google"),
-  apiKey: z.string(),
+  apiKeyFromEnv: z.string().default("GOOGLE_GENERATIVE_AI_API_KEY"),
+  models: GoogleModelsSchema,
 });
+
+type GoogleConfig = z.output<typeof GoogleModelProviderConfigSchema>;
 
 interface Model {
   name: string;
@@ -45,26 +44,73 @@ interface ModelList {
   models: Model[];
 }
 
-function init(providerDisplayName: string, config: z.output<typeof GoogleModelProviderConfigSchema>, app: TokenRingApp) {
-  if (!config.apiKey) {
-    throw new Error("No config.apiKey provided for Google provider.");
+export default class GoogleProvider extends ModelProvider<GoogleConfig> {
+  static readonly providerCode = "google" as const;
+  static readonly configSchema = GoogleModelProviderConfigSchema;
+
+  readonly name: string;
+  readonly description = "Google Generative AI provider";
+
+  private config!: GoogleConfig;
+  private apiKey: string | undefined;
+  private googleProvider: ReturnType<typeof createGoogleGenerativeAI> | undefined;
+  private getModels: (() => Promise<ModelList | null>) | undefined;
+
+  private chatRegistry: ChatModelRegistry | undefined;
+  private imageRegistry: ImageGenerationModelRegistry | undefined;
+
+  private registeredChatKeys = new Set<string>();
+  private registeredImageKeys = new Set<string>();
+
+  constructor(
+    providerDisplayName: string,
+    config: GoogleConfig,
+    private readonly app: TokenRingApp,
+  ) {
+    super();
+    this.name = providerDisplayName;
+    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.app.waitForService(ImageGenerationModelRegistry, r => { this.imageRegistry = r; });
+    this.applyConfig(config);
   }
 
-  const getModels = cachedDataRetriever("https://generativelanguage.googleapis.com/v1beta/models", {
-    headers: {
-      "x-goog-api-key": config.apiKey,
-    },
-  }) as () => Promise<ModelList | null>;
+  async reconfigure(config: GoogleConfig): Promise<void> {
+    this.applyConfig(config);
+  }
 
-  const googleProvider = createGoogleGenerativeAI({
-    apiKey: config.apiKey,
-  });
+  ready(): Promise<void> {
+    return Promise.resolve();
+  }
 
-  function generateModelSpec(
-    modelId: string,
-    modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId"> & { providerModelId?: string },
-  ): ChatModelSpec {
-    const providerModelId = modelSpec.providerModelId ?? modelId;
+  private applyConfig(config: GoogleConfig): void {
+    this.config = config;
+    this.apiKey = process.env[config.apiKeyFromEnv];
+
+    if (!this.apiKey) {
+      this.googleProvider = undefined;
+      this.getModels = undefined;
+      this.syncChatModels([]);
+      this.syncImageModels([]);
+      return;
+    }
+
+    this.getModels = cachedDataRetriever("https://generativelanguage.googleapis.com/v1beta/models", {
+      headers: {
+        "x-goog-api-key": this.apiKey,
+      },
+    }) as () => Promise<ModelList | null>;
+
+    this.googleProvider = createGoogleGenerativeAI({ apiKey: this.apiKey });
+
+    this.syncChatModels(this.buildChatSpecs());
+    this.syncImageModels(this.buildImageSpecs());
+  }
+
+  private buildChatSpec(modelId: string, modelConfig: GoogleConfig["models"]["chat"][string]): ChatModelSpec {
+    const googleProvider = this.googleProvider!;
+    const getModels = this.getModels!;
+
+    const providerModelId = modelConfig.providerModelId ?? modelId;
     const isGemini3 = providerModelId.startsWith("gemini-3");
     const isGemini25 = providerModelId.startsWith("gemini-2.5");
 
@@ -103,10 +149,24 @@ function init(providerDisplayName: string, config: z.output<typeof GoogleModelPr
       };
     }
 
+    if (modelConfig.features?.includes("websearch")) {
+      baseSettings.websearch = {
+        description: "Enables web search",
+        defaultValue: false,
+        type: "boolean",
+      };
+    }
+
     return {
       modelId,
-      providerDisplayName: providerDisplayName,
+      providerDisplayName: this.name,
       impl: googleProvider(providerModelId),
+      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+      maxContextLength: modelConfig.maxContextLength,
+      ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
+        costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
+      }),
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.models.some(model => model.name.includes(providerModelId));
@@ -136,62 +196,58 @@ function init(providerDisplayName: string, config: z.output<typeof GoogleModelPr
         audio: true,
         file: true,
       },
-      settings: { ...baseSettings, ...modelSpec.settings },
-      ...modelSpec,
+      settings: baseSettings,
     } satisfies ChatModelSpec;
   }
 
-  function generateImageModelSpec(modelId: string, costPerImage: number): ImageModelSpec {
-    return {
-      modelId,
-      providerDisplayName: providerDisplayName,
-      impl: googleProvider.image(modelId),
-      isAvailable() {
-        // TODO: figure out how to get this working
-        return true;
-
-        //const modelList = await getModels();
-        //return !!modelList?.models.some((model) => model.name.includes(modelId));
-      },
-      calculateImageCost() {
-        return costPerImage;
-      },
-    };
+  private buildChatSpecs(): ChatModelSpec[] {
+    if (!this.googleProvider) return [];
+    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => this.buildChatSpec(modelId, modelConfig));
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
-    chatModelRegistry.registerAllModelSpecs(
-      Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
-        generateModelSpec(
-          modelId,
-          stripUndefinedKeys({
-            providerModelId: config.providerModelId,
-            costPerMillionInputTokens: config.costPerMillionInputTokens,
-            costPerMillionOutputTokens: config.costPerMillionOutputTokens,
-            costPerMillionCachedInputTokens: config.costPerMillionCachedInputTokens,
-            maxContextLength: config.maxContextLength,
-            ...(config.features?.includes("websearch") && {
-              websearch: {
-                description: "Enables web search",
-                defaultValue: false,
-                type: "boolean",
-              },
-            }),
-          }),
-        ),
-      ),
-    );
-  });
+  private buildImageSpecs(): ImageModelSpec[] {
+    if (!this.googleProvider) return [];
+    const googleProvider = this.googleProvider;
+    return Object.entries(this.config.models.imageGeneration).map(([modelId, modelConfig]) => ({
+      modelId,
+      providerDisplayName: this.name,
+      impl: googleProvider.image(modelId),
+      isAvailable() {
+        return true;
+      },
+      calculateImageCost() {
+        return modelConfig.costPerImage;
+      },
+    } satisfies ImageModelSpec));
+  }
 
-  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
-    imageGenerationModelRegistry.registerAllModelSpecs(
-      Object.entries(parsedModelConfigs.imageGeneration).map(([modelId, config]) => generateImageModelSpec(modelId, config.costPerImage)),
-    );
-  });
+  private syncChatModels(specs: ChatModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.chatRegistry) {
+      if (specs.length > 0) {
+        this.chatRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredChatKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.chatRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredChatKeys = newKeys;
+  }
+
+  private syncImageModels(specs: ImageModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.imageRegistry) {
+      if (specs.length > 0) {
+        this.imageRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredImageKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.imageRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredImageKeys = newKeys;
+  }
 }
-
-export default {
-  providerCode: "google",
-  configSchema: GoogleModelProviderConfigSchema,
-  init,
-} satisfies AIModelProvider<typeof GoogleModelProviderConfigSchema>;

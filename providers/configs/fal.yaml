@@ -1,5 +1,7 @@
-models:
-  fal:
+Fal:
+  provider: fal
+  apiKeyFromEnv: FAL_API_KEY
+  models:
     imageGeneration:
       fal-ai/qwen-image:
         costPerMegapixel: 0.02

@@ -2,7 +2,8 @@ import type TokenRingApp from "@tokenring-ai/app";
 import type { MaybePromise } from "bun";
 import { z } from "zod";
 import type { ModelInputCapability } from "./client/modelCapabilities.ts";
-import minimaxConfig from "./models/minimax.yaml" with { type: "yaml" };
+import allModels from "./providers/configs/index.ts";
+import minimaxConfig from "./providers/configs/minimax.yaml" with { type: "yaml" };
 import type { GenericModelListResponse } from "./providers/generic.ts";
 import { type AIProviderConfig, AIProviderConfigSchema } from "./providers.ts";
 
@@ -81,9 +82,15 @@ export const AIClientConfigSchema = z.object({
   /**
    * Configuration for AI providers
    */
-  providers: z.record(z.string(), AIProviderConfigSchema).default({}),
+  providers: z.record(z.string(), AIProviderConfigSchema).default(allModels),
 });
 
+export const AIPackageConfigSchema = z.object({
+  ai: AIClientConfigSchema.prefault({}),
+});
+
+export type ParsedAIPackageConfig = z.output<typeof AIPackageConfigSchema>;
+/*
 export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
   if (process.env.ANTHROPIC_API_KEY) {
     config.Anthropic ??= {
@@ -92,13 +99,6 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
     };
   }
 
-  if (process.env.AZURE_API_KEY && process.env.AZURE_API_ENDPOINT) {
-    config.Azure ??= {
-      provider: "azure",
-      apiKey: process.env.AZURE_API_KEY,
-      baseURL: process.env.AZURE_API_ENDPOINT,
-    };
-  }
   if (process.env.CEREBRAS_API_KEY) {
     config.Cerebras ??= {
       provider: "cerebras",
@@ -264,4 +264,4 @@ export function addDefaultProviders(config: Record<string, AIProviderConfig>) {
       } satisfies GenericModelListResponse,
     };
   }
-}
+}*/

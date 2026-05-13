@@ -1,5 +1,11 @@
-models:
-  minimax:
+Minimax:
+  provider: generic
+  endpointType: anthropic
+  apiKeyFromEnv: MINIMAX_API_KEY
+  baseURL: https://api.minimax.io/anthropic/v1
+  defaultContextLength: 204800
+  noModelList: true
+  models:
     chat:
       MiniMax-M2.7:
         costPerMillionInputTokens: 0.3

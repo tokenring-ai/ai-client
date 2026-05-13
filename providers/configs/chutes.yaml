@@ -1,0 +1,6 @@
+Chutes:
+  provider: generic
+  endpointType: openai
+  apiKeyFromEnv: CHUTES_API_KEY
+  baseURL: https://llm.chutes.ai/v1
+  defaultContextLength: 128000

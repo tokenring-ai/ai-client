@@ -1,5 +1,7 @@
-models:
-  xai:
+xAi:
+  provider: xai
+  apiKeyFromEnv: XAI_API_KEY
+  models:
     chat:
       grok-code-fast-1:
         costPerMillionInputTokens: 0.2

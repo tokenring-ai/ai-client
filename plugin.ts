@@ -1,6 +1,5 @@
 import type { TokenRingPlugin } from "@tokenring-ai/app";
 import { RpcService } from "@tokenring-ai/rpc";
-import { z } from "zod";
 import {
   ChatModelRegistry,
   EmbeddingModelRegistry,
@@ -11,20 +10,16 @@ import {
   VideoGenerationModelRegistry,
 } from "./ModelRegistry.ts";
 import packageJSON from "./package.json" with { type: "json" };
-import { registerProviders } from "./providers.ts";
+import { reconfigureProviders } from "./providers.ts";
 import aiClientRPC from "./rpc/ai-client.ts";
-import { AIClientConfigSchema, addDefaultProviders } from "./schema.ts";
-
-const pluginConfigSchema = z.object({
-  ai: AIClientConfigSchema.prefault({}),
-});
+import { AIPackageConfigSchema } from "./schema.ts";
 
 export default {
   name: packageJSON.name,
   displayName: "AI Client",
   version: packageJSON.version,
   description: packageJSON.description,
-  install(app, _config) {
+  async install(app, config) {
     app.addServices(new ChatModelRegistry());
     app.addServices(new ImageGenerationModelRegistry());
     app.addServices(new EmbeddingModelRegistry());
@@ -36,13 +31,8 @@ export default {
     app.waitForService(RpcService, rpcService => {
       rpcService.registerEndpoint(aiClientRPC);
     });
-  },
 
-  async start(app, config): Promise<void> {
-    const providers = config.ai.providers;
-    addDefaultProviders(providers);
-
-    await registerProviders(providers, app);
+    await reconfigureProviders(config, app);
   },
-  config: pluginConfigSchema,
-} satisfies TokenRingPlugin<typeof pluginConfigSchema>;
+  config: AIPackageConfigSchema,
+} satisfies TokenRingPlugin<typeof AIPackageConfigSchema>;

@@ -2,8 +2,52 @@ import { setTimeout as delay } from "node:timers/promises";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import type { PrimitiveType } from "@tokenring-ai/utility/types";
 import type { MaybePromise } from "bun";
+import { z } from "zod";
 import { parseModelAndSettings } from "./util/modelSettings.ts";
 
+
+const primitiveTypeSchema: z.ZodType<PrimitiveType> = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.null(),
+  z.undefined(),
+]);
+
+export const ModelSettingsDefinitionSchema = z.discriminatedUnion("type", [
+  z.object({
+    description: z.string(),
+    type: z.literal("boolean"),
+    defaultValue: z.boolean().optional(),
+  }),
+  z.object({
+    description: z.string(),
+    type: z.literal("number"),
+    defaultValue: z.number().optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+  }),
+  z.object({
+    description: z.string(),
+    type: z.literal("string"),
+    defaultValue: z.string().optional(),
+  }),
+  z.object({
+    description: z.string(),
+    type: z.literal("enum"),
+    defaultValue: primitiveTypeSchema.optional(),
+    values: z.array(primitiveTypeSchema),
+  }),
+  z.object({
+    description: z.string(),
+    type: z.literal("array"),
+    defaultValue: z.array(primitiveTypeSchema).optional(),
+  }),
+]);
+
+export type SettingDefinition = z.infer<typeof ModelSettingsDefinitionSchema>;
+
+/*
 export type SettingDefinition = {
   description: string;
 } & (
@@ -32,6 +76,7 @@ export type SettingDefinition = {
     }
 );
 
+ */
 export type ChatModelSettings = Map<string, PrimitiveType>;
 
 export type ModelSpec = {

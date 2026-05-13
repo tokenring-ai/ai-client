@@ -1,5 +1,7 @@
-models:
-  anthropic:
+Anthropic:
+  provider: anthropic
+  apiKeyFromEnv: ANTHROPIC_API_KEY
+  models:
     chat:
       claude-4.7-opus:
         providerModelId: claude-opus-4-7

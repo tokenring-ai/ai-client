@@ -1,5 +1,7 @@
-models:
-  perplexity:
+Perplexity:
+  provider: perplexity
+  apiKeyFromEnv: PERPLEXITY_API_KEY
+  models:
     chat:
       sonar:
         costPerMillionInputTokens: 1

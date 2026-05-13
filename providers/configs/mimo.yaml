@@ -1,0 +1,6 @@
+MiMo:
+  provider: generic
+  endpointType: openai
+  apiKeyFromEnv: MIMO_API_KEY
+  baseURL: https://api.xiaomimimo.com/v1
+  defaultContextLength: 200000

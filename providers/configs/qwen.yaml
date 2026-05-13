@@ -1,0 +1,6 @@
+Qwen:
+  provider: generic
+  endpointType: openai
+  apiKeyFromEnv: DASHSCOPE_API_KEY
+  baseURL: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  defaultContextLength: 262144

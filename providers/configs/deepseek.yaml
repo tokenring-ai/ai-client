@@ -1,0 +1,15 @@
+Deepseek:
+  provider: deepseek
+  apiKeyFromEnv: DEEPSEEK_API_KEY
+  models:
+    chat:
+      deepseek-v4-flash:
+        costPerMillionInputTokens: 0.14
+        costPerMillionCachedInputTokens: 0.0028
+        costPerMillionOutputTokens: 0.28
+        maxContextLength: 1000000
+      deepseek-v4-pro:
+        costPerMillionInputTokens: 1.74
+        costPerMillionCachedInputTokens: 0.0145
+        costPerMillionOutputTokens: 3.48
+        maxContextLength: 1000000

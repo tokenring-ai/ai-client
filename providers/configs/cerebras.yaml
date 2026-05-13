@@ -1,5 +1,7 @@
-models:
-  cerebras:
+Cerebras:
+  provider: cerebras
+  apiKeyFromEnv: CEREBRAS_API_KEY
+  models:
     chat:
       llama3.1-8b:
         costPerMillionInputTokens: 0.1

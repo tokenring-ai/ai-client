@@ -1,22 +1,24 @@
-models:
-  google:
+Google:
+  provider: google
+  apiKeyFromEnv: GOOGLE_GENERATIVE_AI_API_KEY
+  models:
     chat:
       gemini-3.1-pro-long-context:
-        providerModelId: "gemini-3.1-pro-preview"
+        providerModelId: gemini-3.1-pro-preview
         costPerMillionInputTokens: 4.0
         costPerMillionOutputTokens: 18.0
         features:
           - websearch
         maxContextLength: 2000000
       gemini-3.1-pro:
-        providerModelId: "gemini-3.1-pro-preview"
+        providerModelId: gemini-3.1-pro-preview
         costPerMillionInputTokens: 2.0
         costPerMillionOutputTokens: 12.0
         features:
           - websearch
         maxContextLength: 200000
       gemini-3-pro:
-        providerModelId: "gemini-3-pro-preview"
+        providerModelId: gemini-3-pro-preview
         costPerMillionInputTokens: 4.0
         costPerMillionOutputTokens: 18.0
         features:
@@ -35,7 +37,7 @@ models:
           - websearch
         maxContextLength: 1000000
       gemini-3-flash:
-        providerModelId: "gemini-3-flash-preview"
+        providerModelId: gemini-3-flash-preview
         costPerMillionInputTokens: 0.5
         costPerMillionOutputTokens: 3
         features:

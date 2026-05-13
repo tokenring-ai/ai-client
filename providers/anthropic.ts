@@ -3,9 +3,8 @@ import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
-import modelConfigs from "../models/anthropic.yaml" with { type: "yaml" };
-import type { AIModelProvider } from "../schema.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string(),
@@ -14,16 +13,17 @@ const ChatModelSchema = z.object({
   maxContextLength: z.number(),
 });
 
-const AnthropicSchema = z.object({
+const AnthropicModelSchema = z.object({
   chat: z.record(z.string(), ChatModelSchema),
 });
 
-const parsedModelConfigs = AnthropicSchema.parse(modelConfigs.models.anthropic);
-
 const AnthropicModelProviderConfigSchema = z.object({
   provider: z.literal("anthropic"),
-  apiKey: z.string(),
+  apiKeyFromEnv: z.string().default("ANTHROPIC_API_KEY"),
+  models: AnthropicModelSchema,
 });
+
+type AnthropicConfig = z.output<typeof AnthropicModelProviderConfigSchema>;
 
 interface Model {
   created_at: string;
@@ -39,42 +39,83 @@ interface ModelsResponse {
   last_id: string;
 }
 
-function init(providerDisplayName: string, config: z.output<typeof AnthropicModelProviderConfigSchema>, app: TokenRingApp) {
-  if (!config.apiKey) {
-    throw new Error("No config.apiKey provided for Anthropic provider.");
+export default class AnthropicProvider extends ModelProvider<AnthropicConfig> {
+  static readonly providerCode = "anthropic" as const;
+  static readonly configSchema = AnthropicModelProviderConfigSchema;
+
+  readonly name: string;
+  readonly description = "Anthropic AI provider";
+
+  private config!: AnthropicConfig;
+  private apiKey: string | undefined;
+  private anthropicClient: ReturnType<typeof createAnthropic> | undefined;
+  private getModels: (() => Promise<ModelsResponse | null>) | undefined;
+  private chatRegistry: ChatModelRegistry | undefined;
+  private registeredChatKeys = new Set<string>();
+
+  constructor(
+    providerDisplayName: string,
+    config: AnthropicConfig,
+    private readonly app: TokenRingApp,
+  ) {
+    super();
+    this.name = providerDisplayName;
+    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.applyConfig(config);
   }
 
-  const getModels = cachedDataRetriever("https://api.anthropic.com/v1/models", {
-    headers: {
-      "x-api-key": config.apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-  }) as () => Promise<ModelsResponse | null>;
+  async reconfigure(config: AnthropicConfig): Promise<void> {
+    this.applyConfig(config);
+  }
 
-  const anthropicClient = createAnthropic({
-    apiKey: config.apiKey,
-  });
+  ready(): Promise<void> {
+    return Promise.resolve();
+  }
 
-  function generateModelSpec(
-    modelId: string,
-    anthropicModelId: string,
-    modelSpec: Omit<ChatModelSpec, "isAvailable" | "providerDisplayName" | "impl" | "modelId" | "settings" | "mangleRequest">,
-  ): ChatModelSpec {
-    return {
+  private applyConfig(config: AnthropicConfig): void {
+    this.config = config;
+    this.apiKey = process.env[config.apiKeyFromEnv];
+
+    if (!this.apiKey) {
+      this.anthropicClient = undefined;
+      this.getModels = undefined;
+      this.syncChatModels([]);
+      return;
+    }
+
+    this.getModels = cachedDataRetriever("https://api.anthropic.com/v1/models", {
+      headers: {
+        "x-api-key": this.apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+    }) as () => Promise<ModelsResponse | null>;
+
+    this.anthropicClient = createAnthropic({ apiKey: this.apiKey });
+
+    this.syncChatModels(this.buildChatSpecs());
+  }
+
+  private buildChatSpecs(): ChatModelSpec[] {
+    if (!this.anthropicClient) return [];
+    const anthropicClient = this.anthropicClient;
+    const getModels = this.getModels!;
+
+    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
       modelId,
-      providerDisplayName: providerDisplayName,
-      impl: anthropicClient(anthropicModelId),
+      providerDisplayName: this.name,
+      impl: anthropicClient(modelConfig.providerModelId),
+      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+      maxContextLength: modelConfig.maxContextLength,
       async isAvailable() {
         const modelList = await getModels();
-        return !!modelList?.data.some(model => model.id === anthropicModelId);
+        return !!modelList?.data.some(model => model.id === modelConfig.providerModelId);
       },
       mangleRequest(req, settings) {
         const anthropicProvider = ((req.providerOptions ??= {}).anthropic ??= {});
         if (settings.get("caching") as boolean) {
           anthropicProvider.cacheControl = { type: "ephemeral" };
         }
-
-        // Add web search tool if enabled
         if (settings.get("websearch") as boolean) {
           (req.tools ??= {}).web_search = anthropicClient.tools.webSearch_20250305({
             maxUses: (settings.get("maxSearchUses") as number) ?? 5,
@@ -104,24 +145,21 @@ function init(providerDisplayName: string, config: z.output<typeof AnthropicMode
         image: true,
         file: true,
       },
-      ...modelSpec,
-    } satisfies ChatModelSpec;
+    } satisfies ChatModelSpec));
   }
 
-  const chatModelRegistry = app.requireService(ChatModelRegistry);
-  chatModelRegistry.registerAllModelSpecs(
-    Object.entries(parsedModelConfigs.chat).map(([modelId, config]) =>
-      generateModelSpec(modelId, config.providerModelId, {
-        costPerMillionInputTokens: config.costPerMillionInputTokens,
-        costPerMillionOutputTokens: config.costPerMillionOutputTokens,
-        maxContextLength: config.maxContextLength,
-      }),
-    ),
-  );
+  private syncChatModels(specs: ChatModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.chatRegistry) {
+      if (specs.length > 0) {
+        this.chatRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredChatKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.chatRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredChatKeys = newKeys;
+  }
 }
-
-export default {
-  providerCode: "anthropic",
-  configSchema: AnthropicModelProviderConfigSchema,
-  init,
-} satisfies AIModelProvider<typeof AnthropicModelProviderConfigSchema>;

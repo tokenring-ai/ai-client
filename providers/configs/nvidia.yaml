@@ -1,0 +1,6 @@
+Nvidia:
+  provider: generic
+  endpointType: openai
+  apiKeyFromEnv: NVIDIA_NIM_API_KEY
+  baseURL: https://integrate.api.nvidia.com/v1
+  defaultContextLength: 32000

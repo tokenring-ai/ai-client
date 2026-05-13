@@ -1,68 +1,105 @@
 import type TokenRingApp from "@tokenring-ai/app";
+import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import { z } from "zod";
 
-import anthropic from "./providers/anthropic.ts";
-import azure from "./providers/azure.ts";
-import cerebras from "./providers/cerebras.ts";
-import deepseek from "./providers/deepseek.ts";
-import elevenlabs from "./providers/elevenlabs.ts";
-import fal from "./providers/fal.ts";
-import genericProvider from "./providers/generic.ts";
-import google from "./providers/google.ts";
-import groq from "./providers/groq.ts";
-import llama from "./providers/llama.ts";
-import ollama from "./providers/ollama.ts";
-import openai from "./providers/openai.ts";
-import openrouter from "./providers/openrouter.ts";
-import perplexity from "./providers/perplexity.ts";
-import xai from "./providers/xai.ts";
+import AnthropicProvider from "./providers/anthropic.ts";
+import CerebrasProvider from "./providers/cerebras.ts";
+import DeepSeekProvider from "./providers/deepseek.ts";
+import ElevenLabsProvider from "./providers/elevenlabs.ts";
+import FalProvider from "./providers/fal.ts";
+import GenericAIProvider from "./providers/generic.ts";
+import GoogleProvider from "./providers/google.ts";
+import GroqProvider from "./providers/groq.ts";
+import OpenAIProvider from "./providers/openai.ts";
+import OpenRouterProvider from "./providers/openrouter.ts";
+import PerplexityProvider from "./providers/perplexity.ts";
+import XAIProvider from "./providers/xai.ts";
+import type { ModelProvider } from "./ModelProvider.ts";
+import type { ParsedAIPackageConfig } from "./schema.ts";
 
-const providers = {
-  anthropic,
-  azure,
-  cerebras,
-  deepseek,
-  elevenlabs,
-  fal,
-  generic: genericProvider,
-  google,
-  groq,
-  llama,
-  ollama,
-  openai,
-  openrouter,
-  perplexity,
-  xai,
+type AnyProviderClass = new (name: string, config: any, app: TokenRingApp) => ModelProvider<any>;
+
+const providerClasses: Record<string, AnyProviderClass> = {
+  anthropic: AnthropicProvider,
+  cerebras: CerebrasProvider,
+  deepseek: DeepSeekProvider,
+  elevenlabs: ElevenLabsProvider,
+  fal: FalProvider,
+  generic: GenericAIProvider,
+  google: GoogleProvider,
+  groq: GroqProvider,
+  openai: OpenAIProvider,
+  openrouter: OpenRouterProvider,
+  perplexity: PerplexityProvider,
+  xai: XAIProvider,
 };
 
 /**
  * Registers a key: value object of model specs
  */
-export async function registerProviders(config: Record<string, AIProviderConfig>, app: TokenRingApp): Promise<void> {
+export async function reconfigureProviders(config: ParsedAIPackageConfig, app: TokenRingApp): Promise<void> {
+  for (const key in process.env) {
+    const match = key.match(/^LLAMA_(BASE_URL|API_KEY)(\d*)$/);
+    if (match) {
+      const n = match[2];
+      const name = process.env[`LLAMA_NAME${n}`] ?? `Llama${n}`;
+      const baseURL = process.env[`LLAMA_BASE_URL${n}`] ?? "http://127.0.0.1:11434/v1";
+      const apiKey = process.env[`LLAMA_API_KEY${n}`] ?? undefined;
+      const endpointType = process.env[`LLAMA_ENDPOINT_TYPE${n}`] ?? "openai";
+      switch (endpointType) {
+        case "openai":
+        case "anthropic":
+        case "responses":
+          break;
+        default:
+          throw new Error(`Invalid endpoint type for LlamaCPP${n}: ${endpointType}`);
+      }
+      const defaultContextLength = parseInt(process.env[`LLAMA_CONTEXT_LENGTH${n}`] ?? "128000", 10);
+      if (Number.isNaN(defaultContextLength)) {
+        throw new Error(`Invalid context length for LlamaCPP${n}: ${process.env[`LLAMA_CONTEXT_LENGTH${n}`]}`);
+      }
+
+      if (!config.ai.providers[name]) {
+        config = deepMerge(config, {
+          ai: {
+            providers: {
+              [name]: GenericAIProvider.configSchema.parse({
+                provider: "generic",
+                endpointType,
+                baseURL,
+                ...(apiKey && { apiKey }),
+                defaultContextLength,
+              }),
+            },
+          }
+        });
+      }
+    }
+  }
+
   await Promise.all(
-    Object.entries(config)
-      .filter(([_providerDisplayName, providerConfig]) => providerConfig.provider in providers)
-      .map(([providerDisplayName, providerConfig]) =>
-        Promise.resolve(providers[providerConfig.provider].init(providerDisplayName, { ...providerConfig } as any, app)),
-      ),
+    Object.entries(config.ai.providers).map(async ([providerDisplayName, providerConfig]) => {
+      const ProviderClass = providerClasses[providerConfig.provider];
+      if (!ProviderClass) return;
+      const provider = new ProviderClass(providerDisplayName, providerConfig, app);
+      app.addServices(provider);
+      await provider.ready();
+    }),
   );
 }
 
 export const AIProviderConfigSchema = z.discriminatedUnion("provider", [
-  anthropic.configSchema,
-  azure.configSchema,
-  cerebras.configSchema,
-  deepseek.configSchema,
-  elevenlabs.configSchema,
-  fal.configSchema,
-  genericProvider.configSchema,
-  google.configSchema,
-  groq.configSchema,
-  llama.configSchema,
-  ollama.configSchema,
-  openai.configSchema,
-  openrouter.configSchema,
-  perplexity.configSchema,
-  xai.configSchema,
+  AnthropicProvider.configSchema,
+  CerebrasProvider.configSchema,
+  DeepSeekProvider.configSchema,
+  ElevenLabsProvider.configSchema,
+  FalProvider.configSchema,
+  GenericAIProvider.configSchema,
+  GoogleProvider.configSchema,
+  GroqProvider.configSchema,
+  OpenAIProvider.configSchema,
+  OpenRouterProvider.configSchema,
+  PerplexityProvider.configSchema,
+  XAIProvider.configSchema,
 ]);
 export type AIProviderConfig = z.infer<typeof AIProviderConfigSchema>;

@@ -10,14 +10,33 @@ import type { MaybePromise } from "bun";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
+import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, EmbeddingModelRegistry } from "../ModelRegistry.ts";
-import type { SettingDefinition } from "../ModelTypeRegistry.ts";
-import type { AIModelProvider } from "../schema.ts";
+import { ModelSettingsDefinitionSchema, type SettingDefinition } from "../ModelTypeRegistry.ts";
+
+const ChatModelSchema = z.object({
+  costPerMillionInputTokens: z.number().optional(),
+  costPerMillionOutputTokens: z.number().optional(),
+  maxContextLength: z.number().optional(),
+  settings: z.record(z.string(), ModelSettingsDefinitionSchema).default({}),
+});
+
+const EmbeddingModelSchema = z.object({
+  costPerMillionInputTokens: z.number().optional(),
+  maxContextLength: z.number().optional(),
+});
+
+const ModelsSchema = z.object({
+  chat: z.record(z.string(), ChatModelSchema).default({}),
+  embedding: z.record(z.string(), EmbeddingModelSchema).default({}),
+});
 
 const GenericModelConfigSchema = z.object({
   provider: z.literal("generic"),
   endpointType: z.enum(["openai", "anthropic", "responses"]).default("openai"),
   apiKey: z.string().exactOptional(),
+  apiKeyFromEnv: z.string().exactOptional(),
+  models: ModelsSchema.prefault({}),
   baseURL: z.string(),
   chatEndpointURL: z.string().exactOptional(),
   modelListUrl: z.string().exactOptional(),
@@ -26,18 +45,54 @@ const GenericModelConfigSchema = z.object({
   queryParams: z.record(z.string(), z.string()).exactOptional(),
   includeUsage: z.boolean().exactOptional(),
   supportsStructuredOutputs: z.boolean().exactOptional(),
-  defaultContextLength: z.number().default(32000),
-  generateModelSpec: z
-    .function({
-      input: z.tuple([z.any()]),
-      output: z.object({
-        type: z.string(),
-        capabilities: z.record(z.string(), z.any()).exactOptional(),
-      }),
-    })
-    .exactOptional(),
-  staticModelList: z.any().exactOptional(),
+  defaultContextLength: z.number().default(32000)
+}).transform((config) => {
+  const { baseURL, endpointType } = config;
+  const base = baseURL.replace(/\/+$/, "");
+
+  let chatEndpointURL = config.chatEndpointURL;
+  if (!chatEndpointURL) {
+    switch (endpointType) {
+      case "openai":
+        chatEndpointURL = `${base}/chat/completions`;
+        break;
+      case "responses":
+        chatEndpointURL = `${base}/responses`;
+        break;
+      case "anthropic":
+        chatEndpointURL = `${base}/messages`;
+        break;
+    }
+  }
+
+  let modelListUrl = config.modelListUrl;
+  if (!modelListUrl) {
+    if (endpointType === "anthropic") {
+      modelListUrl = `${base}/models`;
+    } else {
+      const match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*)\/$/);
+      modelListUrl = `${match ? match[1] : baseURL}/models`;
+    }
+  }
+
+  let modelPropsUrl = config.modelPropsUrl;
+  if (!modelPropsUrl && endpointType !== "anthropic") {
+    const match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*\/)/);
+    if (match) {
+      modelPropsUrl = `${match[1].replace(/\/+$/, "").replace(/\/v1$/, "")}/props`;
+    }
+  }
+
+  return {
+    ...config,
+    chatEndpointURL,
+    modelListUrl,
+    ...(modelPropsUrl && { modelPropsUrl }),
+  };
 });
+
+export type GenericModelConfig = z.output<typeof GenericModelConfigSchema>;
+export type GenericModels = z.output<typeof ModelsSchema>;
 
 type EndpointType = "openai" | "anthropic" | "responses";
 
@@ -52,20 +107,6 @@ interface UnderlyingProvider {
 
   buildSettings(modelInfo: GenericModelListData, propsResponse: PropsResponse | null): Record<string, SettingDefinition>;
 }
-
-function defaultModelSpecGenerator(modelInfo: GenericModelListData): GenericModelConfigResults {
-  const { id } = modelInfo;
-  let type = "chat";
-  if (id.match(/embed/i)) {
-    type = "embedding";
-  }
-  return { type };
-}
-
-export type GenericModelConfigResults = {
-  type: string;
-  capabilities?: Record<string, any>;
-};
 
 export type GenericModelListData = {
   id: string;
@@ -100,24 +141,6 @@ type PropsResponse = {
     };
   };
 };
-
-/**
- * Resolves the chat endpoint URL based on the endpoint type and base URL.
- */
-function resolveChatEndpointURL(baseURL: string, endpointType: EndpointType, chatEndpointURL?: string): string {
-  if (chatEndpointURL) return chatEndpointURL;
-
-  const base = baseURL.replace(/\/+$/, "");
-
-  switch (endpointType) {
-    case "openai":
-      return `${base}/chat/completions`;
-    case "responses":
-      return `${base}/responses`;
-    case "anthropic":
-      return `${base}/messages`;
-  }
-}
 
 /**
  * Builds OpenAI-compatible settings based on model info and props response.
@@ -217,10 +240,9 @@ function buildOpenAISettings(modelInfo: GenericModelListData, propsResponse: Pro
 function createUnderlyingProvider(
   providerDisplayName: string,
   endpointType: EndpointType,
-  config: z.output<typeof GenericModelConfigSchema>,
+  config: GenericModelConfig & { apiKey?: string | undefined },
 ): UnderlyingProvider {
-  const { baseURL, apiKey, headers, queryParams, includeUsage = true, supportsStructuredOutputs = true } = config;
-  const chatEndpointURL = resolveChatEndpointURL(baseURL, endpointType, config.chatEndpointURL);
+  const { baseURL, apiKey, chatEndpointURL, headers, queryParams, includeUsage = true, supportsStructuredOutputs = true } = config;
 
   switch (endpointType) {
     case "openai": {
@@ -343,256 +365,331 @@ function createUnderlyingProvider(
   }
 }
 
-function createModelRegistryKey(providerDisplayName: string, modelId: string): string {
-  return `${providerDisplayName}:${modelId}`.toLowerCase();
-}
+const SCAN_INTERVAL_MS = 60000;
 
-/**
- * Builds a chat model spec for registration
- */
-function buildChatModelSpec(
-  modelInfo: GenericModelListData,
-  providerDisplayName: string,
-  underlyingProvider: UnderlyingProvider,
-  getModelList: () => MaybePromise<GenericModelListResponse | null>,
-  propsResponse: PropsResponse | null,
-  config: z.output<typeof GenericModelConfigSchema>,
-  generateModelSpec: (modelInfo: GenericModelListData) => GenericModelConfigResults,
-): ChatModelSpec | null {
-  const { type, capabilities = {} } = generateModelSpec(modelInfo);
+export default class GenericAIProvider extends ModelProvider<GenericModelConfig> {
+  static readonly providerCode = "generic" as const;
+  static readonly configSchema = GenericModelConfigSchema;
 
-  if (type !== "chat") {
-    return null;
+  readonly name: string;
+  readonly description = "Generic AI model provider";
+
+  private config!: GenericModelConfig;
+  private apiKey: string | undefined;
+  private underlyingProvider!: UnderlyingProvider;
+  private requestHeaders!: Record<string, string>;
+  private getModelList!: () => MaybePromise<GenericModelListResponse | null>;
+  private getProps: (() => MaybePromise<PropsResponse | null>) | undefined;
+
+  private chatRegistry: ChatModelRegistry | undefined;
+  private embeddingRegistry: EmbeddingModelRegistry | undefined;
+
+  private registeredChatKeys = new Set<string>();
+  private registeredEmbeddingKeys = new Set<string>();
+
+  private readonly readyPromise: Promise<void>;
+  private resolveReady!: () => void;
+  private readyResolved = false;
+
+  constructor(
+    providerDisplayName: string,
+    config: GenericModelConfig,
+    private readonly app: TokenRingApp,
+  ) {
+    super();
+    this.name = providerDisplayName;
+
+    this.readyPromise = new Promise<void>(resolve => {
+      this.resolveReady = () => {
+        if (this.readyResolved) return;
+        this.readyResolved = true;
+        resolve();
+      };
+    });
+
+    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.app.waitForService(EmbeddingModelRegistry, r => { this.embeddingRegistry = r; });
+
+    this.applyConfig(config);
+
+    // Kick off the initial scan asynchronously so that ready() can resolve
+    // before run() is invoked by the app loop.
+    void this.runInitialScan();
   }
 
-  const maxContextLength = modelInfo.max_model_len ?? propsResponse?.default_generation_settings?.n_ctx ?? config.defaultContextLength;
-
-  const impl = underlyingProvider.getLanguageModel(modelInfo.id);
-  if (!impl) return null;
-
-  return {
-    modelId: modelInfo.id,
-    providerDisplayName,
-    impl,
-    isAvailable: async () => {
-      const data = await getModelList();
-      return !!data?.data?.some(m => m.id === modelInfo.id);
-    },
-    isHot: () => true,
-    costPerMillionInputTokens: 0,
-    costPerMillionOutputTokens: 0,
-    maxContextLength,
-    settings: underlyingProvider.buildSettings(modelInfo, propsResponse),
-    mangleRequest: underlyingProvider.mangleRequest,
-    ...(underlyingProvider.inputCapabilities && {
-      inputCapabilities: underlyingProvider.inputCapabilities,
-    }),
-    ...capabilities,
-  };
-}
-
-/**
- * Builds an embedding model spec for registration (only for openai endpoint type)
- */
-function buildEmbeddingModelSpec(
-  modelInfo: GenericModelListData,
-  providerDisplayName: string,
-  underlyingProvider: UnderlyingProvider,
-  getModelList: () => MaybePromise<GenericModelListResponse | null>,
-  generateModelSpec: (modelInfo: GenericModelListData) => GenericModelConfigResults,
-): EmbeddingModelSpec | null {
-  const { type, capabilities = {} } = generateModelSpec(modelInfo);
-
-  if (type !== "embedding") {
-    return null;
+  async reconfigure(config: GenericModelConfig): Promise<void> {
+    this.applyConfig(config);
   }
 
-  const impl = underlyingProvider.getEmbeddingModel(modelInfo.id);
-  if (!impl) return null;
-
-  return {
-    modelId: modelInfo.id,
-    providerDisplayName,
-    contextLength: capabilities.contextLength || 8192,
-    costPerMillionInputTokens: capabilities.costPerMillionInputTokens || 0,
-    impl,
-    isAvailable: async () => {
-      const data = await getModelList();
-      return !!data;
-    },
-    isHot: () => true,
-  };
-}
-
-async function init(providerDisplayName: string, config: z.output<typeof GenericModelConfigSchema>, app: TokenRingApp) {
-  let { baseURL, apiKey, endpointType, generateModelSpec, headers, staticModelList, modelListUrl, modelPropsUrl } = config;
-
-  if (!baseURL) {
-    throw new Error(`No config.baseURL provided for ${providerDisplayName} provider.`);
+  ready(): Promise<void> {
+    return this.readyPromise;
   }
 
-  endpointType ??= "openai";
-  generateModelSpec ??= defaultModelSpecGenerator;
-
-  const underlyingProvider = createUnderlyingProvider(providerDisplayName, endpointType, config);
-
-  // --- Model list retrieval ---
-  let getModelList: () => MaybePromise<GenericModelListResponse | null>;
-
-  if (staticModelList) {
-    getModelList = () => staticModelList;
-  } else {
-    if (!modelListUrl) {
-      if (endpointType === "anthropic") {
-        const base = baseURL.replace(/\/+$/, "");
-        modelListUrl = `${base}/models`;
-      } else {
-        const match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*)\/$/);
-        modelListUrl = `${match ? match[1] : baseURL}/models`;
+  async run(signal: AbortSignal): Promise<void> {
+    await this.readyPromise;
+    while (!signal.aborted) {
+      try {
+        await delay(SCAN_INTERVAL_MS, null, { signal });
+      } catch {
+        break;
+      }
+      if (signal.aborted) break;
+      try {
+        await this.scanAndReconfigure();
+      } catch (err) {
+        this.app.serviceError(this, "Error while scanning models:", err as Error);
       }
     }
+  }
 
-    const modelListHeaders: Record<string, string> = {
-      ...headers,
+  private async runInitialScan(): Promise<void> {
+    try {
+      await this.scanAndReconfigure();
+    } catch (err) {
+      this.app.serviceError(this, "Initial model scan failed:", err as Error);
+    } finally {
+      this.resolveReady();
+    }
+  }
+
+  private applyConfig(config: GenericModelConfig): void {
+    this.config = config;
+    this.apiKey = config.apiKey ?? (config.apiKeyFromEnv ? process.env[config.apiKeyFromEnv] : undefined);
+
+    const requestHeaders: Record<string, string> = {
+      ...config.headers,
       "Content-Type": "application/json",
     };
-
-    if (endpointType === "anthropic") {
-      if (apiKey) modelListHeaders["x-api-key"] = apiKey;
-      modelListHeaders["anthropic-version"] = "2023-06-01";
+    if (config.endpointType === "anthropic") {
+      if (this.apiKey) requestHeaders["x-api-key"] = this.apiKey;
+      requestHeaders["anthropic-version"] = "2023-06-01";
     } else {
-      if (apiKey) modelListHeaders.Authorization = `Bearer ${apiKey}`;
+      if (this.apiKey) requestHeaders.Authorization = `Bearer ${this.apiKey}`;
     }
+    this.requestHeaders = requestHeaders;
 
-    getModelList = cachedDataRetriever(modelListUrl, {
-      headers: modelListHeaders,
+    this.underlyingProvider = createUnderlyingProvider(
+      this.name,
+      config.endpointType,
+      this.apiKey !== undefined ? { ...config, apiKey: this.apiKey } : config,
+    );
+
+    this.getModelList = cachedDataRetriever<GenericModelListResponse>(config.modelListUrl!, {
+      headers: requestHeaders,
       cacheTime: 60000,
       timeout: 5000,
     });
-  }
 
-  // --- Props retrieval (for openai/responses context length discovery) ---
-  let getProps: (() => MaybePromise<PropsResponse | null>) | undefined;
-
-  if (endpointType !== "anthropic") {
-    if (!modelPropsUrl) {
-      const match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*\/)/);
-      if (match) {
-        modelPropsUrl = `${match[1].replace(/\/+$/, "").replace(/\/v1$/, "")}/props`;
-      }
-    }
-
-    if (modelPropsUrl) {
-      getProps = cachedDataRetriever(modelPropsUrl, {
-        headers: {
-          ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
-          ...headers,
-          "Content-Type": "application/json",
-        },
+    this.getProps = undefined;
+    if (config.endpointType !== "anthropic" && config.modelPropsUrl) {
+      this.getProps = cachedDataRetriever<PropsResponse>(config.modelPropsUrl, {
+        headers: requestHeaders,
         cacheTime: 60000,
         timeout: 5000,
       });
     }
+
+    this.syncModels();
   }
 
-  const modelList = await getModelList();
-  if (!modelList?.data) return;
-
-  const propsResponse = getProps ? await Promise.resolve(getProps()).catch(() => undefined) : undefined;
-
-  const chatModelSpecs: ChatModelSpec[] = [];
-  const embeddingModelSpecs: EmbeddingModelSpec[] = [];
-  const registeredChatModels = new Set<string>();
-  const registeredEmbeddingModels = new Set<string>();
-
-  for (const modelInfo of modelList.data) {
-    const chatSpec = buildChatModelSpec(modelInfo, providerDisplayName, underlyingProvider, getModelList, propsResponse ?? null, config, generateModelSpec);
-
-    if (chatSpec) {
-      chatModelSpecs.push(chatSpec);
-      registeredChatModels.add(createModelRegistryKey(providerDisplayName, modelInfo.id));
-    }
-
-    if (underlyingProvider.type === "openai") {
-      const embeddingSpec = buildEmbeddingModelSpec(modelInfo, providerDisplayName, underlyingProvider, getModelList, generateModelSpec);
-
-      if (embeddingSpec) {
-        embeddingModelSpecs.push(embeddingSpec);
-        registeredEmbeddingModels.add(createModelRegistryKey(providerDisplayName, modelInfo.id));
-      }
-    }
+  private isEnabled(): boolean {
+    if (this.config.apiKey) return true;
+    if (this.config.apiKeyFromEnv) return !!this.apiKey;
+    return true;
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
-    chatModelRegistry.registerAllModelSpecs(chatModelSpecs);
-  });
-
-  if (embeddingModelSpecs.length > 0) {
-    app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
-      embeddingModelRegistry.registerAllModelSpecs(embeddingModelSpecs);
-    });
+  private buildChatSpecs(): ChatModelSpec[] {
+    if (!this.isEnabled()) return [];
+    return Object.entries(this.config.models.chat ?? {}).map(([modelId, modelSpec]) => ({
+      providerDisplayName: this.name,
+      modelId,
+      impl: this.underlyingProvider.getLanguageModel(modelId),
+      isHot: () => true,
+      costPerMillionInputTokens: modelSpec.costPerMillionInputTokens ?? 0,
+      costPerMillionOutputTokens: modelSpec.costPerMillionOutputTokens ?? 0,
+      maxContextLength: modelSpec.maxContextLength || this.config.defaultContextLength,
+      settings: modelSpec.settings,
+      mangleRequest: this.underlyingProvider.mangleRequest,
+      isAvailable: async () => !!(await this.getModelList()),
+      ...(this.underlyingProvider.inputCapabilities && {
+        inputCapabilities: this.underlyingProvider.inputCapabilities,
+      }),
+    }));
   }
 
-  // --- Periodic new model discovery ---
-  const checkForNewModels = async () => {
-    const freshModelList = await getModelList();
-    if (!freshModelList?.data) return;
+  private buildEmbeddingSpecs(): EmbeddingModelSpec[] {
+    if (!this.isEnabled()) return [];
+    if (this.config.endpointType !== "openai") return [];
+    return Object.entries(this.config.models.embedding ?? {}).map(([modelId, modelSpec]) => ({
+      modelId,
+      providerDisplayName: this.name,
+      contextLength: modelSpec.maxContextLength || 8192,
+      costPerMillionInputTokens: modelSpec.costPerMillionInputTokens ?? 0,
+      impl: this.underlyingProvider.getEmbeddingModel(modelId)!,
+      isAvailable: async () => !!(await this.getModelList()),
+      isHot: () => true,
+    }));
+  }
 
-    const freshPropsResponse = getProps ? await Promise.resolve(getProps()).catch(() => undefined) : undefined;
+  private syncModels(): void {
+    this.syncChatModels(this.buildChatSpecs());
+    this.syncEmbeddingModels(this.buildEmbeddingSpecs());
+  }
 
-    for (const modelInfo of freshModelList.data) {
-      const modelKey = createModelRegistryKey(providerDisplayName, modelInfo.id);
+  private syncChatModels(specs: ChatModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
 
-      if (registeredChatModels.has(modelKey) || registeredEmbeddingModels.has(modelKey)) {
-        continue;
+    if (this.chatRegistry) {
+      if (specs.length > 0) {
+        this.chatRegistry.registerAllModelSpecs(specs);
       }
-
-      const chatSpec = buildChatModelSpec(
-        modelInfo,
-        providerDisplayName,
-        underlyingProvider,
-        getModelList,
-        freshPropsResponse ?? null,
-        config,
-        generateModelSpec,
-      );
-
-      if (chatSpec) {
-        registeredChatModels.add(modelKey);
-        app.waitForService(ChatModelRegistry, chatModelRegistry => {
-          chatModelRegistry.registerModelSpec(modelKey, chatSpec);
-        });
-      }
-
-      if (underlyingProvider.type === "openai") {
-        const embeddingSpec = buildEmbeddingModelSpec(modelInfo, providerDisplayName, underlyingProvider, getModelList, generateModelSpec);
-
-        if (embeddingSpec) {
-          registeredEmbeddingModels.add(modelKey);
-          app.waitForService(EmbeddingModelRegistry, embeddingModelRegistry => {
-            embeddingModelRegistry.registerModelSpec(modelKey, embeddingSpec);
-          });
+      for (const oldKey of this.registeredChatKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.chatRegistry.modelSpecs.unregister(oldKey);
         }
       }
     }
-  };
+    this.registeredChatKeys = newKeys;
+  }
 
-  const modelRegistry = app.requireService(ChatModelRegistry);
-  app.runBackgroundTask(modelRegistry, async signal => {
-    while (!signal.aborted) {
-      try {
-        await checkForNewModels();
-      } catch (err: unknown) {
-        app.serviceError(modelRegistry, `Error while checking for new models: `, err as Error);
+  private syncEmbeddingModels(specs: EmbeddingModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+
+    if (this.embeddingRegistry) {
+      if (specs.length > 0) {
+        this.embeddingRegistry.registerAllModelSpecs(specs);
       }
-
-      await delay(60000, null, { signal });
+      for (const oldKey of this.registeredEmbeddingKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.embeddingRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
     }
-  });
+    this.registeredEmbeddingKeys = newKeys;
+  }
+
+  private async scanAndReconfigure(): Promise<void> {
+    if (!this.isEnabled()) return;
+
+    const discovered = await scanModels(this.config);
+
+    // Config-declared models win over discovered ones.
+    const mergedChat = { ...discovered.chat, ...this.config.models.chat };
+    const mergedEmbedding = { ...discovered.embedding, ...this.config.models.embedding };
+
+    if (
+      modelMapsEqual(mergedChat, this.config.models.chat) &&
+      modelMapsEqual(mergedEmbedding, this.config.models.embedding)
+    ) {
+      return;
+    }
+
+    await this.reconfigure({
+      ...this.config,
+      models: { chat: mergedChat, embedding: mergedEmbedding },
+    });
+  }
 }
 
-export default {
-  providerCode: "generic",
-  configSchema: GenericModelConfigSchema,
-  init,
-} satisfies AIModelProvider<typeof GenericModelConfigSchema>;
+function modelMapsEqual(
+  a: Record<string, { maxContextLength?: number | undefined }>,
+  b: Record<string, { maxContextLength?: number | undefined }>,
+): boolean {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const k of aKeys) {
+    if (!(k in b)) return false;
+    if (a[k].maxContextLength !== b[k].maxContextLength) return false;
+  }
+  return true;
+}
+
+/**
+ * Determines whether a model is a chat or embedding model based on its id.
+ */
+function defaultModelTypeClassifier(modelInfo: GenericModelListData): "chat" | "embedding" {
+  if (modelInfo.id.match(/embed/i)) {
+    return "embedding";
+  }
+  return "chat";
+}
+
+/**
+ * Scans a generic provider's `/models` (and optionally `/props`) endpoints
+ * and builds a `ModelsSchema`-shaped object describing the discovered
+ * chat and embedding models along with their settings and context lengths.
+ */
+export async function scanModels(
+  config: GenericModelConfig,
+  options?: {
+    classifyModel?: (modelInfo: GenericModelListData) => "chat" | "embedding";
+    buildSettings?: (modelInfo: GenericModelListData, propsResponse: PropsResponse | null) => Record<string, SettingDefinition>;
+  },
+): Promise<GenericModels> {
+  const { apiKey: configApiKey, apiKeyFromEnv, endpointType, headers, modelListUrl, modelPropsUrl, defaultContextLength } = config;
+
+  const apiKey = configApiKey ?? (apiKeyFromEnv ? process.env[apiKeyFromEnv] : undefined);
+
+  const classifyModel = options?.classifyModel ?? defaultModelTypeClassifier;
+  const buildSettings = options?.buildSettings ?? buildOpenAISettings;
+
+  const requestHeaders: Record<string, string> = {
+    ...headers,
+    "Content-Type": "application/json",
+  };
+
+  if (endpointType === "anthropic") {
+    if (apiKey) requestHeaders["x-api-key"] = apiKey;
+    requestHeaders["anthropic-version"] = "2023-06-01";
+  } else {
+    if (apiKey) requestHeaders.Authorization = `Bearer ${apiKey}`;
+  }
+
+  const getModelList = cachedDataRetriever<GenericModelListResponse>(modelListUrl!, {
+    headers: requestHeaders,
+    cacheTime: 60000,
+    timeout: 5000,
+  });
+
+  const modelList = await getModelList();
+  if (!modelList?.data) {
+    return { chat: {}, embedding: {} };
+  }
+
+  let propsResponse: PropsResponse | null = null;
+  if (endpointType !== "anthropic" && modelPropsUrl) {
+    const getProps = cachedDataRetriever<PropsResponse>(modelPropsUrl, {
+      headers: requestHeaders,
+      cacheTime: 60000,
+      timeout: 5000,
+    });
+    propsResponse = (await Promise.resolve(getProps()).catch(() => null)) ?? null;
+  }
+
+  const result: GenericModels = {
+    chat: {},
+    embedding: {},
+  };
+
+  for (const modelInfo of modelList.data) {
+    const modelType = classifyModel(modelInfo);
+    const maxContextLength =
+      modelInfo.max_model_len ??
+      propsResponse?.default_generation_settings?.n_ctx ??
+      defaultContextLength;
+
+    if (modelType === "chat") {
+      result.chat[modelInfo.id] = {
+        maxContextLength,
+        settings: buildSettings(modelInfo, propsResponse),
+      };
+    } else if (modelType === "embedding") {
+      result.embedding[modelInfo.id] = {
+        maxContextLength,
+      };
+    }
+  }
+
+  return result;
+}

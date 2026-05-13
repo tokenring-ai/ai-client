@@ -3,9 +3,8 @@ import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
-import modelConfigs from "../models/cerebras.yaml" with { type: "yaml" };
-import type { AIModelProvider } from "../schema.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),
@@ -13,16 +12,17 @@ const ChatModelSchema = z.object({
   maxContextLength: z.number(),
 });
 
-const CerebrasSchema = z.object({
+const CerebrasModelsSchema = z.object({
   chat: z.record(z.string(), ChatModelSchema),
 });
 
-const parsedModelConfigs = CerebrasSchema.parse(modelConfigs.models.cerebras);
-
 const CerebrasModelProviderConfigSchema = z.object({
   provider: z.literal("cerebras"),
-  apiKey: z.string(),
+  apiKeyFromEnv: z.string().default("CEREBRAS_API_KEY"),
+  models: CerebrasModelsSchema,
 });
+
+type CerebrasConfig = z.output<typeof CerebrasModelProviderConfigSchema>;
 
 interface Model {
   id: string;
@@ -36,45 +36,93 @@ interface ModelList {
   data: Model[];
 }
 
-function init(providerDisplayName: string, config: z.output<typeof CerebrasModelProviderConfigSchema>, app: TokenRingApp) {
-  if (!config.apiKey) {
-    throw new Error("No config.apiKey provided for Cerebras provider.");
+export default class CerebrasProvider extends ModelProvider<CerebrasConfig> {
+  static readonly providerCode = "cerebras" as const;
+  static readonly configSchema = CerebrasModelProviderConfigSchema;
+
+  readonly name: string;
+  readonly description = "Cerebras AI provider";
+
+  private config!: CerebrasConfig;
+  private apiKey: string | undefined;
+  private cerebrasProvider: ReturnType<typeof createCerebras> | undefined;
+  private getModels: (() => Promise<ModelList | null>) | undefined;
+  private chatRegistry: ChatModelRegistry | undefined;
+  private registeredChatKeys = new Set<string>();
+
+  constructor(
+    providerDisplayName: string,
+    config: CerebrasConfig,
+    private readonly app: TokenRingApp,
+  ) {
+    super();
+    this.name = providerDisplayName;
+    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.applyConfig(config);
   }
 
-  const getModels = cachedDataRetriever("https://api.cerebras.ai/v1/models", {
-    headers: {
-      Authorization: `Bearer ${config.apiKey}`,
-      "Content-Type": "application/json",
-    },
-  }) as () => Promise<ModelList | null>;
+  async reconfigure(config: CerebrasConfig): Promise<void> {
+    this.applyConfig(config);
+  }
 
-  const cerebrasProvider = createCerebras({
-    apiKey: config.apiKey,
-  });
+  ready(): Promise<void> {
+    return Promise.resolve();
+  }
 
-  function generateModelSpec(
-    modelId: string,
-    modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId">,
-  ): ChatModelSpec {
-    return {
+  private applyConfig(config: CerebrasConfig): void {
+    this.config = config;
+    this.apiKey = process.env[config.apiKeyFromEnv];
+
+    if (!this.apiKey) {
+      this.cerebrasProvider = undefined;
+      this.getModels = undefined;
+      this.syncChatModels([]);
+      return;
+    }
+
+    this.getModels = cachedDataRetriever("https://api.cerebras.ai/v1/models", {
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+    }) as () => Promise<ModelList | null>;
+
+    this.cerebrasProvider = createCerebras({ apiKey: this.apiKey });
+
+    this.syncChatModels(this.buildChatSpecs());
+  }
+
+  private buildChatSpecs(): ChatModelSpec[] {
+    if (!this.cerebrasProvider) return [];
+    const cerebrasProvider = this.cerebrasProvider;
+    const getModels = this.getModels!;
+
+    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
       modelId,
-      providerDisplayName: providerDisplayName,
+      providerDisplayName: this.name,
       impl: cerebrasProvider(modelId),
+      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+      maxContextLength: modelConfig.maxContextLength,
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some(model => model.id === modelId);
       },
-      ...modelSpec,
-    } satisfies ChatModelSpec;
+    } satisfies ChatModelSpec));
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
-    chatModelRegistry.registerAllModelSpecs(Object.entries(parsedModelConfigs.chat).map(([modelId, config]) => generateModelSpec(modelId, config)));
-  });
+  private syncChatModels(specs: ChatModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.chatRegistry) {
+      if (specs.length > 0) {
+        this.chatRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredChatKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.chatRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredChatKeys = newKeys;
+  }
 }
-
-export default {
-  providerCode: "cerebras",
-  configSchema: CerebrasModelProviderConfigSchema,
-  init,
-} satisfies AIModelProvider<typeof CerebrasModelProviderConfigSchema>;

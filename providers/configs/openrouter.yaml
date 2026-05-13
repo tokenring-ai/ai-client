@@ -1,0 +1,3 @@
+OpenRouter:
+  provider: openrouter
+  apiKeyFromEnv: OPENROUTER_API_KEY

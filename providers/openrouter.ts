@@ -1,15 +1,16 @@
+import { setTimeout as delay } from "node:timers/promises";
 import type { JSONArray } from "@ai-sdk/provider";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
-import type { AIModelProvider } from "../schema.ts";
 
 const OpenRouterModelProviderConfigSchema = z.object({
   provider: z.literal("openrouter"),
-  apiKey: z.string(),
+  apiKeyFromEnv: z.string().default("OPENROUTER_API_KEY"),
   modelFilter: z
     .function({
       input: z.tuple([z.any()]),
@@ -17,6 +18,8 @@ const OpenRouterModelProviderConfigSchema = z.object({
     })
     .exactOptional(),
 });
+
+type OpenRouterConfig = z.output<typeof OpenRouterModelProviderConfigSchema>;
 
 interface ModelData {
   id: string;
@@ -47,7 +50,6 @@ interface ModelData {
     max_completion_tokens: number | null;
     is_moderated: boolean;
   };
-  //per_request_limits: any | null; // You may want to define a more specific type based on your use case
   supported_parameters: string[];
 }
 
@@ -55,7 +57,6 @@ interface ApiResponse {
   data: ModelData[];
 }
 
-// Function to safely convert pricing string to number (cost per million tokens)
 function parsePricing(priceString: string | null | undefined): number {
   if (priceString === null || priceString === undefined || priceString === "0") {
     return 0;
@@ -64,37 +65,141 @@ function parsePricing(priceString: string | null | undefined): number {
   return Number.isNaN(price) ? 0 : price * 1000000;
 }
 
-async function fetchAndRegisterOpenRouterModels(providerDisplayName: string, config: z.output<typeof OpenRouterModelProviderConfigSchema>, app: TokenRingApp) {
-  const getModels = cachedDataRetriever("https://openrouter.ai/api/v1/models", {
-    headers: {
-      Authorization: `Bearer ${config.apiKey}`,
-    },
-  }) as () => Promise<ApiResponse | null>;
+const SCAN_INTERVAL_MS = 60000;
 
-  const modelsData = await getModels();
-  if (modelsData == null) return;
+export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> {
+  static readonly providerCode = "openrouter" as const;
+  static readonly configSchema = OpenRouterModelProviderConfigSchema;
 
-  const isAvailable = async () => true; // Models are available if we got data
+  readonly name: string;
+  readonly description = "OpenRouter provider";
 
-  const chatModelsSpec: ChatModelSpec[] = [];
+  private config!: OpenRouterConfig;
+  private apiKey: string | undefined;
+  private getModels: (() => Promise<ApiResponse | null>) | undefined;
 
-  for (const model of modelsData.data) {
-    if (!model.id) {
-      continue;
-    }
+  private chatRegistry: ChatModelRegistry | undefined;
+  private registeredChatKeys = new Set<string>();
+  private lastModelFingerprint: string | undefined;
 
-    if (config.modelFilter) {
-      if (!config.modelFilter(model)) {
-        continue;
+  private readonly readyPromise: Promise<void>;
+  private resolveReady!: () => void;
+  private readyResolved = false;
+
+  constructor(
+    providerDisplayName: string,
+    config: OpenRouterConfig,
+    private readonly app: TokenRingApp,
+  ) {
+    super();
+    this.name = providerDisplayName;
+
+    this.readyPromise = new Promise<void>(resolve => {
+      this.resolveReady = () => {
+        if (this.readyResolved) return;
+        this.readyResolved = true;
+        resolve();
+      };
+    });
+
+    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+
+    this.applyConfig(config);
+
+    void this.runInitialScan();
+  }
+
+  async reconfigure(config: OpenRouterConfig): Promise<void> {
+    this.applyConfig(config);
+    // Force re-fetch & re-register on next scan
+    this.lastModelFingerprint = undefined;
+    await this.scanAndRegister();
+  }
+
+  ready(): Promise<void> {
+    return this.readyPromise;
+  }
+
+  async run(signal: AbortSignal): Promise<void> {
+    await this.readyPromise;
+    while (!signal.aborted) {
+      try {
+        await delay(SCAN_INTERVAL_MS, null, { signal });
+      } catch {
+        break;
+      }
+      if (signal.aborted) break;
+      try {
+        await this.scanAndRegister();
+      } catch (err) {
+        this.app.serviceError(this, "Error while scanning OpenRouter models:", err as Error);
       }
     }
+  }
 
-    const isChatModel = model.architecture?.output_modalities?.includes("text") && model.architecture?.input_modalities?.includes("text");
+  private async runInitialScan(): Promise<void> {
+    try {
+      await this.scanAndRegister();
+    } catch (err) {
+      this.app.serviceError(this, "Initial OpenRouter model scan failed:", err as Error);
+    } finally {
+      this.resolveReady();
+    }
+  }
 
-    if (isChatModel) {
-      chatModelsSpec.push({
+  private applyConfig(config: OpenRouterConfig): void {
+    this.config = config;
+    this.apiKey = process.env[config.apiKeyFromEnv];
+
+    if (!this.apiKey) {
+      this.getModels = undefined;
+      this.syncChatModels([]);
+      return;
+    }
+
+    this.getModels = cachedDataRetriever("https://openrouter.ai/api/v1/models", {
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      cacheTime: SCAN_INTERVAL_MS,
+      timeout: 10000,
+    }) as () => Promise<ApiResponse | null>;
+  }
+
+  private async scanAndRegister(): Promise<void> {
+    if (!this.apiKey || !this.getModels) return;
+
+    const modelsData = await this.getModels();
+    if (modelsData == null) return;
+
+    const filtered = this.config.modelFilter
+      ? modelsData.data.filter(m => this.config.modelFilter!(m))
+      : modelsData.data;
+
+    const fingerprint = filtered
+      .map(m => `${m.id}|${m.context_length}|${m.pricing?.prompt}|${m.pricing?.completion}`)
+      .sort()
+      .join(",");
+
+    if (fingerprint === this.lastModelFingerprint) return;
+    this.lastModelFingerprint = fingerprint;
+
+    this.syncChatModels(this.buildChatSpecs(filtered));
+  }
+
+  private buildChatSpecs(models: ModelData[]): ChatModelSpec[] {
+    const specs: ChatModelSpec[] = [];
+    const isAvailable = async () => true;
+
+    for (const model of models) {
+      if (!model.id) continue;
+
+      const isChatModel = model.architecture?.output_modalities?.includes("text") && model.architecture?.input_modalities?.includes("text");
+      if (!isChatModel) continue;
+
+      specs.push({
         modelId: model.id,
-        providerDisplayName: providerDisplayName,
+        providerDisplayName: this.name,
         impl: openrouter(model.id),
         isAvailable,
         maxContextLength: model.context_length || model.topProvider?.context_length || 4096,
@@ -168,7 +273,7 @@ async function fetchAndRegisterOpenRouterModels(providerDisplayName: string, con
             type: "number",
             min: 0,
             max: 100,
-          }, // TODO: The upper bound is not described in the docs
+          },
           searchContextSize: {
             description: "Search context size for native search",
             defaultValue: "low",
@@ -239,30 +344,24 @@ async function fetchAndRegisterOpenRouterModels(providerDisplayName: string, con
             reasoning: { description: "Reasoning mode", type: "string" },
           }),
         },
-        //reasoning: model.supported_parameters?.includes('include_reasoning') ? 2 : 0,
-        //tools: model.supported_parameters?.includes('tools') ? 2 : 0,
-        //webSearch: model.pricing?.web_search && model.pricing?.web_search !== "0" && model.pricing?.web_search !== null ? 1 : 0,
       });
     }
+
+    return specs;
   }
 
-  if (chatModelsSpec.length > 0) {
-    app.waitForService(ChatModelRegistry, chatModelRegistry => {
-      chatModelRegistry.registerAllModelSpecs(chatModelsSpec);
-    });
+  private syncChatModels(specs: ChatModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.chatRegistry) {
+      if (specs.length > 0) {
+        this.chatRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredChatKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.chatRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredChatKeys = newKeys;
   }
 }
-
-async function init(providerDisplayName: string, config: z.output<typeof OpenRouterModelProviderConfigSchema>, app: TokenRingApp) {
-  if (!config.apiKey) {
-    throw new Error("No config.apiKey provided for OpenRouter provider.");
-  }
-
-  await fetchAndRegisterOpenRouterModels(providerDisplayName, config, app);
-}
-
-export default {
-  providerCode: "openrouter",
-  configSchema: OpenRouterModelProviderConfigSchema,
-  init,
-} satisfies AIModelProvider<typeof OpenRouterModelProviderConfigSchema>;

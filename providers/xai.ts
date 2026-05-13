@@ -4,9 +4,10 @@ import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever"
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
+import type { VideoModelSpec } from "../client/AIVideoGenerationClient.ts";
+import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry } from "../ModelRegistry.ts";
-import modelConfigs from "../models/xai.yaml" with { type: "yaml" };
-import type { AIModelProvider } from "../schema.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),
@@ -23,18 +24,19 @@ const VideoGenerationModelSchema = z.object({
   costPerSecond: z.number(),
 });
 
-const XAISchema = z.object({
+const XAIModelsSchema = z.object({
   chat: z.record(z.string(), ChatModelSchema),
   imageGeneration: z.record(z.string(), ImageGenerationModelSchema),
   videoGeneration: z.record(z.string(), VideoGenerationModelSchema),
 });
 
-const parsedModelConfigs = XAISchema.parse(modelConfigs.models.xai);
-
 export const XAIModelProviderConfigSchema = z.object({
   provider: z.literal("xai"),
-  apiKey: z.string(),
+  apiKeyFromEnv: z.string().default("XAI_API_KEY"),
+  models: XAIModelsSchema,
 });
+
+type XAIConfig = z.output<typeof XAIModelProviderConfigSchema>;
 
 interface Model {
   id: string;
@@ -48,39 +50,96 @@ interface ModelList {
   data: Model[];
 }
 
-export function init(providerDisplayName: string, config: z.output<typeof XAIModelProviderConfigSchema>, app: TokenRingApp) {
-  if (!config.apiKey) {
-    throw new Error("No config.apiKey provided for xAI provider.");
+export default class XAIProvider extends ModelProvider<XAIConfig> {
+  static readonly providerCode = "xai" as const;
+  static readonly configSchema = XAIModelProviderConfigSchema;
+
+  readonly name: string;
+  readonly description = "xAI provider";
+
+  private config!: XAIConfig;
+  private apiKey: string | undefined;
+  private getModels: (() => Promise<ModelList | null>) | undefined;
+
+  private chatRegistry: ChatModelRegistry | undefined;
+  private imageRegistry: ImageGenerationModelRegistry | undefined;
+  private videoRegistry: VideoGenerationModelRegistry | undefined;
+
+  private registeredChatKeys = new Set<string>();
+  private registeredImageKeys = new Set<string>();
+  private registeredVideoKeys = new Set<string>();
+
+  constructor(
+    providerDisplayName: string,
+    config: XAIConfig,
+    private readonly app: TokenRingApp,
+  ) {
+    super();
+    this.name = providerDisplayName;
+    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.app.waitForService(ImageGenerationModelRegistry, r => { this.imageRegistry = r; });
+    this.app.waitForService(VideoGenerationModelRegistry, r => { this.videoRegistry = r; });
+    this.applyConfig(config);
   }
 
-  const getModels = cachedDataRetriever("https://api.x.ai/v1/models", {
-    headers: {
-      Authorization: `Bearer ${config.apiKey}`,
-    },
-  }) as () => Promise<ModelList | null>;
+  async reconfigure(config: XAIConfig): Promise<void> {
+    this.applyConfig(config);
+  }
 
-  function generateModelSpec(
-    modelId: string,
-    modelSpec: Omit<ChatModelSpec, "isAvailable" | "provider" | "providerDisplayName" | "impl" | "modelId" | "settings" | "mangleRequest">,
-  ): ChatModelSpec {
-    return {
-      ...modelSpec,
+  ready(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  private applyConfig(config: XAIConfig): void {
+    this.config = config;
+    this.apiKey = process.env[config.apiKeyFromEnv];
+
+    if (!this.apiKey) {
+      this.getModels = undefined;
+      this.syncChatModels([]);
+      this.syncImageModels([]);
+      this.syncVideoModels([]);
+      return;
+    }
+
+    this.getModels = cachedDataRetriever("https://api.x.ai/v1/models", {
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    }) as () => Promise<ModelList | null>;
+
+    this.syncChatModels(this.buildChatSpecs());
+    this.syncImageModels(this.buildImageSpecs());
+    this.syncVideoModels(this.buildVideoSpecs());
+  }
+
+  private buildChatSpecs(): ChatModelSpec[] {
+    if (!this.apiKey) return [];
+    const getModels = this.getModels!;
+
+    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
       modelId,
-      providerDisplayName: providerDisplayName,
+      providerDisplayName: this.name,
       impl: xai.responses(modelId),
+      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+      maxContextLength: modelConfig.maxContextLength,
+      ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
+        costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
+      }),
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some(model => model.id === modelId);
       },
       mangleRequest(req, settings) {
         if (settings.has("websearch")) {
-          req.tools.web_search = xai.tools.webSearch({
+          (req.tools ??= {}).web_search = xai.tools.webSearch({
             enableImageUnderstanding: settings.get("webImageUnderstanding") as boolean,
           });
         }
 
         if (settings.has("XSearch")) {
-          req.tools.x_search = xai.tools.xSearch(
+          (req.tools ??= {}).x_search = xai.tools.xSearch(
             stripUndefinedKeys({
               allowedXHandles: (settings.get("XAllowedHandles") as string | undefined)?.split(","),
               fromDate: settings.get("XFromDate") as string | undefined,
@@ -133,51 +192,88 @@ export function init(providerDisplayName: string, config: z.output<typeof XAIMod
           type: "boolean",
         },
       },
-    };
+    } satisfies ChatModelSpec));
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
-    chatModelRegistry.registerAllModelSpecs(Object.entries(parsedModelConfigs.chat).map(([modelId, config]) => generateModelSpec(modelId, config)));
-  });
+  private buildImageSpecs(): ImageModelSpec[] {
+    if (!this.apiKey) return [];
+    const getModels = this.getModels!;
 
-  app.waitForService(ImageGenerationModelRegistry, imageGenerationModelRegistry => {
-    imageGenerationModelRegistry.registerAllModelSpecs(
-      Object.entries(parsedModelConfigs.imageGeneration).map(([modelId, config]) => ({
-        modelId,
-        providerDisplayName,
-        impl: xai.imageModel(modelId),
-        async isAvailable() {
-          const modelList = await getModels();
-          return !!modelList?.data.some(model => model.id === modelId);
-        },
-        calculateImageCost() {
-          return config.costPerImage;
-        },
-      })),
-    );
+    return Object.entries(this.config.models.imageGeneration).map(([modelId, modelConfig]) => ({
+      modelId,
+      providerDisplayName: this.name,
+      impl: xai.imageModel(modelId),
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some(model => model.id === modelId);
+      },
+      calculateImageCost() {
+        return modelConfig.costPerImage;
+      },
+    } satisfies ImageModelSpec));
+  }
 
-    app.waitForService(VideoGenerationModelRegistry, videoGenerationModelRegistry => {
-      videoGenerationModelRegistry.registerAllModelSpecs(
-        Object.entries(parsedModelConfigs.videoGeneration).map(([modelId, config]) => ({
-          modelId,
-          providerDisplayName,
-          impl: xai.videoModel(modelId),
-          inputCapabilities: { image: true },
-          async isAvailable() {
-            const modelList = await getModels();
-            return !!modelList?.data.some(model => model.id === modelId);
-          },
-          calculateVideoCost(request: { duration?: number }) {
-            return request.duration ? request.duration * config.costPerSecond : NaN;
-          },
-        })),
-      );
-    });
-  });
+  private buildVideoSpecs(): VideoModelSpec[] {
+    if (!this.apiKey) return [];
+    const getModels = this.getModels!;
+
+    return Object.entries(this.config.models.videoGeneration).map(([modelId, modelConfig]) => ({
+      modelId,
+      providerDisplayName: this.name,
+      impl: xai.videoModel(modelId),
+      inputCapabilities: { image: true },
+      async isAvailable() {
+        const modelList = await getModels();
+        return !!modelList?.data.some(model => model.id === modelId);
+      },
+      calculateVideoCost(request: { duration?: number }) {
+        return request.duration ? request.duration * modelConfig.costPerSecond : NaN;
+      },
+    } satisfies VideoModelSpec));
+  }
+
+  private syncChatModels(specs: ChatModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.chatRegistry) {
+      if (specs.length > 0) {
+        this.chatRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredChatKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.chatRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredChatKeys = newKeys;
+  }
+
+  private syncImageModels(specs: ImageModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.imageRegistry) {
+      if (specs.length > 0) {
+        this.imageRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredImageKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.imageRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredImageKeys = newKeys;
+  }
+
+  private syncVideoModels(specs: VideoModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.videoRegistry) {
+      if (specs.length > 0) {
+        this.videoRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredVideoKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.videoRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredVideoKeys = newKeys;
+  }
 }
-
-export default {
-  providerCode: "xai",
-  configSchema: XAIModelProviderConfigSchema,
-  init,
-} satisfies AIModelProvider<typeof XAIModelProviderConfigSchema>;

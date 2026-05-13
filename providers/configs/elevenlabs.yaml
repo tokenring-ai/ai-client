@@ -1,5 +1,7 @@
-models:
-  elevenlabs:
+Elevenlabs:
+  provider: elevenlabs
+  apiKeyFromEnv: ELEVENLABS_API_KEY
+  models:
     speech:
       eleven_v3:
         costPerMillionCharacters: 100

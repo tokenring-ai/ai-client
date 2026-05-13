@@ -1,5 +1,7 @@
-models:
-  openai:
+OpenAI:
+  provider: openai
+  apiKeyFromEnv: OPENAI_API_KEY
+  models:
     chat:
       gpt-4.1:
         costPerMillionInputTokens: 2.0
@@ -65,7 +67,7 @@ models:
         features:
           - websearch
       gpt-5.4-long-context:
-        providerModelId: "gpt-5.4"
+        providerModelId: gpt-5.4
         costPerMillionInputTokens: 5.0
         costPerMillionCachedInputTokens: 0.5
         costPerMillionOutputTokens: 22.5
@@ -79,7 +81,7 @@ models:
         features:
           - websearch
       gpt-5.4-pro-long-context:
-        providerModelId: "gpt-5.4-pro"
+        providerModelId: gpt-5.4-pro
         costPerMillionInputTokens: 60.0
         costPerMillionOutputTokens: 270.0
         maxContextLength: 1000000
@@ -269,47 +271,47 @@ models:
         maxContextLength: 128000
     imageGeneration:
       gpt-image-1-mini-high:
-        providerModelId: "gpt-image-1-mini"
+        providerModelId: gpt-image-1-mini
         providerOptions:
           quality: high
         costPerMegapixel: 0.036
       gpt-image-1-mini-medium:
-        providerModelId: "gpt-image-1-mini"
+        providerModelId: gpt-image-1-mini
         providerOptions:
           quality: medium
         costPerMegapixel: 0.011
       gpt-image-1-mini-low:
-        providerModelId: "gpt-image-1-mini"
+        providerModelId: gpt-image-1-mini
         providerOptions:
           quality: low
         costPerMegapixel: 0.005
       gpt-image-1-high:
-        providerModelId: "gpt-image-1"
+        providerModelId: gpt-image-1
         providerOptions:
           quality: high
         costPerMegapixel: 0.167
       gpt-image-1-medium:
-        providerModelId: "gpt-image-1"
+        providerModelId: gpt-image-1
         providerOptions:
           quality: medium
         costPerMegapixel: 0.042
       gpt-image-1-low:
-        providerModelId: "gpt-image-1"
+        providerModelId: gpt-image-1
         providerOptions:
           quality: low
         costPerMegapixel: 0.011
       gpt-image-1-5-mini-high:
-        providerModelId: "gpt-image-1-5-mini"
+        providerModelId: gpt-image-1-5-mini
         providerOptions:
           quality: high
         costPerMegapixel: 0.133
       gpt-image-1-5-mini-medium:
-        providerModelId: "gpt-image-1-5-mini"
+        providerModelId: gpt-image-1-5-mini
         providerOptions:
           quality: medium
         costPerMegapixel: 0.034
       gpt-image-1-5-mini-low:
-        providerModelId: "gpt-image-1-5-mini"
+        providerModelId: gpt-image-1-5-mini
         providerOptions:
           quality: low
         costPerMegapixel: 0.009

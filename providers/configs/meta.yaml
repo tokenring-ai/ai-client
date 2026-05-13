@@ -1,0 +1,19 @@
+Meta:
+  provider: generic
+  endpointType: openai
+  apiKeyFromEnv: META_LLAMA_API_KEY
+  baseURL: https://api.llama.com/compat/v1
+  defaultContextLength: 131072
+  models:
+    Llama-3.3-70B-Instruct:
+      costPerMillionInputTokens: 0
+      costPerMillionOutputTokens: 0
+    Llama-3.3-8B-Instruct:
+      costPerMillionInputTokens: 0
+      costPerMillionOutputTokens: 0
+    Llama-4-Maverick-17B-128E-Instruct-FP8:
+      costPerMillionInputTokens: 0
+      costPerMillionOutputTokens: 0
+    Llama-4-Scout-17B-16E-Instruct-FP8:
+      costPerMillionInputTokens: 0
+      costPerMillionOutputTokens: 0

@@ -3,9 +3,8 @@ import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
-import modelConfigs from "../models/deepseek.yaml" with { type: "yaml" };
-import type { AIModelProvider } from "../schema.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),
@@ -14,16 +13,17 @@ const ChatModelSchema = z.object({
   maxContextLength: z.number(),
 });
 
-const DeepSeekSchema = z.object({
+const DeepSeekModelsSchema = z.object({
   chat: z.record(z.string(), ChatModelSchema),
 });
 
-const parsedModelConfigs = DeepSeekSchema.parse(modelConfigs.models.deepseek);
-
 const DeepSeekModelProviderConfigSchema = z.object({
   provider: z.literal("deepseek"),
-  apiKey: z.string(),
+  apiKeyFromEnv: z.string().default("DEEPSEEK_API_KEY"),
+  models: DeepSeekModelsSchema,
 });
+
+type DeepSeekConfig = z.output<typeof DeepSeekModelProviderConfigSchema>;
 
 interface Model {
   id: string;
@@ -36,44 +36,95 @@ interface ModelsListResponse {
   data: Model[];
 }
 
-function init(providerDisplayName: string, config: z.output<typeof DeepSeekModelProviderConfigSchema>, app: TokenRingApp) {
-  if (!config.apiKey) {
-    throw new Error("No config.apiKey provided for DeepSeek provider.");
+export default class DeepSeekProvider extends ModelProvider<DeepSeekConfig> {
+  static readonly providerCode = "deepseek" as const;
+  static readonly configSchema = DeepSeekModelProviderConfigSchema;
+
+  readonly name: string;
+  readonly description = "DeepSeek AI provider";
+
+  private config!: DeepSeekConfig;
+  private apiKey: string | undefined;
+  private deepseekProvider: ReturnType<typeof createDeepSeek> | undefined;
+  private getModels: (() => Promise<ModelsListResponse | null>) | undefined;
+  private chatRegistry: ChatModelRegistry | undefined;
+  private registeredChatKeys = new Set<string>();
+
+  constructor(
+    providerDisplayName: string,
+    config: DeepSeekConfig,
+    private readonly app: TokenRingApp,
+  ) {
+    super();
+    this.name = providerDisplayName;
+    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.applyConfig(config);
   }
 
-  const getModels = cachedDataRetriever("https://api.deepseek.com/models", {
-    headers: {
-      Authorization: `Bearer ${config.apiKey}`,
-    },
-  }) as () => Promise<ModelsListResponse | null>;
+  async reconfigure(config: DeepSeekConfig): Promise<void> {
+    this.applyConfig(config);
+  }
 
-  const deepseekProvider = createDeepSeek({
-    apiKey: config.apiKey,
-  });
+  ready(): Promise<void> {
+    return Promise.resolve();
+  }
 
-  function generateModelSpecs(
-    modelId: string,
-    modelSpec: Omit<ChatModelSpec, "impl" | "isAvailable" | "provider" | "providerDisplayName" | "modelId">,
-  ): ChatModelSpec {
-    return {
+  private applyConfig(config: DeepSeekConfig): void {
+    this.config = config;
+    this.apiKey = process.env[config.apiKeyFromEnv];
+
+    if (!this.apiKey) {
+      this.deepseekProvider = undefined;
+      this.getModels = undefined;
+      this.syncChatModels([]);
+      return;
+    }
+
+    this.getModels = cachedDataRetriever("https://api.deepseek.com/models", {
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    }) as () => Promise<ModelsListResponse | null>;
+
+    this.deepseekProvider = createDeepSeek({ apiKey: this.apiKey });
+
+    this.syncChatModels(this.buildChatSpecs());
+  }
+
+  private buildChatSpecs(): ChatModelSpec[] {
+    if (!this.deepseekProvider) return [];
+    const deepseekProvider = this.deepseekProvider;
+    const getModels = this.getModels!;
+
+    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
       modelId,
       impl: deepseekProvider(modelId),
-      providerDisplayName: providerDisplayName,
+      providerDisplayName: this.name,
+      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+      maxContextLength: modelConfig.maxContextLength,
+      ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
+        costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
+      }),
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some(model => model.id === modelId);
       },
-      ...modelSpec,
-    } satisfies ChatModelSpec;
+    } satisfies ChatModelSpec));
   }
 
-  app.waitForService(ChatModelRegistry, chatModelRegistry => {
-    chatModelRegistry.registerAllModelSpecs(Object.entries(parsedModelConfigs.chat).map(([modelId, config]) => generateModelSpecs(modelId, config)));
-  });
+  private syncChatModels(specs: ChatModelSpec[]): void {
+    const newKeys = new Set<string>(specs.map(s => `${s.providerDisplayName}:${s.modelId}`.toLowerCase()));
+    if (this.chatRegistry) {
+      if (specs.length > 0) {
+        this.chatRegistry.registerAllModelSpecs(specs);
+      }
+      for (const oldKey of this.registeredChatKeys) {
+        if (!newKeys.has(oldKey)) {
+          this.chatRegistry.modelSpecs.unregister(oldKey);
+        }
+      }
+    }
+    this.registeredChatKeys = newKeys;
+  }
 }
-
-export default {
-  providerCode: "deepseek",
-  configSchema: DeepSeekModelProviderConfigSchema,
-  init,
-} satisfies AIModelProvider<typeof DeepSeekModelProviderConfigSchema>;

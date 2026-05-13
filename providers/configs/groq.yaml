@@ -1,5 +1,7 @@
-models:
-  groq:
+Groq:
+  provider: groq
+  apiKeyFromEnv: GROQ_API_KEY
+  models:
     chat:
       llama-3.1-8b-instant:
         costPerMillionInputTokens: 0.05
