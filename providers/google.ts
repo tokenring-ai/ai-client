@@ -4,6 +4,7 @@ import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever"
 import { z } from "zod";
 import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
+import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, ImageGenerationModelRegistry } from "../ModelRegistry.ts";
 import type { ChatModelSettings, SettingDefinition } from "../ModelTypeRegistry.ts";
@@ -15,10 +16,12 @@ const ChatModelSchema = z.object({
   costPerMillionCachedInputTokens: z.number().exactOptional(),
   maxContextLength: z.number(),
   features: z.array(z.string()).exactOptional(),
+  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, video: true, audio: true, file: true }),
 });
 
 const ImageGenerationModelSchema = z.object({
   costPerImage: z.number(),
+  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
 });
 
 const GoogleModelsSchema = z.object({
@@ -190,12 +193,7 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
           googleOptions.thinkingConfig = thinkingConfig;
         }
       },
-      inputCapabilities: {
-        image: true,
-        video: true,
-        audio: true,
-        file: true,
-      },
+      inputCapabilities: modelConfig.inputCapabilities,
       settings: baseSettings,
     } satisfies ChatModelSpec;
   }
@@ -218,6 +216,7 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
       calculateImageCost() {
         return modelConfig.costPerImage;
       },
+      inputCapabilities: modelConfig.inputCapabilities,
     } satisfies ImageModelSpec));
   }
 

@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 import type { VideoModelSpec } from "../client/AIVideoGenerationClient.ts";
+import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry } from "../ModelRegistry.ts";
 
@@ -14,10 +15,12 @@ const ChatModelSchema = z.object({
   costPerMillionOutputTokens: z.number(),
   costPerMillionCachedInputTokens: z.number().exactOptional(),
   maxContextLength: z.number(),
+  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
 });
 
 const ImageGenerationModelSchema = z.object({
   costPerImage: z.number(),
+  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
 });
 
 const VideoGenerationModelSchema = z.object({
@@ -192,6 +195,7 @@ export default class XAIProvider extends ModelProvider<XAIConfig> {
           type: "boolean",
         },
       },
+      inputCapabilities: modelConfig.inputCapabilities,
     } satisfies ChatModelSpec));
   }
 
@@ -210,6 +214,7 @@ export default class XAIProvider extends ModelProvider<XAIConfig> {
       calculateImageCost() {
         return modelConfig.costPerImage;
       },
+      inputCapabilities: modelConfig.inputCapabilities,
     } satisfies ImageModelSpec));
   }
 

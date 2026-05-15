@@ -1,5 +1,5 @@
 import type TokenRingApp from "@tokenring-ai/app";
-import deepMerge from "@tokenring-ai/utility/object/deepMerge";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { z } from "zod";
 
 import AnthropicProvider from "./providers/anthropic.ts";
@@ -60,7 +60,7 @@ export async function reconfigureProviders(config: ParsedAIPackageConfig, app: T
       }
 
       if (!config.ai.providers[name]) {
-        config = deepMerge(config, {
+        config = deepClone(config, {
           ai: {
             providers: {
               [name]: GenericAIProvider.configSchema.parse({

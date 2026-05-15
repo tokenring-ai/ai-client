@@ -1,18 +1,15 @@
 import { createOpenAI, type OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 import type { SpeechModelSpec } from "../client/AISpeechClient.ts";
 import type { TranscriptionModelSpec } from "../client/AITranscriptionClient.ts";
+import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
-import {
-  ChatModelRegistry,
-  ImageGenerationModelRegistry,
-  SpeechModelRegistry,
-  TranscriptionModelRegistry,
-} from "../ModelRegistry.ts";
+import { ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry, } from "../ModelRegistry.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
@@ -22,12 +19,14 @@ const ChatModelSchema = z.object({
   costPerMillionCachedInputTokens: z.number().exactOptional(),
   maxContextLength: z.number(),
   features: z.array(z.string()).exactOptional(),
+  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
 });
 
 const ImageGenerationModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
   providerOptions: z.record(z.string(), z.unknown()).exactOptional(),
   costPerMegapixel: z.number(),
+  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
 });
 
 const TextToSpeechModelSchema = z.object({
@@ -94,10 +93,18 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
-    this.app.waitForService(ImageGenerationModelRegistry, r => { this.imageRegistry = r; });
-    this.app.waitForService(SpeechModelRegistry, r => { this.speechRegistry = r; });
-    this.app.waitForService(TranscriptionModelRegistry, r => { this.transcriptionRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
+    this.app.waitForService(ImageGenerationModelRegistry, r => {
+      this.imageRegistry = r;
+    });
+    this.app.waitForService(SpeechModelRegistry, r => {
+      this.speechRegistry = r;
+    });
+    this.app.waitForService(TranscriptionModelRegistry, r => {
+      this.transcriptionRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -144,7 +151,6 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
     const providerModelId = modelConfig.providerModelId ?? modelId;
     const isReasoningModel = providerModelId.startsWith("gpt-5") || providerModelId.startsWith("o");
     const isGpt51 = providerModelId === "gpt-5.1" || providerModelId.startsWith("gpt-5.1-");
-    const supportsImageInput = /^(gpt-(4\.1|4o|5)|o[134])/.test(providerModelId) || providerModelId === "computer-use-preview";
     const supportsAudioInput = providerModelId.includes("audio") || providerModelId.includes("realtime");
 
     const baseSettings: any = {
@@ -203,6 +209,10 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
       costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
       costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
       maxContextLength: modelConfig.maxContextLength,
+      inputCapabilities: deepClone(
+        modelConfig.inputCapabilities,
+        supportsAudioInput ? { audio: true, file: true } : {},
+      ),
       ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
         costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
       }),
@@ -216,7 +226,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
         }
 
         const openaiOptions: OpenAIResponsesProviderOptions = ((req.providerOptions ??= {}).openai ??= {});
-
+        
         if (settings.has("reasoningEffort")) {
           openaiOptions.reasoningEffort = settings.get("reasoningEffort") as string;
         }
@@ -238,11 +248,6 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
 
         return undefined;
       },
-      inputCapabilities: {
-        image: supportsImageInput,
-        audio: supportsAudioInput,
-        file: supportsImageInput || supportsAudioInput,
-      },
       settings: baseSettings,
     } satisfies ChatModelSpec;
   }
@@ -263,6 +268,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
         modelId: variantId,
         providerDisplayName: this.name,
         impl: openai.imageModel(baseModelId),
+        inputCapabilities: modelConfig.inputCapabilities,
         async isAvailable() {
           const modelList = await getModels();
           return !!modelList?.data.some(model => model.id === baseModelId);

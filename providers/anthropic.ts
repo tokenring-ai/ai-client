@@ -3,6 +3,7 @@ import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
 
@@ -11,6 +12,7 @@ const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number(),
   maxContextLength: z.number(),
+  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
 });
 
 const AnthropicModelSchema = z.object({
@@ -60,7 +62,9 @@ export default class AnthropicProvider extends ModelProvider<AnthropicConfig> {
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -141,10 +145,7 @@ export default class AnthropicProvider extends ModelProvider<AnthropicConfig> {
           max: 20,
         },
       },
-      inputCapabilities: {
-        image: true,
-        file: true,
-      },
+      inputCapabilities: modelConfig.inputCapabilities
     } satisfies ChatModelSpec));
   }
 

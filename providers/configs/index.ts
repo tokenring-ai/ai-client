@@ -1,4 +1,4 @@
-import deepMerge from "@tokenring-ai/utility/object/deepMerge";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import anthropic from "./anthropic.yaml";
 import cerebras from "./cerebras.yaml";
 import chutes from "./chutes.yaml";
@@ -18,7 +18,7 @@ import qwen from "./qwen.yaml";
 import xai from "./xai.yaml";
 import zai from "./zai.yaml";
 
-export default deepMerge(
+export default deepClone(
   anthropic, cerebras, chutes, deepseek, elevenlabs, fal, google, groq, meta, mimo,
   minimax, nvidia, openai, openrouter, perplexity, qwen, xai, zai
 );

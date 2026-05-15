@@ -270,6 +270,21 @@ OpenAI:
         costPerMillionOutputTokens: 12.0
         maxContextLength: 128000
     imageGeneration:
+      gpt-image-2-high:
+        providerModelId: gpt-image-2
+        providerOptions:
+          quality: high
+        costPerMegapixel: 0.211
+      gpt-image-2-medium:
+        providerModelId: gpt-image-2
+        providerOptions:
+          quality: medium
+        costPerMegapixel: 0.053
+      gpt-image-2-low:
+        providerModelId: gpt-image-2
+        providerOptions:
+          quality: low
+        costPerMegapixel: 0.006
       gpt-image-1-mini-high:
         providerModelId: gpt-image-1-mini
         providerOptions:
