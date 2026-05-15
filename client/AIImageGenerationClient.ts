@@ -5,11 +5,10 @@ import { z } from "zod";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
-export type ImageRequest = {
-  prompt: string;
-  quality?: string | undefined;
+type GenerateImageOptions = Parameters<typeof generateImage>["0"];
+
+export type ImageRequest = Omit<GenerateImageOptions, "model" | "providerOptions" | "abortSignal" | "size"> & {
   size: `${number}x${number}`;
-  n: number;
 };
 
 export type ImageModelSpec = ModelSpec & {
@@ -17,19 +16,6 @@ export type ImageModelSpec = ModelSpec & {
    * - Maximum context length in tokens
    */
   contextLength?: number | undefined;
-  /**
-   * - Cost per million input tokens
-   */
-  //costPerMillionInputTokens?: number;
-  /**
-   * - Cost per generated image
-   */
-  //costPerImage?: number;
-
-  /**
-   * - Cost per megapixel (may not be applicable, or cost is per image).
-   */
-  //costPerMegapixel?: number;
   /**
    * - The AI SDK image generation model implementation.
    */
@@ -110,7 +96,6 @@ export default class AIImageGenerationClient {
       }
       const result = await generateImage({
         ...request,
-        n: 1,
         model: this.modelSpec.impl,
         providerOptions: this.modelSpec.providerOptions ?? {},
         abortSignal: signal,
