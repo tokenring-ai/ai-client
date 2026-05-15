@@ -5,7 +5,6 @@
   "dependencies": {
     "@tokenring-ai/app": "workspace:*",
     "@ai-sdk/anthropic": "^3.0.67",
-    "@ai-sdk/azure": "^3.0.52",
     "@ai-sdk/cerebras": "^2.0.44",
     "@ai-sdk/deepseek": "^2.0.28",
     "@ai-sdk/elevenlabs": "^2.0.28",
@@ -24,7 +23,6 @@
     "@tokenring-ai/utility": "workspace:*",
     "@tokenring-ai/metrics": "workspace:*",
     "ai": "^6.0.149",
-    "ollama-ai-provider-v2": "^3.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
