@@ -3,6 +3,11 @@ Anthropic:
   apiKeyFromEnv: ANTHROPIC_API_KEY
   models:
     chat:
+      claude-4.8-opus:
+        providerModelId: claude-opus-4-8
+        costPerMillionInputTokens: 5
+        costPerMillionOutputTokens: 25
+        maxContextLength: 1000000
       claude-4.7-opus:
         providerModelId: claude-opus-4-7
         costPerMillionInputTokens: 5

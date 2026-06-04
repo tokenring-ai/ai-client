@@ -20,7 +20,11 @@ xAi:
         costPerMillionCachedInputTokens: 0.20
         costPerMillionOutputTokens: 2.50
         maxContextLength: 1000000
-
+      grok-build-0.1:
+        costPerMillionInputTokens: 1
+        costPerMillionCachedInputTokens: 0.20
+        costPerMillionOutputTokens: 2
+        maxContextLength: 2560000
     imageGeneration:
       grok-imagine-image-quality:
         costPerImage: 0.05

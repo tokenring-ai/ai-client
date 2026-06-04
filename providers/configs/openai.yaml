@@ -52,6 +52,13 @@ OpenAI:
         maxContextLength: 272000
         features:
           - websearch
+      gpt-5.5:
+        costPerMillionInputTokens: 5.0
+        costPerMillionCachedInputTokens: 0.50
+        costPerMillionOutputTokens: 30.0
+        maxContextLength: 272000
+        features:
+          - websearch
       gpt-5.4-mini:
         costPerMillionInputTokens: 0.75
         costPerMillionOutputTokens: 4.5
@@ -71,6 +78,14 @@ OpenAI:
         costPerMillionInputTokens: 5.0
         costPerMillionCachedInputTokens: 0.5
         costPerMillionOutputTokens: 22.5
+        maxContextLength: 1000000
+        features:
+          - websearch
+      gpt-5.5-long-context:
+        providerModelId: gpt-5.5
+        costPerMillionInputTokens: 10.0
+        costPerMillionCachedInputTokens: 1
+        costPerMillionOutputTokens: 45
         maxContextLength: 1000000
         features:
           - websearch
