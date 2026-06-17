@@ -10,6 +10,7 @@ import type { TranscriptionModelSpec } from "../client/AITranscriptionClient.ts"
 import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry, } from "../ModelRegistry.ts";
+import type { SettingDefinition } from "../ModelTypeRegistry.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
@@ -153,7 +154,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
     const isGpt51 = providerModelId === "gpt-5.1" || providerModelId.startsWith("gpt-5.1-");
     const supportsAudioInput = providerModelId.includes("audio") || providerModelId.includes("realtime");
 
-    const baseSettings: any = {
+    const baseSettings: Record<string, SettingDefinition> = {
       websearch: {
         description: "Enables web search",
         defaultValue: false,

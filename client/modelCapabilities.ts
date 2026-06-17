@@ -31,5 +31,5 @@ export function createModelSpecSchema<TInputCapabilities extends z.ZodTypeAny>(i
     mangleRequest: z.function().exactOptional(),
     providerOptions: z.any().exactOptional(),
     inputCapabilities: inputCapabilitiesSchema.exactOptional(),
-  }).passthrough();
+  }).loose();
 }

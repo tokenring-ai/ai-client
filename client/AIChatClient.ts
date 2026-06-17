@@ -480,7 +480,7 @@ Be objective and precise in your scoring.`.trim(),
 
     // Convert to RerankResult format
     return {
-      rankings: finalRankings.map((ranking: any) => ({
+      rankings: finalRankings.map((ranking) => ({
         index: ranking.index,
         score: ranking.score,
       })),

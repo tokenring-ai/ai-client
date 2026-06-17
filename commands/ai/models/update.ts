@@ -29,7 +29,7 @@ async function execute({ args, remainder: url, agent }: AgentCommandInputType<ty
   const response = await doFetchWithRetry(url);
   const yamlText = await response.text();
 
-  const parsed = YAML.parse(yamlText);
+  YAML.parse(yamlText);
 
   return "Model download successful";
 }

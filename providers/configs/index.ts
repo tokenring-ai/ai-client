@@ -1,4 +1,5 @@
 import deepClone from "@tokenring-ai/utility/object/deepClone";
+import type { AIProviderConfig } from "../../providers.ts";
 import anthropic from "./anthropic.yaml";
 import cerebras from "./cerebras.yaml";
 import chutes from "./chutes.yaml";
@@ -21,4 +22,4 @@ import zai from "./zai.yaml";
 export default deepClone(
   anthropic, cerebras, chutes, deepseek, elevenlabs, fal, google, groq, meta, mimo,
   minimax, nvidia, openai, openrouter, perplexity, qwen, xai, zai
-);
+) as Record<string, AIProviderConfig>;
