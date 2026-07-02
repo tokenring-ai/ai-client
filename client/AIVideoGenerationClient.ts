@@ -1,4 +1,4 @@
-import type { Experimental_VideoModelV3 } from "@ai-sdk/provider";
+import type { Experimental_VideoModelV4 } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
 import { MetricsService } from "@tokenring-ai/metrics";
 import { type GeneratedFile, type GenerateVideoResult, experimental_generateVideo as generateVideo } from "ai";
@@ -7,7 +7,7 @@ import { z } from "zod";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
-export type VideoModel = Experimental_VideoModelV3;
+export type VideoModel = Experimental_VideoModelV4;
 export type VideoRequest = {
   prompt: string | { image: string | Uint8Array; text?: string };
   aspectRatio?: `${number}:${number}`;

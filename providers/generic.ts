@@ -1,8 +1,9 @@
+import type { EmbeddingModelV4 } from "@ai-sdk/provider";
+import type { LanguageModelV4 } from "@ai-sdk/provider";
 import { setTimeout as delay } from "node:timers/promises";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenResponses } from "@ai-sdk/open-responses";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { EmbeddingModelV3, LanguageModelV3 } from "@ai-sdk/provider";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
@@ -101,9 +102,9 @@ interface UnderlyingProvider {
   mangleRequest: (req: any, settings: Map<string, unknown>) => void;
   inputCapabilities?: { image?: boolean; file?: boolean };
 
-  getLanguageModel(modelId: string): LanguageModelV3;
+  getLanguageModel(modelId: string): LanguageModelV4;
 
-  getEmbeddingModel(modelId: string): EmbeddingModelV3 | null;
+  getEmbeddingModel(modelId: string): EmbeddingModelV4 | null;
 
   buildSettings(modelInfo: GenericModelListData, propsResponse: PropsResponse | null): Record<string, SettingDefinition>;
 }
@@ -407,8 +408,12 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
       };
     });
 
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
-    this.app.waitForService(EmbeddingModelRegistry, r => { this.embeddingRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
+    this.app.waitForService(EmbeddingModelRegistry, r => {
+      this.embeddingRegistry = r;
+    });
 
     this.applyConfig(config);
 

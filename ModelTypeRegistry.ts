@@ -79,6 +79,11 @@ export type SettingDefinition = {
  */
 export type ChatModelSettings = Map<string, PrimitiveType>;
 
+export const SerializedModelSpecSchema = z.object({
+  modelId: z.string(),
+  providerDisplayName: z.string(),
+});
+
 export type ModelSpec = {
   modelId: string;
   providerDisplayName: string;
