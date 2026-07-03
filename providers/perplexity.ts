@@ -62,7 +62,9 @@ export default class PerplexityProvider extends ModelProvider<PerplexityConfig> 
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -88,31 +90,34 @@ export default class PerplexityProvider extends ModelProvider<PerplexityConfig> 
 
   private buildChatSpecs(): ChatModelSpec[] {
     if (!this.apiKey) return [];
-    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: perplexity(modelId),
-      mangleRequest,
-      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
-      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
-      maxContextLength: modelConfig.maxContextLength,
-      isAvailable() {
-        return true;
-      },
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: true,
-          type: "boolean",
-        },
-        searchContextSize: {
-          description: "The searchContextSize parameter allows you to control how much search context is retrieved from the web during query resolution",
-          defaultValue: "low",
-          type: "enum",
-          values: ["low", "medium", "high"],
-        },
-      },
-    } satisfies ChatModelSpec));
+    return Object.entries(this.config.models.chat).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: perplexity(modelId),
+          mangleRequest,
+          costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+          costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+          maxContextLength: modelConfig.maxContextLength,
+          isAvailable() {
+            return true;
+          },
+          settings: {
+            websearch: {
+              description: "Enables web search",
+              defaultValue: true,
+              type: "boolean",
+            },
+            searchContextSize: {
+              description: "The searchContextSize parameter allows you to control how much search context is retrieved from the web during query resolution",
+              defaultValue: "low",
+              type: "enum",
+              values: ["low", "medium", "high"],
+            },
+          },
+        }) satisfies ChatModelSpec,
+    );
   }
 
   private syncChatModels(specs: ChatModelSpec[]): void {

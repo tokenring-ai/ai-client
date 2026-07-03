@@ -57,7 +57,9 @@ export default class GroqProvider extends ModelProvider<GroqConfig> {
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -91,21 +93,24 @@ export default class GroqProvider extends ModelProvider<GroqConfig> {
   private buildChatSpecs(): ChatModelSpec[] {
     if (!this.apiKey) return [];
     const getModels = this.getModels!;
-    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: groq(modelId),
-      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
-      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
-      maxContextLength: modelConfig.maxContextLength,
-      ...(modelConfig.maxCompletionTokens !== undefined && {
-        maxCompletionTokens: modelConfig.maxCompletionTokens,
-      }),
-      async isAvailable() {
-        const modelList = await getModels();
-        return !!modelList?.data.some(model => model.id === modelId);
-      },
-    } satisfies ChatModelSpec));
+    return Object.entries(this.config.models.chat).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: groq(modelId),
+          costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+          costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+          maxContextLength: modelConfig.maxContextLength,
+          ...(modelConfig.maxCompletionTokens !== undefined && {
+            maxCompletionTokens: modelConfig.maxCompletionTokens,
+          }),
+          async isAvailable() {
+            const modelList = await getModels();
+            return !!modelList?.data.some(model => model.id === modelId);
+          },
+        }) satisfies ChatModelSpec,
+    );
   }
 
   private syncChatModels(specs: ChatModelSpec[]): void {

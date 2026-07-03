@@ -1,8 +1,8 @@
-import { setTimeout as delay } from "node:timers/promises";
 import type { JSONArray } from "@ai-sdk/provider";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
+import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
@@ -102,7 +102,9 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
       };
     });
 
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
 
     this.applyConfig(config);
 
@@ -172,9 +174,7 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
     const modelsData = await this.getModels();
     if (modelsData == null) return;
 
-    const filtered = this.config.modelFilter
-      ? modelsData.data.filter(m => this.config.modelFilter!(m))
-      : modelsData.data;
+    const filtered = this.config.modelFilter ? modelsData.data.filter(m => this.config.modelFilter!(m)) : modelsData.data;
 
     const fingerprint = filtered
       .map(m => `${m.id}|${m.context_length}|${m.pricing?.prompt}|${m.pricing?.completion}`)

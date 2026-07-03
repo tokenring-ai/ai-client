@@ -1,6 +1,7 @@
 import type TokenRingApp from "@tokenring-ai/app";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { z } from "zod";
+import type { ModelProvider } from "./ModelProvider.ts";
 
 import AnthropicProvider from "./providers/anthropic.ts";
 import CerebrasProvider from "./providers/cerebras.ts";
@@ -14,7 +15,6 @@ import OpenAIProvider from "./providers/openai.ts";
 import OpenRouterProvider from "./providers/openrouter.ts";
 import PerplexityProvider from "./providers/perplexity.ts";
 import XAIProvider from "./providers/xai.ts";
-import type { ModelProvider } from "./ModelProvider.ts";
 import type { ParsedAIPackageConfig } from "./schema.ts";
 
 type AnyProviderClass = new (name: string, config: any, app: TokenRingApp) => ModelProvider<any>;
@@ -71,7 +71,7 @@ export async function reconfigureProviders(config: ParsedAIPackageConfig, app: T
                 defaultContextLength,
               }),
             },
-          }
+          },
         });
       }
     }

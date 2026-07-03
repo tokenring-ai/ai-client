@@ -20,6 +20,22 @@ import xai from "./xai.yaml";
 import zai from "./zai.yaml";
 
 export default deepClone(
-  anthropic, cerebras, chutes, deepseek, elevenlabs, fal, google, groq, meta, mimo,
-  minimax, nvidia, openai, openrouter, perplexity, qwen, xai, zai
+  anthropic,
+  cerebras,
+  chutes,
+  deepseek,
+  elevenlabs,
+  fal,
+  google,
+  groq,
+  meta,
+  mimo,
+  minimax,
+  nvidia,
+  openai,
+  openrouter,
+  perplexity,
+  qwen,
+  xai,
+  zai,
 ) as Record<string, AIProviderConfig>;

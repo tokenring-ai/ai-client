@@ -1,13 +1,14 @@
-import type { EmbeddingModelV4 } from "@ai-sdk/provider";
-import type { LanguageModelV4 } from "@ai-sdk/provider";
-import { setTimeout as delay } from "node:timers/promises";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenResponses } from "@ai-sdk/open-responses";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import type { EmbeddingModelV4 } from "@ai-sdk/provider";
+import type { LanguageModelV4 } from "@ai-sdk/provider";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
+import { deepEquals } from "bun";
 import type { MaybePromise } from "bun";
+import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
@@ -32,65 +33,67 @@ const ModelsSchema = z.object({
   embedding: z.record(z.string(), EmbeddingModelSchema).default({}),
 });
 
-const GenericModelConfigSchema = z.object({
-  provider: z.literal("generic"),
-  endpointType: z.enum(["openai", "anthropic", "responses"]).default("openai"),
-  apiKey: z.string().exactOptional(),
-  apiKeyFromEnv: z.string().exactOptional(),
-  models: ModelsSchema.prefault({}),
-  baseURL: z.string(),
-  chatEndpointURL: z.string().exactOptional(),
-  modelListUrl: z.string().exactOptional(),
-  modelPropsUrl: z.string().exactOptional(),
-  headers: z.record(z.string(), z.string()).exactOptional(),
-  queryParams: z.record(z.string(), z.string()).exactOptional(),
-  includeUsage: z.boolean().exactOptional(),
-  supportsStructuredOutputs: z.boolean().exactOptional(),
-  defaultContextLength: z.number().default(32000)
-}).transform((config) => {
-  const { baseURL, endpointType } = config;
-  const base = baseURL.replace(/\/+$/, "");
+const GenericModelConfigSchema = z
+  .object({
+    provider: z.literal("generic"),
+    endpointType: z.enum(["openai", "anthropic", "responses"]).default("openai"),
+    apiKey: z.string().exactOptional(),
+    apiKeyFromEnv: z.string().exactOptional(),
+    models: ModelsSchema.prefault({}),
+    baseURL: z.string(),
+    chatEndpointURL: z.string().exactOptional(),
+    modelListUrl: z.string().exactOptional(),
+    modelPropsUrl: z.string().exactOptional(),
+    headers: z.record(z.string(), z.string()).exactOptional(),
+    queryParams: z.record(z.string(), z.string()).exactOptional(),
+    includeUsage: z.boolean().exactOptional(),
+    supportsStructuredOutputs: z.boolean().exactOptional(),
+    defaultContextLength: z.number().default(32000),
+  })
+  .transform(config => {
+    const { baseURL, endpointType } = config;
+    const base = baseURL.replace(/\/+$/, "");
 
-  let chatEndpointURL = config.chatEndpointURL;
-  if (!chatEndpointURL) {
-    switch (endpointType) {
-      case "openai":
-        chatEndpointURL = `${base}/chat/completions`;
-        break;
-      case "responses":
-        chatEndpointURL = `${base}/responses`;
-        break;
-      case "anthropic":
-        chatEndpointURL = `${base}/messages`;
-        break;
+    let chatEndpointURL = config.chatEndpointURL;
+    if (!chatEndpointURL) {
+      switch (endpointType) {
+        case "openai":
+          chatEndpointURL = `${base}/chat/completions`;
+          break;
+        case "responses":
+          chatEndpointURL = `${base}/responses`;
+          break;
+        case "anthropic":
+          chatEndpointURL = `${base}/messages`;
+          break;
+      }
     }
-  }
 
-  let modelListUrl = config.modelListUrl;
-  if (!modelListUrl) {
-    if (endpointType === "anthropic") {
-      modelListUrl = `${base}/models`;
-    } else {
-      const match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*)\/$/);
-      modelListUrl = `${match ? match[1] : baseURL}/models`;
+    let modelListUrl = config.modelListUrl;
+    if (!modelListUrl) {
+      if (endpointType === "anthropic") {
+        modelListUrl = `${base}/models`;
+      } else {
+        const match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*)\/$/);
+        modelListUrl = `${match ? match[1] : baseURL}/models`;
+      }
     }
-  }
 
-  let modelPropsUrl = config.modelPropsUrl;
-  if (!modelPropsUrl && endpointType !== "anthropic") {
-    const match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*\/)/);
-    if (match) {
-      modelPropsUrl = `${match[1].replace(/\/+$/, "").replace(/\/v1$/, "")}/props`;
+    let modelPropsUrl = config.modelPropsUrl;
+    if (!modelPropsUrl && endpointType !== "anthropic") {
+      const match = baseURL.match(/(.*\/v1\/?)/) || baseURL.match(/(.*\/)/);
+      if (match) {
+        modelPropsUrl = `${match[1]!.replace(/\/+$/, "").replace(/\/v1$/, "")}/props`;
+      }
     }
-  }
 
-  return {
-    ...config,
-    chatEndpointURL,
-    modelListUrl,
-    ...(modelPropsUrl && { modelPropsUrl }),
-  };
-});
+    return {
+      ...config,
+      chatEndpointURL,
+      modelListUrl,
+      ...(modelPropsUrl && { modelPropsUrl }),
+    };
+  });
 
 export type GenericModelConfig = z.output<typeof GenericModelConfigSchema>;
 export type GenericModels = z.output<typeof ModelsSchema>;
@@ -473,11 +476,7 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
     }
     this.requestHeaders = requestHeaders;
 
-    this.underlyingProvider = createUnderlyingProvider(
-      this.name,
-      config.endpointType,
-      this.apiKey !== undefined ? { ...config, apiKey: this.apiKey } : config,
-    );
+    this.underlyingProvider = createUnderlyingProvider(this.name, config.endpointType, this.apiKey !== undefined ? { ...config, apiKey: this.apiKey } : config);
 
     this.getModelList = cachedDataRetriever<GenericModelListResponse>(config.modelListUrl!, {
       headers: requestHeaders,
@@ -582,10 +581,7 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
     const mergedChat = { ...discovered.chat, ...this.config.models.chat };
     const mergedEmbedding = { ...discovered.embedding, ...this.config.models.embedding };
 
-    if (
-      modelMapsEqual(mergedChat, this.config.models.chat) &&
-      modelMapsEqual(mergedEmbedding, this.config.models.embedding)
-    ) {
+    if (deepEquals(mergedChat, this.config.models.chat, true) && deepEquals(mergedEmbedding, this.config.models.embedding, true)) {
       return;
     }
 
@@ -594,20 +590,6 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
       models: { chat: mergedChat, embedding: mergedEmbedding },
     });
   }
-}
-
-function modelMapsEqual(
-  a: Record<string, { maxContextLength?: number | undefined }>,
-  b: Record<string, { maxContextLength?: number | undefined }>,
-): boolean {
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-  if (aKeys.length !== bKeys.length) return false;
-  for (const k of aKeys) {
-    if (!(k in b)) return false;
-    if (a[k].maxContextLength !== b[k].maxContextLength) return false;
-  }
-  return true;
 }
 
 /**
@@ -679,10 +661,7 @@ export async function scanModels(
 
   for (const modelInfo of modelList.data) {
     const modelType = classifyModel(modelInfo);
-    const maxContextLength =
-      modelInfo.max_model_len ??
-      propsResponse?.default_generation_settings?.n_ctx ??
-      defaultContextLength;
+    const maxContextLength = modelInfo.max_model_len ?? propsResponse?.default_generation_settings?.n_ctx ?? defaultContextLength;
 
     if (modelType === "chat") {
       result.chat[modelInfo.id] = {

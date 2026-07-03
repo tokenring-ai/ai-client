@@ -10,7 +10,7 @@ export function parseModelAndSettings(model: string): {
   if (qIndex >= 0) {
     for (const part of model.substring(qIndex + 1).split("&")) {
       if (!part) continue;
-      const [rawK, rawV] = part.split("=");
+      const [rawK, rawV] = part.split("=") as [string, string | undefined];
       settings.set(decodeURIComponent(rawK), coerceFeatureValue(rawV === undefined ? "1" : decodeURIComponent(rawV)));
     }
   }

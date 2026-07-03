@@ -1,18 +1,11 @@
-import { setTimeout as delay } from "node:timers/promises";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import type { PrimitiveType } from "@tokenring-ai/utility/types";
 import type { MaybePromise } from "bun";
+import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { parseModelAndSettings } from "./util/modelSettings.ts";
 
-
-const primitiveTypeSchema: z.ZodType<PrimitiveType> = z.union([
-  z.string(),
-  z.number(),
-  z.boolean(),
-  z.null(),
-  z.undefined(),
-]);
+const primitiveTypeSchema: z.ZodType<PrimitiveType> = z.union([z.string(), z.number(), z.boolean(), z.null(), z.undefined()]);
 
 export const ModelSettingsDefinitionSchema = z.discriminatedUnion("type", [
   z.object({
@@ -166,8 +159,7 @@ export class ModelTypeRegistry<T extends ModelSpec, C extends GenericAIClient> {
     const allModels = await this.getAllModelsWithOnlineStatus();
     const modelsByProvider: Record<string, Record<string, ModelStatus<T>>> = {};
 
-    for (const modelName in allModels) {
-      const model = allModels[modelName];
+    for (const [modelName, model] of Object.entries(allModels)) {
       const leaf = (modelsByProvider[model.modelSpec.providerDisplayName] ??= {});
       leaf[modelName] = model;
     }
@@ -186,7 +178,7 @@ export class ModelTypeRegistry<T extends ModelSpec, C extends GenericAIClient> {
       const matchedNames = this.modelSpecs.keysLike(lookupName);
       if (matchedNames.length > 1) {
         throw new Error(`Model ${lookupName} matched more than one model`);
-      } else if (matchedNames.length === 1) {
+      } else if (matchedNames.length === 1 && matchedNames[0]) {
         lookupName = matchedNames[0];
       } else {
         throw new Error(`Model matching ${lookupName} not found`);

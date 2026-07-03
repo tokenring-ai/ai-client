@@ -104,49 +104,52 @@ export default class AnthropicProvider extends ModelProvider<AnthropicConfig> {
     const anthropicClient = this.anthropicClient;
     const getModels = this.getModels!;
 
-    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: anthropicClient(modelConfig.providerModelId),
-      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
-      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
-      maxContextLength: modelConfig.maxContextLength,
-      async isAvailable() {
-        const modelList = await getModels();
-        return !!modelList?.data.some(model => model.id === modelConfig.providerModelId);
-      },
-      mangleRequest(req, settings) {
-        const anthropicProvider = ((req.providerOptions ??= {}).anthropic ??= {});
-        if (settings.get("caching") as boolean) {
-          anthropicProvider.cacheControl = { type: "ephemeral" };
-        }
-        if (settings.get("websearch") as boolean) {
-          (req.tools ??= {}).web_search = anthropicClient.tools.webSearch_20250305({
-            maxUses: (settings.get("maxSearchUses") as number) ?? 5,
-          });
-        }
-      },
-      settings: {
-        caching: {
-          description: "Enable context caching for this model",
-          defaultValue: true,
-          type: "boolean",
-        },
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-        maxSearchUses: {
-          description: "Maximum number of web searches Claude can perform (0 to disable)",
-          defaultValue: 5,
-          type: "number",
-          min: 1,
-          max: 20,
-        },
-      },
-      inputCapabilities: modelConfig.inputCapabilities
-    } satisfies ChatModelSpec));
+    return Object.entries(this.config.models.chat).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: anthropicClient(modelConfig.providerModelId),
+          costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+          costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+          maxContextLength: modelConfig.maxContextLength,
+          async isAvailable() {
+            const modelList = await getModels();
+            return !!modelList?.data.some(model => model.id === modelConfig.providerModelId);
+          },
+          mangleRequest(req, settings) {
+            const anthropicProvider = ((req.providerOptions ??= {}).anthropic ??= {});
+            if (settings.get("caching") as boolean) {
+              anthropicProvider.cacheControl = { type: "ephemeral" };
+            }
+            if (settings.get("websearch") as boolean) {
+              (req.tools ??= {}).web_search = anthropicClient.tools.webSearch_20250305({
+                maxUses: (settings.get("maxSearchUses") as number) ?? 5,
+              });
+            }
+          },
+          settings: {
+            caching: {
+              description: "Enable context caching for this model",
+              defaultValue: true,
+              type: "boolean",
+            },
+            websearch: {
+              description: "Enables web search",
+              defaultValue: false,
+              type: "boolean",
+            },
+            maxSearchUses: {
+              description: "Maximum number of web searches Claude can perform (0 to disable)",
+              defaultValue: 5,
+              type: "number",
+              min: 1,
+              max: 20,
+            },
+          },
+          inputCapabilities: modelConfig.inputCapabilities,
+        }) satisfies ChatModelSpec,
+    );
   }
 
   private syncChatModels(specs: ChatModelSpec[]): void {

@@ -9,23 +9,23 @@ import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import {
   type AssistantModelMessage,
   type GenerateObjectResult,
-  type GenerateTextResult,
   generateText,
+  type GenerateTextResult,
   type LanguageModel,
   type LanguageModelUsage,
   Output,
-  type StreamTextResult,
   streamText,
+  type StreamTextResult,
   type ToolModelMessage,
   type ToolSet,
   type UserModelMessage,
 } from "ai";
-import { type ZodObject, z } from "zod";
+import { z, type ZodObject } from "zod";
 import { SerializedModelSpecSchema } from "../ModelTypeRegistry.ts";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
-export type ChatInputMessage = { role: "system", content: never } | UserModelMessage | AssistantModelMessage | ToolModelMessage;
+export type ChatInputMessage = { role: "system"; content: never } | UserModelMessage | AssistantModelMessage | ToolModelMessage;
 
 export type ChatRequest<TOOLS extends ToolSet = ToolSet> = {
   temperature?: number;
@@ -69,7 +69,7 @@ export const SerializedChatModelSpecSchema = SerializedModelSpecSchema.extend({
     })
     .partial()
     .exactOptional(),
-})
+});
 
 export type ChatModelSpec = ModelSpec & {
   impl: Exclude<LanguageModel, string>;
@@ -157,8 +157,7 @@ export default class AIChatClient {
   constructor(
     private readonly modelSpec: ChatModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.
@@ -210,10 +209,7 @@ export default class AIChatClient {
 
   calculateTiming(elapsedMs: number, usage: LanguageModelUsage): AIResponseTiming {
     const totalTokens =
-      (usage.inputTokens ?? 0) +
-      (usage.outputTokens ?? 0) +
-      (usage.inputTokenDetails.cacheReadTokens ?? 0) +
-      (usage.outputTokenDetails.reasoningTokens ?? 0);
+      (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0) + (usage.inputTokenDetails.cacheReadTokens ?? 0) + (usage.outputTokenDetails.reasoningTokens ?? 0);
 
     return stripUndefinedKeys({
       elapsedMs,
@@ -291,25 +287,27 @@ export default class AIChatClient {
     try {
       for await (const part of stream) {
         switch (part.type) {
-          case "file": {
-            flushBuffer(true);
-            const mimeType = BaseAttachmentSchema.shape.mimeType.parse(part.file.mediaType);
-            try {
-              agent.artifactOutput({
-                name: "Generated File",
-                encoding: "base64",
-                mimeType,
-                body: part.file.base64,
-              });
-            } catch {
-              agent.errorMessage(`The LLM generated a file with ${mimeType} output type, which is unsupported, and has been dropped`);
+          case "file":
+            {
+              flushBuffer(true);
+              const mimeType = BaseAttachmentSchema.shape.mimeType.parse(part.file.mediaType);
+              try {
+                agent.artifactOutput({
+                  name: "Generated File",
+                  encoding: "base64",
+                  mimeType,
+                  body: part.file.base64,
+                });
+              } catch {
+                agent.errorMessage(`The LLM generated a file with ${mimeType} output type, which is unsupported, and has been dropped`);
+              }
             }
-          }
             break;
           case "text-end":
-          case "reasoning-end": {
-            flushBuffer(true);
-          }
+          case "reasoning-end":
+            {
+              flushBuffer(true);
+            }
             break;
           case "text-delta": {
             if (chunkType === "chat") {
@@ -509,7 +507,7 @@ Be objective and precise in your scoring.`.trim(),
 
     // Convert to RerankResult format
     return {
-      rankings: finalRankings.map((ranking) => ({
+      rankings: finalRankings.map(ranking => ({
         index: ranking.index,
         score: ranking.score,
       })),

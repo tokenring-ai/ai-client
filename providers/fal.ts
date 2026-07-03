@@ -42,7 +42,9 @@ export default class FalProvider extends ModelProvider<FalConfig> {
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(ImageGenerationModelRegistry, r => { this.imageRegistry = r; });
+    this.app.waitForService(ImageGenerationModelRegistry, r => {
+      this.imageRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -72,18 +74,22 @@ export default class FalProvider extends ModelProvider<FalConfig> {
   private buildImageSpecs(): ImageModelSpec[] {
     if (!this.fal) return [];
     const fal = this.fal;
-    return Object.entries(this.config.models.imageGeneration).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: fal.image(modelId),
-      isAvailable() {
-        return true;
-      },
-      calculateImageCost(req) {
-        const size = req.size.split("x").map(Number);
-        return (modelConfig.costPerMegapixel * size[0] * size[1]) / 1000000;
-      },
-    } satisfies ImageModelSpec));
+    return Object.entries(this.config.models.imageGeneration).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: fal.image(modelId),
+          isAvailable() {
+            return true;
+          },
+          calculateImageCost(req) {
+            const size = req.size.split("x").map(Number);
+            if (!size[0] || !size[1]) throw new Error(`Invalid size: ${req.size}`);
+            return (modelConfig.costPerMegapixel * size[0] * size[1]) / 1000000;
+          },
+        }) satisfies ImageModelSpec,
+    );
   }
 
   private syncImageModels(specs: ImageModelSpec[]): void {

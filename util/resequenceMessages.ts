@@ -18,19 +18,15 @@ export function resequenceMessages(request: ChatRequest) {
     return acc;
   }, []);
 
-  // Handle system messages separately as they can appear at the beginning
-  const systemMessages = combinedMessages.filter((msg): msg is Extract<ChatInputMessage, { role: "system" }> => msg.role === "system");
-  const nonSystemMessages = combinedMessages.filter((msg): msg is Exclude<ChatInputMessage, { role: "system" }> => msg.role !== "system");
-
   // If there are no non-system messages, just return what we have
-  if (nonSystemMessages.length === 0) {
+  if (!combinedMessages[0]) {
     request.messages = combinedMessages;
     return undefined;
   }
 
   // Ensure the first non-system message is from the user
-  if (nonSystemMessages[0].role !== "user") {
-    nonSystemMessages.unshift({
+  if (combinedMessages[0].role !== "user") {
+    combinedMessages.unshift({
       role: "user",
       content: "Hello",
     });
@@ -39,13 +35,10 @@ export function resequenceMessages(request: ChatRequest) {
   // Create a properly alternating sequence
   const alternatingMessages: ChatInputMessage[] = [];
 
-  // First add all system messages
-  alternatingMessages.push(...systemMessages);
-
   // Then add alternating user/assistant messages
   let isUserTurn = true;
 
-  for (const message of nonSystemMessages) {
+  for (const message of combinedMessages) {
     const expectedRole = isUserTurn ? "user" : "assistant";
 
     if (message.role === expectedRole) {
@@ -63,7 +56,7 @@ export function resequenceMessages(request: ChatRequest) {
   }
 
   // Ensure the sequence ends with an user message if it ends with another type of message
-  if (alternatingMessages[alternatingMessages.length - 1].role !== "user") {
+  if (alternatingMessages[alternatingMessages.length - 1]!.role !== "user") {
     alternatingMessages.push({
       role: "user",
       content: "Continue.",

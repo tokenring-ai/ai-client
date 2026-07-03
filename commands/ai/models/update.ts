@@ -7,21 +7,23 @@ const inputSchema = {
     y: {
       type: "flag",
       description: "Don't prompt for confirmation",
-    }
+    },
   },
   remainder: {
     name: "url",
     description: "URL of the models.yaml to download",
     defaultValue: "https://dist.tokenring.ai/models.yaml",
-  }
+  },
 } as const satisfies AgentCommandInputSchema;
 
 async function execute({ args, remainder: url, agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   if (!args.y) {
-    if (!await agent.askForApproval({
-      message: `Would you like to download the latest models from ${url}?`,
-      label: "Update models?",
-    })) {
+    if (
+      !(await agent.askForApproval({
+        message: `Would you like to download the latest models from ${url}?`,
+        label: "Update models?",
+      }))
+    ) {
       return "User declined to update models";
     }
   }

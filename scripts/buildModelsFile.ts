@@ -5,11 +5,11 @@ import providers from "../providers/configs/index.ts";
 const config = {
   ai: {
     providers,
-  }
+  },
 };
 
 const modelsFile = process.argv[2];
-if (! modelsFile) {
+if (!modelsFile) {
   console.error("Usage: node buildModelsFile.js <modelsFile>");
   process.exit(1);
 }

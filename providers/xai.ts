@@ -79,9 +79,15 @@ export default class XAIProvider extends ModelProvider<XAIConfig> {
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
-    this.app.waitForService(ImageGenerationModelRegistry, r => { this.imageRegistry = r; });
-    this.app.waitForService(VideoGenerationModelRegistry, r => { this.videoRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
+    this.app.waitForService(ImageGenerationModelRegistry, r => {
+      this.imageRegistry = r;
+    });
+    this.app.waitForService(VideoGenerationModelRegistry, r => {
+      this.videoRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -120,121 +126,130 @@ export default class XAIProvider extends ModelProvider<XAIConfig> {
     if (!this.apiKey) return [];
     const getModels = this.getModels!;
 
-    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: xai.responses(modelId),
-      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
-      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
-      maxContextLength: modelConfig.maxContextLength,
-      ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
-        costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
-      }),
-      async isAvailable() {
-        const modelList = await getModels();
-        return !!modelList?.data.some(model => model.id === modelId);
-      },
-      mangleRequest(req, settings) {
-        if (settings.has("websearch")) {
-          (req.tools ??= {}).web_search = xai.tools.webSearch({
-            enableImageUnderstanding: settings.get("webImageUnderstanding") as boolean,
-          });
-        }
+    return Object.entries(this.config.models.chat).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: xai.responses(modelId),
+          costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+          costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+          maxContextLength: modelConfig.maxContextLength,
+          ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
+            costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
+          }),
+          async isAvailable() {
+            const modelList = await getModels();
+            return !!modelList?.data.some(model => model.id === modelId);
+          },
+          mangleRequest(req, settings) {
+            if (settings.has("websearch")) {
+              (req.tools ??= {}).web_search = xai.tools.webSearch({
+                enableImageUnderstanding: settings.get("webImageUnderstanding") as boolean,
+              });
+            }
 
-        if (settings.has("XSearch")) {
-          (req.tools ??= {}).x_search = xai.tools.xSearch(
-            stripUndefinedKeys({
-              allowedXHandles: (settings.get("XAllowedHandles") as string | undefined)?.split(","),
-              fromDate: settings.get("XFromDate") as string | undefined,
-              toDate: settings.get("XToDate") as string | undefined,
-              enableImageUnderstanding: settings.get("XImageUnderstanding") as boolean,
-              enableVideoUnderstanding: settings.get("XVideoUnderstanding") as boolean,
-            }),
-          );
-        }
-      },
-      settings: {
-        websearch: {
-          description: "Enables web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-        webImageUnderstanding: {
-          description: "Enables image understanding in web search",
-          defaultValue: false,
-          type: "boolean",
-        },
-        XSearch: {
-          description: "Enables X search",
-          defaultValue: false,
-          type: "boolean",
-        },
-        XFromDate: {
-          description: "From date for X search",
-          defaultValue: undefined,
-          type: "string",
-        },
-        XToDate: {
-          description: "To date for X search",
-          defaultValue: undefined,
-          type: "string",
-        },
-        XAllowedHandles: {
-          description: "Allowed handles for X search",
-          defaultValue: undefined,
-          type: "string",
-        },
-        XImageUnderstanding: {
-          description: "Enables image understanding in X search",
-          defaultValue: false,
-          type: "boolean",
-        },
-        XVideoUnderstanding: {
-          description: "Enables video understanding in X search",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-      inputCapabilities: modelConfig.inputCapabilities,
-    } satisfies ChatModelSpec));
+            if (settings.has("XSearch")) {
+              (req.tools ??= {}).x_search = xai.tools.xSearch(
+                stripUndefinedKeys({
+                  allowedXHandles: (settings.get("XAllowedHandles") as string | undefined)?.split(","),
+                  fromDate: settings.get("XFromDate") as string | undefined,
+                  toDate: settings.get("XToDate") as string | undefined,
+                  enableImageUnderstanding: settings.get("XImageUnderstanding") as boolean,
+                  enableVideoUnderstanding: settings.get("XVideoUnderstanding") as boolean,
+                }),
+              );
+            }
+          },
+          settings: {
+            websearch: {
+              description: "Enables web search",
+              defaultValue: false,
+              type: "boolean",
+            },
+            webImageUnderstanding: {
+              description: "Enables image understanding in web search",
+              defaultValue: false,
+              type: "boolean",
+            },
+            XSearch: {
+              description: "Enables X search",
+              defaultValue: false,
+              type: "boolean",
+            },
+            XFromDate: {
+              description: "From date for X search",
+              defaultValue: undefined,
+              type: "string",
+            },
+            XToDate: {
+              description: "To date for X search",
+              defaultValue: undefined,
+              type: "string",
+            },
+            XAllowedHandles: {
+              description: "Allowed handles for X search",
+              defaultValue: undefined,
+              type: "string",
+            },
+            XImageUnderstanding: {
+              description: "Enables image understanding in X search",
+              defaultValue: false,
+              type: "boolean",
+            },
+            XVideoUnderstanding: {
+              description: "Enables video understanding in X search",
+              defaultValue: false,
+              type: "boolean",
+            },
+          },
+          inputCapabilities: modelConfig.inputCapabilities,
+        }) satisfies ChatModelSpec,
+    );
   }
 
   private buildImageSpecs(): ImageModelSpec[] {
     if (!this.apiKey) return [];
     const getModels = this.getModels!;
 
-    return Object.entries(this.config.models.imageGeneration).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: xai.imageModel(modelId),
-      async isAvailable() {
-        const modelList = await getModels();
-        return !!modelList?.data.some(model => model.id === modelId);
-      },
-      calculateImageCost() {
-        return modelConfig.costPerImage;
-      },
-      inputCapabilities: modelConfig.inputCapabilities,
-    } satisfies ImageModelSpec));
+    return Object.entries(this.config.models.imageGeneration).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: xai.imageModel(modelId),
+          async isAvailable() {
+            const modelList = await getModels();
+            return !!modelList?.data.some(model => model.id === modelId);
+          },
+          calculateImageCost() {
+            return modelConfig.costPerImage;
+          },
+          inputCapabilities: modelConfig.inputCapabilities,
+        }) satisfies ImageModelSpec,
+    );
   }
 
   private buildVideoSpecs(): VideoModelSpec[] {
     if (!this.apiKey) return [];
     const getModels = this.getModels!;
 
-    return Object.entries(this.config.models.videoGeneration).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: xai.videoModel(modelId),
-      inputCapabilities: { image: true },
-      async isAvailable() {
-        const modelList = await getModels();
-        return !!modelList?.data.some(model => model.id === modelId);
-      },
-      calculateVideoCost(request: { duration?: number }) {
-        return request.duration ? request.duration * modelConfig.costPerSecond : NaN;
-      },
-    } satisfies VideoModelSpec));
+    return Object.entries(this.config.models.videoGeneration).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: xai.videoModel(modelId),
+          inputCapabilities: { image: true },
+          async isAvailable() {
+            const modelList = await getModels();
+            return !!modelList?.data.some(model => model.id === modelId);
+          },
+          calculateVideoCost(request: { duration?: number }) {
+            return request.duration ? request.duration * modelConfig.costPerSecond : NaN;
+          },
+        }) satisfies VideoModelSpec,
+    );
   }
 
   private syncChatModels(specs: ChatModelSpec[]): void {

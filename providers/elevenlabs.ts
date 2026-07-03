@@ -52,8 +52,12 @@ export default class ElevenLabsProvider extends ModelProvider<ElevenLabsConfig> 
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(SpeechModelRegistry, r => { this.speechRegistry = r; });
-    this.app.waitForService(TranscriptionModelRegistry, r => { this.transcriptionRegistry = r; });
+    this.app.waitForService(SpeechModelRegistry, r => {
+      this.speechRegistry = r;
+    });
+    this.app.waitForService(TranscriptionModelRegistry, r => {
+      this.transcriptionRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -85,97 +89,103 @@ export default class ElevenLabsProvider extends ModelProvider<ElevenLabsConfig> 
   private buildSpeechSpecs(): SpeechModelSpec[] {
     if (!this.elevenlabs) return [];
     const elevenlabs = this.elevenlabs;
-    return Object.entries(this.config.models.speech).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: elevenlabs.speech(modelId),
-      isAvailable() {
-        return true;
-      },
-      costPerMillionCharacters: modelConfig.costPerMillionCharacters,
-      settings: {
-        voice: {
-          description: "Voice ID to use for speech synthesis",
-          defaultValue: undefined,
-          type: "string",
-        },
-        ...(modelConfig.supportsLanguageCode && {
-          language_code: {
-            description: "Language code (ISO 639-1) for the voice",
-            defaultValue: undefined,
-            type: "string",
+    return Object.entries(this.config.models.speech).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: elevenlabs.speech(modelId),
+          isAvailable() {
+            return true;
           },
-        }),
-        stability: {
-          description: "Voice stability (0-1, lower = more variation)",
-          defaultValue: 0.5,
-          type: "number",
-        },
-        similarity_boost: {
-          description: "Similarity boost (0-1, controls adherence to voice)",
-          defaultValue: 0.75,
-          type: "number",
-        },
-        style: {
-          description: "Style amplification (0-1)",
-          defaultValue: 0,
-          type: "number",
-        },
-        use_speaker_boost: {
-          description: "Boost similarity to original speaker",
-          defaultValue: false,
-          type: "boolean",
-        },
-      },
-    } satisfies SpeechModelSpec));
+          costPerMillionCharacters: modelConfig.costPerMillionCharacters,
+          settings: {
+            voice: {
+              description: "Voice ID to use for speech synthesis",
+              defaultValue: undefined,
+              type: "string",
+            },
+            ...(modelConfig.supportsLanguageCode && {
+              language_code: {
+                description: "Language code (ISO 639-1) for the voice",
+                defaultValue: undefined,
+                type: "string",
+              },
+            }),
+            stability: {
+              description: "Voice stability (0-1, lower = more variation)",
+              defaultValue: 0.5,
+              type: "number",
+            },
+            similarity_boost: {
+              description: "Similarity boost (0-1, controls adherence to voice)",
+              defaultValue: 0.75,
+              type: "number",
+            },
+            style: {
+              description: "Style amplification (0-1)",
+              defaultValue: 0,
+              type: "number",
+            },
+            use_speaker_boost: {
+              description: "Boost similarity to original speaker",
+              defaultValue: false,
+              type: "boolean",
+            },
+          },
+        }) satisfies SpeechModelSpec,
+    );
   }
 
   private buildTranscriptionSpecs(): TranscriptionModelSpec[] {
     if (!this.elevenlabs) return [];
     const elevenlabs = this.elevenlabs;
-    return Object.entries(this.config.models.transcription).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: elevenlabs.transcription(modelId),
-      isAvailable() {
-        return true;
-      },
-      costPerMinute: modelConfig.costPerMinute,
-      settings: {
-        languageCode: {
-          description: "Language code (ISO 639-1 or ISO 639-3)",
-          defaultValue: undefined,
-          type: "string",
-        },
-        tagAudioEvents: {
-          description: "Tag audio events like laughter and footsteps",
-          defaultValue: true,
-          type: "boolean",
-        },
-        numSpeakers: {
-          description: "Maximum number of speakers (1-32)",
-          defaultValue: undefined,
-          type: "number",
-        },
-        timestampsGranularity: {
-          description: "Timestamp granularity",
-          defaultValue: "word",
-          type: "enum",
-          values: ["none", "word", "character"],
-        },
-        diarize: {
-          description: "Annotate which speaker is talking",
-          defaultValue: true,
-          type: "boolean",
-        },
-        fileFormat: {
-          description: "Input audio format",
-          defaultValue: "other",
-          type: "enum",
-          values: ["pcm_s16le_16", "other"],
-        },
-      },
-    } satisfies TranscriptionModelSpec));
+    return Object.entries(this.config.models.transcription).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: elevenlabs.transcription(modelId),
+          isAvailable() {
+            return true;
+          },
+          costPerMinute: modelConfig.costPerMinute,
+          settings: {
+            languageCode: {
+              description: "Language code (ISO 639-1 or ISO 639-3)",
+              defaultValue: undefined,
+              type: "string",
+            },
+            tagAudioEvents: {
+              description: "Tag audio events like laughter and footsteps",
+              defaultValue: true,
+              type: "boolean",
+            },
+            numSpeakers: {
+              description: "Maximum number of speakers (1-32)",
+              defaultValue: undefined,
+              type: "number",
+            },
+            timestampsGranularity: {
+              description: "Timestamp granularity",
+              defaultValue: "word",
+              type: "enum",
+              values: ["none", "word", "character"],
+            },
+            diarize: {
+              description: "Annotate which speaker is talking",
+              defaultValue: true,
+              type: "boolean",
+            },
+            fileFormat: {
+              description: "Input audio format",
+              defaultValue: "other",
+              type: "enum",
+              values: ["pcm_s16le_16", "other"],
+            },
+          },
+        }) satisfies TranscriptionModelSpec,
+    );
   }
 
   private syncSpeechModels(specs: SpeechModelSpec[]): void {

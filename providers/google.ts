@@ -72,8 +72,12 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
-    this.app.waitForService(ImageGenerationModelRegistry, r => { this.imageRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
+    this.app.waitForService(ImageGenerationModelRegistry, r => {
+      this.imageRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -206,18 +210,21 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
   private buildImageSpecs(): ImageModelSpec[] {
     if (!this.googleProvider) return [];
     const googleProvider = this.googleProvider;
-    return Object.entries(this.config.models.imageGeneration).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: googleProvider.image(modelId),
-      isAvailable() {
-        return true;
-      },
-      calculateImageCost() {
-        return modelConfig.costPerImage;
-      },
-      inputCapabilities: modelConfig.inputCapabilities,
-    } satisfies ImageModelSpec));
+    return Object.entries(this.config.models.imageGeneration).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: googleProvider.image(modelId),
+          isAvailable() {
+            return true;
+          },
+          calculateImageCost() {
+            return modelConfig.costPerImage;
+          },
+          inputCapabilities: modelConfig.inputCapabilities,
+        }) satisfies ImageModelSpec,
+    );
   }
 
   private syncChatModels(specs: ChatModelSpec[]): void {

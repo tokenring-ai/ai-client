@@ -57,7 +57,9 @@ export default class CerebrasProvider extends ModelProvider<CerebrasConfig> {
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -97,18 +99,21 @@ export default class CerebrasProvider extends ModelProvider<CerebrasConfig> {
     const cerebrasProvider = this.cerebrasProvider;
     const getModels = this.getModels!;
 
-    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: cerebrasProvider(modelId),
-      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
-      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
-      maxContextLength: modelConfig.maxContextLength,
-      async isAvailable() {
-        const modelList = await getModels();
-        return !!modelList?.data.some(model => model.id === modelId);
-      },
-    } satisfies ChatModelSpec));
+    return Object.entries(this.config.models.chat).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: cerebrasProvider(modelId),
+          costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+          costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+          maxContextLength: modelConfig.maxContextLength,
+          async isAvailable() {
+            const modelList = await getModels();
+            return !!modelList?.data.some(model => model.id === modelId);
+          },
+        }) satisfies ChatModelSpec,
+    );
   }
 
   private syncChatModels(specs: ChatModelSpec[]): void {

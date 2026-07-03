@@ -57,7 +57,9 @@ export default class DeepSeekProvider extends ModelProvider<DeepSeekConfig> {
   ) {
     super();
     this.name = providerDisplayName;
-    this.app.waitForService(ChatModelRegistry, r => { this.chatRegistry = r; });
+    this.app.waitForService(ChatModelRegistry, r => {
+      this.chatRegistry = r;
+    });
     this.applyConfig(config);
   }
 
@@ -96,21 +98,24 @@ export default class DeepSeekProvider extends ModelProvider<DeepSeekConfig> {
     const deepseekProvider = this.deepseekProvider;
     const getModels = this.getModels!;
 
-    return Object.entries(this.config.models.chat).map(([modelId, modelConfig]) => ({
-      modelId,
-      impl: deepseekProvider(modelId),
-      providerDisplayName: this.name,
-      costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
-      costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
-      maxContextLength: modelConfig.maxContextLength,
-      ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
-        costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
-      }),
-      async isAvailable() {
-        const modelList = await getModels();
-        return !!modelList?.data.some(model => model.id === modelId);
-      },
-    } satisfies ChatModelSpec));
+    return Object.entries(this.config.models.chat).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          impl: deepseekProvider(modelId),
+          providerDisplayName: this.name,
+          costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
+          costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
+          maxContextLength: modelConfig.maxContextLength,
+          ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
+            costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
+          }),
+          async isAvailable() {
+            const modelList = await getModels();
+            return !!modelList?.data.some(model => model.id === modelId);
+          },
+        }) satisfies ChatModelSpec,
+    );
   }
 
   private syncChatModels(specs: ChatModelSpec[]): void {

@@ -9,7 +9,7 @@ import type { SpeechModelSpec } from "../client/AISpeechClient.ts";
 import type { TranscriptionModelSpec } from "../client/AITranscriptionClient.ts";
 import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
-import { ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry, } from "../ModelRegistry.ts";
+import { ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry } from "../ModelRegistry.ts";
 import type { SettingDefinition } from "../ModelTypeRegistry.ts";
 
 const ChatModelSchema = z.object({
@@ -210,10 +210,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
       costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
       costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
       maxContextLength: modelConfig.maxContextLength,
-      inputCapabilities: deepClone(
-        modelConfig.inputCapabilities,
-        supportsAudioInput ? { audio: true, file: true } : {},
-      ),
+      inputCapabilities: deepClone(modelConfig.inputCapabilities, supportsAudioInput ? { audio: true, file: true } : {}),
       ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
         costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
       }),
@@ -227,7 +224,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
         }
 
         const openaiOptions: OpenAIResponsesProviderOptions = ((req.providerOptions ??= {}).openai ??= {});
-        
+
         if (settings.has("reasoningEffort")) {
           openaiOptions.reasoningEffort = settings.get("reasoningEffort") as string;
         }
@@ -276,6 +273,8 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
         },
         calculateImageCost(req) {
           const size = req.size.split("x").map(Number);
+          if (!size[0] || !size[1]) throw new Error(`Invalid size: ${req.size}`);
+
           return (modelConfig.costPerMegapixel * size[0] * size[1]) / 1000000;
         },
         ...(modelConfig.providerOptions && {
@@ -288,29 +287,35 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
   private buildSpeechSpecs(): SpeechModelSpec[] {
     if (!this.openai) return [];
     const openai = this.openai;
-    return Object.entries(this.config.models.textToSpeech).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: openai.speech(modelId),
-      isAvailable() {
-        return true;
-      },
-      costPerMillionCharacters: modelConfig.costPerMillionCharacters,
-    } satisfies SpeechModelSpec));
+    return Object.entries(this.config.models.textToSpeech).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: openai.speech(modelId),
+          isAvailable() {
+            return true;
+          },
+          costPerMillionCharacters: modelConfig.costPerMillionCharacters,
+        }) satisfies SpeechModelSpec,
+    );
   }
 
   private buildTranscriptionSpecs(): TranscriptionModelSpec[] {
     if (!this.openai) return [];
     const openai = this.openai;
-    return Object.entries(this.config.models.speechToText).map(([modelId, modelConfig]) => ({
-      modelId,
-      providerDisplayName: this.name,
-      impl: openai.transcription(modelId),
-      isAvailable() {
-        return true;
-      },
-      costPerMinute: modelConfig.costPerMinute,
-    } satisfies TranscriptionModelSpec));
+    return Object.entries(this.config.models.speechToText).map(
+      ([modelId, modelConfig]) =>
+        ({
+          modelId,
+          providerDisplayName: this.name,
+          impl: openai.transcription(modelId),
+          isAvailable() {
+            return true;
+          },
+          costPerMinute: modelConfig.costPerMinute,
+        }) satisfies TranscriptionModelSpec,
+    );
   }
 
   private syncChatModels(specs: ChatModelSpec[]): void {
