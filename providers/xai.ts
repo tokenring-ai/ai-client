@@ -144,13 +144,13 @@ export default class XAIProvider extends ModelProvider<XAIConfig> {
           },
           mangleRequest(req, settings) {
             if (settings.has("websearch")) {
-              (req.tools ??= {}).web_search = xai.tools.webSearch({
+              req.tools.web_search = xai.tools.webSearch({
                 enableImageUnderstanding: settings.get("webImageUnderstanding") as boolean,
               });
             }
 
             if (settings.has("XSearch")) {
-              (req.tools ??= {}).x_search = xai.tools.xSearch(
+              req.tools.x_search = xai.tools.xSearch(
                 stripUndefinedKeys({
                   allowedXHandles: (settings.get("XAllowedHandles") as string | undefined)?.split(","),
                   fromDate: settings.get("XFromDate") as string | undefined,

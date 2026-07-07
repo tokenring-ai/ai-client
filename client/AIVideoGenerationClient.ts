@@ -1,7 +1,8 @@
+import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import type { Experimental_VideoModelV4 } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
 import { MetricsService } from "@tokenring-ai/metrics";
-import { type GeneratedFile, type GenerateVideoResult, experimental_generateVideo as generateVideo } from "ai";
+import { experimental_generateVideo as generateVideo, type GeneratedFile, type GenerateVideoResult } from "ai";
 import { z } from "zod";
 
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
@@ -28,7 +29,7 @@ export type VideoModelSpec = ModelSpec & {
   /**
    * - Provider-specific options for the video generation model.
    */
-  providerOptions?: any;
+  providerOptions?: SharedV4ProviderOptions;
 
   /**
    * - A callback to calculate the video cost based on request parameters and result.
@@ -62,7 +63,8 @@ export default class AIVideoGenerationClient {
   constructor(
     private modelSpec: VideoModelSpec,
     private settings: ChatModelSettings,
-  ) {}
+  ) {
+  }
 
   /**
    * Set settings for this client instance.
@@ -91,28 +93,23 @@ export default class AIVideoGenerationClient {
   async generateVideo(request: VideoRequest, agent: Agent): Promise<[GeneratedFile, GenerateVideoResult]> {
     const signal = agent.getAbortSignal();
 
-    try {
-      const finalRequest = { ...request };
+    const finalRequest = { ...request };
 
-      if (this.modelSpec.mangleRequest) {
-        this.modelSpec.mangleRequest(finalRequest, this.settings);
-      }
-
-      const result = await generateVideo({
-        ...finalRequest,
-        model: this.modelSpec.impl,
-        providerOptions: this.modelSpec.providerOptions ?? {},
-        abortSignal: signal,
-      });
-
-      const cost = this.modelSpec.calculateVideoCost(finalRequest, result);
-
-      agent.getServiceByType(MetricsService)?.addCost(`Video Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost, agent);
-
-      return [result.video, result];
-    } catch (error: unknown) {
-      agent.errorMessage("Error generating video: ", error as Error);
-      throw error;
+    if (this.modelSpec.mangleRequest) {
+      this.modelSpec.mangleRequest(finalRequest, this.settings);
     }
+
+    const result = await generateVideo({
+      ...finalRequest,
+      model: this.modelSpec.impl,
+      providerOptions: this.modelSpec.providerOptions ?? {},
+      abortSignal: signal,
+    });
+
+    const cost = this.modelSpec.calculateVideoCost(finalRequest, result);
+
+    agent.getServiceByType(MetricsService)?.addCost(`Video Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost, agent);
+
+    return [result.video, result];
   }
 }

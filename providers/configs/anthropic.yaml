@@ -13,6 +13,11 @@ Anthropic:
         costPerMillionInputTokens: 10
         costPerMillionOutputTokens: 50
         maxContextLength: 1000000
+      claude-sonnet-5:
+        providerModelId: claude-sonnet-5
+        costPerMillionInputTokens: 3
+        costPerMillionOutputTokens: 15
+        maxContextLength: 1000000
       claude-4.8-opus:
         providerModelId: claude-opus-4-8
         costPerMillionInputTokens: 5

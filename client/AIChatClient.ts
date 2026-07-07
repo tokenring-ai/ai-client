@@ -1,31 +1,41 @@
-import type { SharedV4Warning } from "@ai-sdk/provider";
-import type { LanguageModelV4Source } from "@ai-sdk/provider";
+import type { LanguageModelV4Source, SharedV4Warning } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
 import { BaseAttachmentSchema } from "@tokenring-ai/agent/AgentEvents";
 import { MetricsService } from "@tokenring-ai/metrics";
 import omit from "@tokenring-ai/utility/object/omit";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
-
+import type { ModelMessage } from "ai";
+import type { ProviderMetadata } from "ai";
 import {
-  type AssistantModelMessage,
+  assistantModelMessageSchema,
   type GenerateObjectResult,
   generateText,
   type GenerateTextResult,
   type LanguageModel,
   type LanguageModelUsage,
+  modelMessageSchema,
   Output,
   streamText,
   type StreamTextResult,
-  type ToolModelMessage,
+  systemModelMessageSchema,
+  toolModelMessageSchema,
   type ToolSet,
-  type UserModelMessage,
+  userModelMessageSchema,
 } from "ai";
 import { z, type ZodObject } from "zod";
-import { SerializedModelSpecSchema } from "../ModelTypeRegistry.ts";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
+import { SerializedModelSpecSchema } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
 
-export type ChatInputMessage = { role: "system"; content: never } | UserModelMessage | AssistantModelMessage | ToolModelMessage;
+// Use the authoritative schemas from the AI SDK for chat message validation and types.
+// These are fully validating and ensure exact compatibility + serializability.
+export const ChatInputMessageSchema = modelMessageSchema;
+export const SystemMessageSchema = systemModelMessageSchema;
+export const UserMessageSchema = userModelMessageSchema;
+export const AssistantMessageSchema = assistantModelMessageSchema;
+export const ToolMessageSchema = toolModelMessageSchema;
+
+export type ChatInputMessage = ModelMessage;
 
 export type ChatRequest<TOOLS extends ToolSet = ToolSet> = {
   temperature?: number;
@@ -40,7 +50,6 @@ export type ChatRequest<TOOLS extends ToolSet = ToolSet> = {
   instructions: string;
   messages: ChatInputMessage[];
   parallelTools?: boolean;
-  _toolQueue?: any;
 };
 
 export type RerankRequest = {
@@ -107,34 +116,42 @@ export function normalizeChatModelSpec(modelSpec: ChatModelSpec): ChatModelSpec 
   }) as ChatModelSpec;
 }
 
-export type AIResponse = {
-  providerMetadata: any;
-  finishReason: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other" | "unknown";
-  timestamp: number;
-  modelId: string;
-  messages?: ChatInputMessage[];
-  text?: string;
-  lastStepUsage: LanguageModelUsage;
-  totalUsage: LanguageModelUsage;
-  cost: AIResponseCost;
-  timing: AIResponseTiming;
-  sources?: LanguageModelV4Source[];
-  warnings?: SharedV4Warning[];
-};
+export const AIResponseCostSchema = z.object({
+  input: z.number().exactOptional(),
+  cachedInput: z.number().exactOptional(),
+  output: z.number().exactOptional(),
+  reasoning: z.number().exactOptional(),
+  total: z.number().exactOptional(),
+});
 
-export type AIResponseCost = {
-  input?: number;
-  cachedInput?: number;
-  output?: number;
-  reasoning?: number;
-  total?: number;
-};
+export type AIResponseCost = z.infer<typeof AIResponseCostSchema>;
 
-export type AIResponseTiming = {
-  elapsedMs: number;
-  tokensPerSec?: number;
-  totalTokens?: number;
-};
+export const AIResponseTimingSchema = z.object({
+  elapsedMs: z.number(),
+  tokensPerSec: z.number().exactOptional(),
+  totalTokens: z.number().exactOptional(),
+});
+
+export type AIResponseTiming = z.infer<typeof AIResponseTimingSchema>;
+
+const FinishReasonSchema = z.enum(["stop", "length", "content-filter", "tool-calls", "error", "other", "unknown"]);
+
+export const AIResponseSchema = z.object({
+  providerMetadata: z.custom<ProviderMetadata>().optional(),
+  finishReason: FinishReasonSchema,
+  timestamp: z.number(),
+  modelId: z.string(),
+  messages: z.array(ChatInputMessageSchema).exactOptional(),
+  text: z.string().exactOptional(),
+  lastStepUsage: z.custom<LanguageModelUsage>(),
+  totalUsage: z.custom<LanguageModelUsage>(),
+  cost: AIResponseCostSchema,
+  timing: AIResponseTimingSchema,
+  sources: z.array(z.custom<LanguageModelV4Source>()).exactOptional(),
+  warnings: z.array(z.custom<SharedV4Warning>()).exactOptional(),
+});
+
+export type AIResponse = z.infer<typeof AIResponseSchema>;
 
 const rerankSchema = z.object({
   rankings: z
@@ -500,7 +517,7 @@ Be objective and precise in your scoring.`.trim(),
     const [result] = await this.generateObject(req, agent);
 
     // Sort rankings by score (descending)
-    const sortedRankings = result.rankings.sort((a: any, b: any) => b.score - a.score);
+    const sortedRankings = result.rankings.sort((a, b) => b.score - a.score);
 
     // Apply topK if specified
     const finalRankings = topN ? sortedRankings.slice(0, topN) : sortedRankings;

@@ -1,6 +1,7 @@
+import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
 import { MetricsService } from "@tokenring-ai/metrics";
-import { type GeneratedFile, type GenerateImageResult, generateImage, type ImageModel } from "ai";
+import { type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel } from "ai";
 import { z } from "zod";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
@@ -25,7 +26,7 @@ export type ImageModelSpec = ModelSpec & {
   /**
    * - Provider-specific options for the image generation model.
    */
-  providerOptions?: any;
+  providerOptions?: SharedV4ProviderOptions;
   /**
    * - A callback to calculate the image cost
    */
@@ -60,7 +61,8 @@ export default class AIImageGenerationClient {
   constructor(
     private modelSpec: ImageModelSpec,
     private settings: ChatModelSettings,
-  ) {}
+  ) {
+  }
 
   /**
    * Set settings for this client instance.
@@ -89,26 +91,21 @@ export default class AIImageGenerationClient {
   async generateImage(request: ImageRequest, agent: Agent): Promise<[GeneratedFile, GenerateImageResult]> {
     const signal = agent.getAbortSignal();
 
-    try {
-      if (this.modelSpec.mangleRequest) {
-        request = { ...request };
-        this.modelSpec.mangleRequest(request, this.settings);
-      }
-      const result = await generateImage({
-        ...request,
-        model: this.modelSpec.impl,
-        providerOptions: this.modelSpec.providerOptions ?? {},
-        abortSignal: signal,
-      });
-
-      const cost = this.modelSpec.calculateImageCost(request, result);
-
-      agent.getServiceByType(MetricsService)?.addCost(`Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost, agent);
-
-      return [result.image, result];
-    } catch (error: unknown) {
-      agent.errorMessage("Error generating image: ", error as Error);
-      throw error;
+    if (this.modelSpec.mangleRequest) {
+      request = { ...request };
+      this.modelSpec.mangleRequest(request, this.settings);
     }
+    const result = await generateImage({
+      ...request,
+      model: this.modelSpec.impl,
+      providerOptions: this.modelSpec.providerOptions ?? {},
+      abortSignal: signal,
+    });
+
+    const cost = this.modelSpec.calculateImageCost(request, result);
+
+    agent.getServiceByType(MetricsService)?.addCost(`Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost, agent);
+
+    return [result.image, result];
   }
 }

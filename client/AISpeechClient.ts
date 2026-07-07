@@ -1,5 +1,6 @@
+import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
-import { type Experimental_SpeechResult, experimental_generateSpeech as generateSpeech, type SpeechModel } from "ai";
+import { generateSpeech, type SpeechModel, type SpeechResult } from "ai";
 import { z } from "zod";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
@@ -14,7 +15,7 @@ export type SpeechModelSpec = ModelSpec & {
   costPerMillionCharacters?: number;
   impl: SpeechModel;
   inputCapabilities?: Partial<ModelInputCapabilities>;
-  providerOptions?: any;
+  providerOptions?: SharedV4ProviderOptions;
   /** Optional hook to adjust the request prior to sending. */
   mangleRequest?: (req: SpeechRequest, settings?: Record<string, any>) => void;
 };
@@ -34,7 +35,8 @@ export default class AISpeechClient {
   constructor(
     private modelSpec: SpeechModelSpec,
     private settings: ChatModelSettings,
-  ) {}
+  ) {
+  }
 
   /**
    * Set settings for this client instance.
@@ -50,26 +52,21 @@ export default class AISpeechClient {
     return new Map(this.settings.entries());
   }
 
-  async generateSpeech(request: SpeechRequest, agent: Agent): Promise<[Uint8Array, Experimental_SpeechResult]> {
+  async generateSpeech(request: SpeechRequest, agent: Agent): Promise<[Uint8Array, SpeechResult]> {
     const signal = agent.getAbortSignal();
 
-    try {
-      if (this.modelSpec.mangleRequest) {
-        request = { ...request };
-        this.modelSpec.mangleRequest(request, this.settings);
-      }
-      const result = await generateSpeech({
-        ...request,
-        model: this.modelSpec.impl,
-        providerOptions: this.modelSpec.providerOptions ?? {},
-        abortSignal: signal,
-      });
-
-      return [result.audio.uint8Array, result];
-    } catch (error: unknown) {
-      agent.errorMessage("Error generating speech: ", error as Error);
-      throw error;
+    if (this.modelSpec.mangleRequest) {
+      request = { ...request };
+      this.modelSpec.mangleRequest(request, this.settings);
     }
+    const result = await generateSpeech({
+      ...request,
+      model: this.modelSpec.impl,
+      providerOptions: this.modelSpec.providerOptions ?? {},
+      abortSignal: signal,
+    });
+
+    return [result.audio.uint8Array, result];
   }
 
   getModelSpec(): SpeechModelSpec {

@@ -1,5 +1,5 @@
-import { YAML } from "bun";
 import { writeFileSync } from "node:fs";
+import { YAML } from "bun";
 import providers from "../providers/configs/index.ts";
 
 const config = {

@@ -123,9 +123,10 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
 
     const baseSettings: Record<string, SettingDefinition> = {
       responseModalities: {
-        description: "Response modalities (TEXT, IMAGE)",
-        defaultValue: ["TEXT"],
-        type: "array",
+        description: "Response modalities (text, image, text_and_image)",
+        defaultValue: "text_and_image",
+        type: "enum",
+        values: ["text", "image", "text_and_image"],
       },
     };
 
@@ -180,13 +181,27 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
       },
       mangleRequest(req: ChatRequest, settings: ChatModelSettings) {
         if (settings.has("websearch")) {
-          (req.tools ??= {}).google_search = googleProvider.tools.googleSearch({});
+          req.tools.google_search = googleProvider.tools.googleSearch({});
         }
 
         const googleOptions: GoogleGenerativeAIProviderOptions = ((req.providerOptions ??= {}).google ??= {});
 
         if (settings.has("responseModalities")) {
-          googleOptions.responseModalities = (settings.get("responseModalities") as any)?.map((s: string) => s.toUpperCase());
+          const modalities = settings.get("responseModalities") as "text" | "image" | "text_and_image";
+          switch (modalities) {
+            case "text":
+              googleOptions.responseModalities = ["TEXT"];
+              break;
+            case "image":
+              googleOptions.responseModalities = ["IMAGE"];
+              break;
+            case "text_and_image":
+              googleOptions.responseModalities = ["TEXT", "IMAGE"];
+              break;
+            default:
+              const exhaustive: any = modalities satisfies never;
+              throw new Error(`Unexpected response modality: ${exhaustive}`);
+          }
         }
 
         if (settings.has("thinkingLevel") || settings.has("thinkingBudget") || settings.has("includeThoughts")) {

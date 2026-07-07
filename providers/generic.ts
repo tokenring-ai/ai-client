@@ -1,19 +1,19 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenResponses } from "@ai-sdk/open-responses";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { EmbeddingModelV4 } from "@ai-sdk/provider";
-import type { LanguageModelV4 } from "@ai-sdk/provider";
+import type { EmbeddingModelV4, LanguageModelV4 } from "@ai-sdk/provider";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
-import { deepEquals } from "bun";
 import type { MaybePromise } from "bun";
+import { deepEquals } from "bun";
 import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
+import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
 import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, EmbeddingModelRegistry } from "../ModelRegistry.ts";
+import type { ChatModelSettings } from "../ModelTypeRegistry.ts";
 import { ModelSettingsDefinitionSchema, type SettingDefinition } from "../ModelTypeRegistry.ts";
 
 const ChatModelSchema = z.object({
@@ -102,7 +102,7 @@ type EndpointType = "openai" | "anthropic" | "responses";
 
 interface UnderlyingProvider {
   type: EndpointType;
-  mangleRequest: (req: any, settings: Map<string, unknown>) => void;
+  mangleRequest?: (req: ChatRequest, settings: ChatModelSettings) => void;
   inputCapabilities?: { image?: boolean; file?: boolean };
 
   getLanguageModel(modelId: string): LanguageModelV4;
@@ -360,7 +360,7 @@ function createUnderlyingProvider(
           }
           if (settings.get("websearch") as boolean) {
             (req.tools ??= {}).web_search = provider.tools.webSearch_20250305({
-              maxUses: (settings.get("maxSearchUses") as number) ?? 5,
+              maxUses: (settings.get("maxSearchUses") as number | undefined) ?? 5,
             });
           }
         },
@@ -441,6 +441,8 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
       } catch {
         break;
       }
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- can be mutated asynchronously
       if (signal.aborted) break;
       try {
         await this.scanAndReconfigure();
@@ -504,7 +506,7 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
 
   private buildChatSpecs(): ChatModelSpec[] {
     if (!this.isEnabled()) return [];
-    return Object.entries(this.config.models.chat ?? {}).map(([modelId, modelSpec]) => ({
+    return Object.entries(this.config.models.chat).map(([modelId, modelSpec]) => ({
       providerDisplayName: this.name,
       modelId,
       impl: this.underlyingProvider.getLanguageModel(modelId),
@@ -513,7 +515,7 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
       costPerMillionOutputTokens: modelSpec.costPerMillionOutputTokens ?? 0,
       maxContextLength: modelSpec.maxContextLength || this.config.defaultContextLength,
       settings: modelSpec.settings,
-      mangleRequest: this.underlyingProvider.mangleRequest,
+      ...(this.underlyingProvider.mangleRequest && { mangleRequest: this.underlyingProvider.mangleRequest }),
       isAvailable: async () => !!(await this.getModelList()),
       ...(this.underlyingProvider.inputCapabilities && {
         inputCapabilities: this.underlyingProvider.inputCapabilities,
@@ -524,7 +526,7 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
   private buildEmbeddingSpecs(): EmbeddingModelSpec[] {
     if (!this.isEnabled()) return [];
     if (this.config.endpointType !== "openai") return [];
-    return Object.entries(this.config.models.embedding ?? {}).map(([modelId, modelSpec]) => ({
+    return Object.entries(this.config.models.embedding).map(([modelId, modelSpec]) => ({
       modelId,
       providerDisplayName: this.name,
       contextLength: modelSpec.maxContextLength || 8192,
@@ -663,15 +665,21 @@ export async function scanModels(
     const modelType = classifyModel(modelInfo);
     const maxContextLength = modelInfo.max_model_len ?? propsResponse?.default_generation_settings?.n_ctx ?? defaultContextLength;
 
-    if (modelType === "chat") {
-      result.chat[modelInfo.id] = {
-        maxContextLength,
-        settings: buildSettings(modelInfo, propsResponse),
-      };
-    } else if (modelType === "embedding") {
-      result.embedding[modelInfo.id] = {
-        maxContextLength,
-      };
+    switch (modelType) {
+      case "chat":
+        result.chat[modelInfo.id] = {
+          maxContextLength,
+          settings: buildSettings(modelInfo, propsResponse),
+        };
+        break;
+      case "embedding":
+        result.embedding[modelInfo.id] = {
+          maxContextLength,
+        };
+        break;
+      default:
+        const exhaustive: any = modelType satisfies never;
+        throw new Error(`Unexpected model type: ${exhaustive}`);
     }
   }
 

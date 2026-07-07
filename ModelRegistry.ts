@@ -26,8 +26,8 @@ export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatCl
     // Sort the matched chatModels by price, using the current context length + 1000 tokens to calculate the price
     return (
       Object.entries(eligibleModels).sort(([, a], [, b]) => {
-        const aPrice = estimatedContextLength * (a.costPerMillionInputTokens ?? 600) + 1000 * (a.costPerMillionOutputTokens ?? 600);
-        const bPrice = estimatedContextLength * (b.costPerMillionInputTokens ?? 600) + 1000 * (b.costPerMillionOutputTokens ?? 600);
+        const aPrice = estimatedContextLength * a.costPerMillionInputTokens + 1000 * a.costPerMillionOutputTokens;
+        const bPrice = estimatedContextLength * b.costPerMillionInputTokens + 1000 * b.costPerMillionOutputTokens;
 
         return aPrice - bPrice;
       })[0]?.[0] ?? null

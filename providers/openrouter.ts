@@ -1,8 +1,8 @@
+import { setTimeout as delay } from "node:timers/promises";
 import type { JSONArray } from "@ai-sdk/provider";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
@@ -21,41 +21,50 @@ const OpenRouterModelProviderConfigSchema = z.object({
 
 type OpenRouterConfig = z.output<typeof OpenRouterModelProviderConfigSchema>;
 
-interface ModelData {
-  id: string;
-  canonical_slug: string;
-  hugging_face_id: string;
-  name: string;
-  created: number;
-  description: string;
-  context_length: number;
-  architecture: {
-    modality: string;
-    input_modalities: string[];
-    output_modalities: string[];
-    tokenizer: string;
-    instruct_type: string | null;
-  };
-  pricing: {
-    prompt: string;
-    completion: string;
-    request: string;
-    image: string;
-    audio: string;
-    web_search: string;
-    internal_reasoning: string;
-  };
-  topProvider: {
-    context_length: number;
-    max_completion_tokens: number | null;
-    is_moderated: boolean;
-  };
-  supported_parameters: string[];
-}
+const ArchitectureSchema = z.object({
+  modality: z.string(),
+  input_modalities: z.array(z.string()),
+  output_modalities: z.array(z.string()),
+  tokenizer: z.string(),
+  instruct_type: z.string().nullable(),
+});
 
-interface ApiResponse {
-  data: ModelData[];
-}
+const PricingSchema = z.object({
+  prompt: z.string(),
+  completion: z.string(),
+  request: z.string().exactOptional(),
+  image: z.string().exactOptional(),
+  audio: z.string().exactOptional(),
+  web_search: z.string().exactOptional(),
+  internal_reasoning: z.string().exactOptional(),
+});
+
+const TopProviderSchema = z.object({
+  context_length: z.number(),
+  max_completion_tokens: z.number().nullable(),
+  is_moderated: z.boolean(),
+});
+
+const ModelDataSchema = z.object({
+  id: z.string(),
+  canonical_slug: z.string(),
+  hugging_face_id: z.string().nullable(),
+  name: z.string(),
+  created: z.number(),
+  description: z.string(),
+  context_length: z.number(),
+  architecture: ArchitectureSchema,
+  pricing: PricingSchema,
+  topProvider: TopProviderSchema.exactOptional(),
+  supported_parameters: z.array(z.string()),
+});
+
+const ApiResponseSchema = z.object({
+  data: z.array(ModelDataSchema),
+});
+
+type ModelData = z.infer<typeof ModelDataSchema>;
+//type ApiResponse = z.infer<typeof ApiResponseSchema>;
 
 function parsePricing(priceString: string | null | undefined): number {
   if (priceString === null || priceString === undefined || priceString === "0") {
@@ -74,9 +83,8 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
   readonly name: string;
   readonly description = "OpenRouter provider";
 
-  private config!: OpenRouterConfig;
   private apiKey: string | undefined;
-  private getModels: (() => Promise<ApiResponse | null>) | undefined;
+  private getModels: (() => Promise<unknown>) | undefined;
 
   private chatRegistry: ChatModelRegistry | undefined;
   private registeredChatKeys = new Set<string>();
@@ -88,7 +96,7 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
 
   constructor(
     providerDisplayName: string,
-    config: OpenRouterConfig,
+    private config: OpenRouterConfig,
     private readonly app: TokenRingApp,
   ) {
     super();
@@ -165,14 +173,16 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
       },
       cacheTime: SCAN_INTERVAL_MS,
       timeout: 10000,
-    }) as () => Promise<ApiResponse | null>;
+    }) as () => Promise<unknown>;
   }
 
   private async scanAndRegister(): Promise<void> {
     if (!this.apiKey || !this.getModels) return;
 
-    const modelsData = await this.getModels();
-    if (modelsData == null) return;
+    const rawData = await this.getModels();
+    if (rawData == null) return;
+
+    const modelsData = ApiResponseSchema.parse(rawData);
 
     const filtered = this.config.modelFilter ? modelsData.data.filter(m => this.config.modelFilter!(m)) : modelsData.data;
 
@@ -215,7 +225,7 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
           file: model.architecture?.input_modalities?.includes("file"),
         },
         mangleRequest(req, settings) {
-          const supported = model.supported_parameters || [];
+          const supported = model.supported_parameters ?? [];
 
           if (settings.has("websearch")) {
             const plugins = (((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= []) as JSONArray;
@@ -280,7 +290,7 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
             type: "enum",
             values: ["low", "medium", "high"],
           },
-          ...(model.supported_parameters?.includes("frequency_penalty") && {
+          ...(model.supported_parameters.includes("frequency_penalty") && {
             frequencyPenalty: {
               description: "Frequency penalty",
               type: "number",
@@ -288,10 +298,10 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
               max: 2.0,
             },
           }),
-          ...(model.supported_parameters?.includes("max_tokens") && {
+          ...(model.supported_parameters.includes("max_tokens") && {
             maxTokens: { description: "Max tokens", type: "number", min: 1 },
           }),
-          ...(model.supported_parameters?.includes("min_p") && {
+          ...(model.supported_parameters.includes("min_p") && {
             minP: {
               description: "Min P sampling",
               type: "number",
@@ -299,7 +309,7 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
               max: 1.0,
             },
           }),
-          ...(model.supported_parameters?.includes("presence_penalty") && {
+          ...(model.supported_parameters.includes("presence_penalty") && {
             presencePenalty: {
               description: "Presence penalty",
               type: "number",
@@ -307,7 +317,7 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
               max: 2.0,
             },
           }),
-          ...(model.supported_parameters?.includes("repetition_penalty") && {
+          ...(model.supported_parameters.includes("repetition_penalty") && {
             repetitionPenalty: {
               description: "Repetition penalty",
               type: "number",
@@ -315,7 +325,7 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
               max: 2.0,
             },
           }),
-          ...(model.supported_parameters?.includes("temperature") && {
+          ...(model.supported_parameters.includes("temperature") && {
             temperature: {
               description: "Temperature",
               type: "number",
@@ -323,10 +333,10 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
               max: 2.0,
             },
           }),
-          ...(model.supported_parameters?.includes("top_k") && {
+          ...(model.supported_parameters.includes("top_k") && {
             topK: { description: "Top K sampling", type: "number", min: 0 },
           }),
-          ...(model.supported_parameters?.includes("top_p") && {
+          ...(model.supported_parameters.includes("top_p") && {
             topP: {
               description: "Top P sampling",
               type: "number",
@@ -334,13 +344,13 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
               max: 1.0,
             },
           }),
-          ...(model.supported_parameters?.includes("include_reasoning") && {
+          ...(model.supported_parameters.includes("include_reasoning") && {
             includeReasoning: {
               description: "Include reasoning",
               type: "boolean",
             },
           }),
-          ...(model.supported_parameters?.includes("reasoning") && {
+          ...(model.supported_parameters.includes("reasoning") && {
             reasoning: { description: "Reasoning mode", type: "string" },
           }),
         },

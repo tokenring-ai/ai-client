@@ -2,8 +2,8 @@ import type TokenRingApp from "@tokenring-ai/app";
 import type { MaybePromise } from "bun";
 import { z } from "zod";
 import type { ModelInputCapability } from "./client/modelCapabilities.ts";
-import { AIProviderConfigSchema } from "./providers.ts";
 import allModels from "./providers/configs/index.ts";
+import { AIProviderConfigSchema } from "./providers.ts";
 
 export type { FilePart, ImagePart, TextPart, UserModelMessage } from "ai";
 export type { ModelInputCapability } from "./client/modelCapabilities.ts";

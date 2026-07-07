@@ -1,3 +1,5 @@
+import type { OpenAIImageModelGenerationOptions } from "@ai-sdk/openai";
+import type { OpenAILanguageModelCompletionOptions } from "@ai-sdk/openai";
 import { createOpenAI, type OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
@@ -14,7 +16,9 @@ import type { SettingDefinition } from "../ModelTypeRegistry.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
-  providerOptions: z.record(z.string(), z.unknown()).exactOptional(),
+  providerOptions: z.object({
+    openai: z.custom<OpenAILanguageModelCompletionOptions>().exactOptional()
+  }).exactOptional(),
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number(),
   costPerMillionCachedInputTokens: z.number().exactOptional(),
@@ -25,7 +29,9 @@ const ChatModelSchema = z.object({
 
 const ImageGenerationModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
-  providerOptions: z.record(z.string(), z.unknown()).exactOptional(),
+  providerOptions: z.object({
+    openai: z.custom<OpenAIImageModelGenerationOptions>().exactOptional()
+  }).exactOptional(),
   costPerMegapixel: z.number(),
   inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
 });
@@ -214,13 +220,14 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
       ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
         costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
       }),
+      ...modelConfig.providerOptions,
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some(model => model.id === providerModelId);
       },
       mangleRequest(req, settings) {
         if (settings.has("websearch")) {
-          (req.tools ??= {}).web_search = openai.tools.webSearch({});
+          req.tools.web_search = openai.tools.webSearch({});
         }
 
         const openaiOptions: OpenAIResponsesProviderOptions = ((req.providerOptions ??= {}).openai ??= {});
@@ -235,10 +242,10 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
           openaiOptions.strictJsonSchema = settings.get("strictJsonSchema") as boolean;
         }
         if (settings.has("serviceTier")) {
-          openaiOptions.serviceTier = settings.get("serviceTier") as any;
+          openaiOptions.serviceTier = settings.get("serviceTier") as OpenAIResponsesProviderOptions["serviceTier"];
         }
         if (settings.has("textVerbosity")) {
-          openaiOptions.textVerbosity = settings.get("textVerbosity") as any;
+          openaiOptions.textVerbosity = settings.get("textVerbosity") as OpenAIResponsesProviderOptions["textVerbosity"];
         }
         if (settings.has("promptCacheRetention")) {
           openaiOptions.promptCacheRetention = settings.get("promptCacheRetention") as any;
@@ -277,9 +284,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
 
           return (modelConfig.costPerMegapixel * size[0] * size[1]) / 1000000;
         },
-        ...(modelConfig.providerOptions && {
-          providerOptions: { openai: modelConfig.providerOptions },
-        }),
+        ...modelConfig.providerOptions,
       } satisfies ImageModelSpec;
     });
   }

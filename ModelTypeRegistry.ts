@@ -1,7 +1,7 @@
+import { setTimeout as delay } from "node:timers/promises";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import type { PrimitiveType } from "@tokenring-ai/utility/types";
 import type { MaybePromise } from "bun";
-import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { parseModelAndSettings } from "./util/modelSettings.ts";
 

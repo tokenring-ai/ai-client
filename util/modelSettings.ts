@@ -18,7 +18,7 @@ export function parseModelAndSettings(model: string): {
 }
 
 export function coerceFeatureValue(v: string): true | false | number | string {
-  const lower = v.toLowerCase?.();
+  const lower = v.toLowerCase();
   if (v === "1" || lower === "true") return true;
   if (v === "0" || lower === "false") return false;
   const asNum = Number(v);
