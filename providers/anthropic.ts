@@ -1,5 +1,4 @@
-import { AnthropicProviderOptions } from "@ai-sdk/anthropic";
-import { createAnthropic } from "@ai-sdk/anthropic";
+import { type AnthropicProviderOptions, createAnthropic } from "@ai-sdk/anthropic";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
@@ -119,11 +118,17 @@ export default class AnthropicProvider extends ModelProvider<AnthropicConfig> {
             return !!modelList?.data.some(model => model.id === modelConfig.providerModelId);
           },
           mangleRequest(req, settings) {
-            const anthropicProvider = ((req.providerOptions ??= {}).anthropic ??= {}) as AnthropicProviderOptions;
+            if (req.providerOptions.anthropic === undefined) {
+              req.providerOptions.anthropic = {};
+            }
+            const anthropicProvider = req.providerOptions.anthropic as AnthropicProviderOptions;
             const ttl = settings.get("caching") as "off" | "5m" | "1h";
             if (ttl !== "off") {
               anthropicProvider.cacheControl = { type: "ephemeral", ttl };
             }
+
+            /* The following settings only apply to requests that use tools */
+            if (!("tools" in req)) return;
 
             if (settings.get("websearch") as boolean) {
               req.tools.web_search = anthropicClient.tools.webSearch_20250305({

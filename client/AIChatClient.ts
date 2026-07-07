@@ -1,28 +1,26 @@
-import type { LanguageModelV4Source, SharedV4Warning } from "@ai-sdk/provider";
+import type { JSONObject, LanguageModelV4Source, SharedV4Warning } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
 import { BaseAttachmentSchema } from "@tokenring-ai/agent/AgentEvents";
 import { MetricsService } from "@tokenring-ai/metrics";
-import omit from "@tokenring-ai/utility/object/omit";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
-import type { ModelMessage } from "ai";
-import type { ProviderMetadata } from "ai";
+import type { ModelMessage, ProviderMetadata } from "ai";
 import {
   assistantModelMessageSchema,
   type GenerateObjectResult,
-  generateText,
   type GenerateTextResult,
+  generateText,
   type LanguageModel,
   type LanguageModelUsage,
   modelMessageSchema,
   Output,
-  streamText,
   type StreamTextResult,
+  streamText,
   systemModelMessageSchema,
-  toolModelMessageSchema,
   type ToolSet,
+  toolModelMessageSchema,
   userModelMessageSchema,
 } from "ai";
-import { z, type ZodObject } from "zod";
+import { type ZodObject, z } from "zod";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
 import { SerializedModelSpecSchema } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
@@ -37,20 +35,50 @@ export const ToolMessageSchema = toolModelMessageSchema;
 
 export type ChatInputMessage = ModelMessage;
 
-export type ChatRequest<TOOLS extends ToolSet = ToolSet> = {
-  temperature?: number;
-  seed?: number;
-  topP?: number;
-  topK?: number;
-  frequencyPenalty?: number;
-  presencePenalty?: number;
-  providerOptions?: Exclude<Parameters<typeof streamText>[0]["providerOptions"], undefined>;
+export const BaseChatRequestSchema = z.object({
+  temperature: z.number().exactOptional(),
+  seed: z.number().exactOptional(),
+  topP: z.number().exactOptional(),
+  topK: z.number().exactOptional(),
+  frequencyPenalty: z.number().exactOptional(),
+  presencePenalty: z.number().exactOptional(),
+  providerOptions: z.record(z.string(), z.custom<JSONObject>()).prefault({}),
+  instructions: z.string(),
+  messages: z.array(ChatInputMessageSchema),
+  parallelTools: z.boolean().exactOptional(),
+});
 
+export const AgentRequestWithToolsSchema = BaseChatRequestSchema.extend({
+  type: z.literal("agent").default("agent"),
+  tools: z.custom<ToolSet>(),
+  prepareStep: z.custom<Parameters<typeof streamText<ToolSet, never>>[0]["prepareStep"]>().optional(),
+  stopWhen: z.custom<Parameters<typeof streamText<ToolSet, never>>[0]["stopWhen"]>().optional(),
+  onStepFinish: z.custom<Parameters<typeof streamText<ToolSet, never>>[0]["onStepFinish"]>().optional(),
+});
+
+export type AgentRequestWithTools<TOOLS extends ToolSet = ToolSet> = z.input<typeof AgentRequestWithToolsSchema> & {
   tools: TOOLS;
-  instructions: string;
-  messages: ChatInputMessage[];
-  parallelTools?: boolean;
 };
+
+export type ParsedAgentRequestWithTools<TOOLS extends ToolSet = ToolSet> = z.output<typeof AgentRequestWithToolsSchema> & {
+  tools: TOOLS;
+};
+
+export const GenerateRequestSchema = BaseChatRequestSchema.extend({
+  type: z.literal("generate").default("generate"),
+  schema: z.custom<ZodObject>(),
+});
+
+export type GenerateRequest<Schema extends ZodObject = ZodObject> = z.input<typeof GenerateRequestSchema> & {
+  schema: Schema;
+};
+
+export type ParsedGenerateRequest<Schema extends ZodObject = ZodObject> = z.output<typeof GenerateRequestSchema> & {
+  schema: Schema;
+};
+
+export type ChatRequest = AgentRequestWithTools | GenerateRequest;
+export type ParsedChatRequest = ParsedAgentRequestWithTools | ParsedGenerateRequest;
 
 export type RerankRequest = {
   query: string;
@@ -68,32 +96,14 @@ export const SerializedChatModelSpecSchema = SerializedModelSpecSchema.extend({
   tools: z.boolean().exactOptional(),
   structuredOutput: z.boolean().exactOptional(),
   webSearch: z.boolean().exactOptional(),
-  inputCapabilities: z
-    .object({
-      text: z.boolean(),
-      image: z.union([z.boolean(), z.array(z.string())]),
-      video: z.union([z.boolean(), z.array(z.string())]),
-      audio: z.union([z.boolean(), z.array(z.string())]),
-      file: z.union([z.boolean(), z.array(z.string())]),
-    })
-    .partial()
-    .exactOptional(),
+  inputCapabilities: ModelInputCapabilitiesSchema.exactOptional(),
 });
 
-export type ChatModelSpec = ModelSpec & {
-  impl: Exclude<LanguageModel, string>;
-  mangleRequest?: (req: ChatRequest, settings: ChatModelSettings) => void;
-  inputCapabilities?: Partial<ChatModelInputCapabilities>;
-  tools?: boolean;
-  structuredOutput?: boolean;
-  webSearch?: boolean;
-  maxCompletionTokens?: number;
-  maxContextLength: number;
-  costPerMillionInputTokens: number;
-  costPerMillionOutputTokens: number;
-  costPerMillionCachedInputTokens?: number;
-  costPerMillionReasoningTokens?: number;
-};
+export type ChatModelSpec = z.input<typeof SerializedChatModelSpecSchema> &
+  ModelSpec & {
+    impl: Exclude<LanguageModel, string>;
+    mangleRequest?: (req: ParsedChatRequest, settings: ChatModelSettings) => void;
+  };
 
 export type ChatModelInputCapabilities = ModelInputCapabilities;
 
@@ -239,16 +249,12 @@ export default class AIChatClient {
    * Streams a chat completion via `streamText`, relaying every delta
    * back to the `ChatService`.
    */
-  async streamChat<TOOLS extends ToolSet>(
-    request: ChatRequest<TOOLS> & Pick<Parameters<typeof streamText<TOOLS, never>>[0], "prepareStep" | "stopWhen" | "onStepFinish">,
-    agent: Agent,
-  ): Promise<AIResponse> {
+  async streamChat<TOOLS extends ToolSet>(request: AgentRequestWithTools<TOOLS>, agent: Agent): Promise<AIResponse> {
     const signal = agent.getAbortSignal();
 
-    if (this.modelSpec.mangleRequest) {
-      request = { ...request };
-      this.modelSpec.mangleRequest(request, this.settings);
-    }
+    const parsedRequest = AgentRequestWithToolsSchema.parse(request);
+
+    this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
 
     const isHot = this.modelSpec.isHot ? await this.modelSpec.isHot() : true;
 
@@ -259,7 +265,7 @@ export default class AIChatClient {
     const start = Date.now();
     const result = streamText(
       stripUndefinedKeys({
-        ...request,
+        ...parsedRequest,
         maxRetries: 15,
         model: this.modelSpec.impl,
         abortSignal: signal,
@@ -383,21 +389,17 @@ export default class AIChatClient {
   /**
    * Sends a chat completion request and returns the full text response.
    */
-  async textChat<TOOLS extends ToolSet>(
-    request: ChatRequest<TOOLS> & Pick<Parameters<typeof generateText<TOOLS, never>>[0], "prepareStep" | "stopWhen" | "onStepFinish">,
-    agent: Agent,
-  ): Promise<[string, AIResponse]> {
-    if (this.modelSpec.mangleRequest) {
-      request = { ...request };
-      this.modelSpec.mangleRequest(request, this.settings);
-    }
+  async textChat<TOOLS extends ToolSet>(request: AgentRequestWithTools<TOOLS>, agent: Agent): Promise<[string, AIResponse]> {
+    const parsedRequest = AgentRequestWithToolsSchema.parse(request);
+
+    this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
 
     const signal = agent.getAbortSignal();
 
     const start = Date.now();
     const result = await generateText(
       stripUndefinedKeys({
-        ...request,
+        ...parsedRequest,
         model: this.modelSpec.impl,
         abortSignal: signal,
       }),
@@ -413,13 +415,12 @@ export default class AIChatClient {
   /**
    * Sends a chat completion request and returns the generated object response.
    */
-  async generateObject<T extends ZodObject>(request: ChatRequest & { schema: T }, agent: Agent): Promise<[z.infer<typeof request.schema>, AIResponse]> {
-    if (this.modelSpec.mangleRequest) {
-      request = { ...request };
-      this.modelSpec.mangleRequest(request, this.settings);
-    }
+  async generateObject<T extends ZodObject>(request: GenerateRequest<T>, agent: Agent): Promise<[z.infer<T>, AIResponse]> {
+    const parsedRequest = GenerateRequestSchema.parse(request);
 
-    const generateRequest = omit(request, ["schema"]);
+    this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
+
+    const { schema, ...remaining } = parsedRequest;
 
     const signal = agent.getAbortSignal();
 
@@ -427,9 +428,9 @@ export default class AIChatClient {
     const result = await generateText({
       model: this.modelSpec.impl,
       abortSignal: signal,
-      ...generateRequest,
+      ...remaining,
       output: Output.object({
-        schema: request.schema,
+        schema,
       }),
     });
 
@@ -440,7 +441,7 @@ export default class AIChatClient {
       .getServiceByType(MetricsService)
       ?.addCost(`GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
 
-    return [result.output as z.infer<typeof request.schema>, response];
+    return [result.output as z.infer<T>, response];
   }
 
   /**
@@ -493,7 +494,6 @@ ${documentsText}
 Please rank these documents by their relevance to the query.`;
 
     const req = {
-      tools: {},
       instructions: `
 You are a relevance scoring system. Your task is to evaluate how relevant each document is to the given query and rank them accordingly.
 
@@ -511,7 +511,7 @@ Be objective and precise in your scoring.`.trim(),
       ],
       // Create a schema for the reranking output
       schema: rerankSchema,
-    } satisfies ChatRequest & { schema: typeof rerankSchema };
+    } satisfies GenerateRequest<typeof rerankSchema>;
 
     // Use generateObject to get structured reranking results
     const [result] = await this.generateObject(req, agent);

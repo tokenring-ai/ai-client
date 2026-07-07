@@ -1,7 +1,7 @@
 import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
 import { MetricsService } from "@tokenring-ai/metrics";
-import { type GeneratedFile, generateImage, type GenerateImageResult, type ImageModel } from "ai";
+import { type GeneratedFile, type GenerateImageResult, generateImage, type ImageModel } from "ai";
 import { z } from "zod";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
@@ -61,8 +61,7 @@ export default class AIImageGenerationClient {
   constructor(
     private modelSpec: ImageModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.

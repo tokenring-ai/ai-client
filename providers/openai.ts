@@ -1,5 +1,4 @@
-import type { OpenAIImageModelGenerationOptions } from "@ai-sdk/openai";
-import type { OpenAILanguageModelCompletionOptions } from "@ai-sdk/openai";
+import type { OpenAIImageModelGenerationOptions, OpenAILanguageModelCompletionOptions } from "@ai-sdk/openai";
 import { createOpenAI, type OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
@@ -16,9 +15,11 @@ import type { SettingDefinition } from "../ModelTypeRegistry.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
-  providerOptions: z.object({
-    openai: z.custom<OpenAILanguageModelCompletionOptions>().exactOptional()
-  }).exactOptional(),
+  providerOptions: z
+    .object({
+      openai: z.custom<OpenAILanguageModelCompletionOptions>().exactOptional(),
+    })
+    .exactOptional(),
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number(),
   costPerMillionCachedInputTokens: z.number().exactOptional(),
@@ -29,9 +30,11 @@ const ChatModelSchema = z.object({
 
 const ImageGenerationModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
-  providerOptions: z.object({
-    openai: z.custom<OpenAIImageModelGenerationOptions>().exactOptional()
-  }).exactOptional(),
+  providerOptions: z
+    .object({
+      openai: z.custom<OpenAIImageModelGenerationOptions>().exactOptional(),
+    })
+    .exactOptional(),
   costPerMegapixel: z.number(),
   inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
 });
@@ -226,11 +229,10 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
         return !!modelList?.data.some(model => model.id === providerModelId);
       },
       mangleRequest(req, settings) {
-        if (settings.has("websearch")) {
-          req.tools.web_search = openai.tools.webSearch({});
+        if (req.providerOptions.openai === undefined) {
+          req.providerOptions.openai = {};
         }
-
-        const openaiOptions: OpenAIResponsesProviderOptions = ((req.providerOptions ??= {}).openai ??= {});
+        const openaiOptions: OpenAIResponsesProviderOptions = req.providerOptions.openai;
 
         if (settings.has("reasoningEffort")) {
           openaiOptions.reasoningEffort = settings.get("reasoningEffort") as string;
@@ -248,10 +250,14 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
           openaiOptions.textVerbosity = settings.get("textVerbosity") as OpenAIResponsesProviderOptions["textVerbosity"];
         }
         if (settings.has("promptCacheRetention")) {
-          openaiOptions.promptCacheRetention = settings.get("promptCacheRetention") as any;
+          openaiOptions.promptCacheRetention = settings.get("promptCacheRetention") as OpenAIResponsesProviderOptions["promptCacheRetention"];
         }
 
-        return undefined;
+        /* The following settings only apply to requests that use tools */
+        if (!("tools" in req)) return;
+        if (settings.has("websearch")) {
+          req.tools.web_search = openai.tools.webSearch({});
+        }
       },
       settings: baseSettings,
     } satisfies ChatModelSpec;

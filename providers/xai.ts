@@ -143,6 +143,9 @@ export default class XAIProvider extends ModelProvider<XAIConfig> {
             return !!modelList?.data.some(model => model.id === modelId);
           },
           mangleRequest(req, settings) {
+            /* The following settings only apply to requests that use tools */
+            if (!("tools" in req)) return;
+
             if (settings.has("websearch")) {
               req.tools.web_search = xai.tools.webSearch({
                 enableImageUnderstanding: settings.get("webImageUnderstanding") as boolean,

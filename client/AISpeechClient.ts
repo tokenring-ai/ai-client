@@ -35,8 +35,7 @@ export default class AISpeechClient {
   constructor(
     private modelSpec: SpeechModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.

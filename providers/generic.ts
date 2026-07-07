@@ -1,3 +1,4 @@
+import { setTimeout as delay } from "node:timers/promises";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenResponses } from "@ai-sdk/open-responses";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -7,9 +8,8 @@ import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever"
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import type { MaybePromise } from "bun";
 import { deepEquals } from "bun";
-import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
-import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
+import type { ChatModelSpec, ParsedChatRequest } from "../client/AIChatClient.ts";
 import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, EmbeddingModelRegistry } from "../ModelRegistry.ts";
@@ -102,7 +102,7 @@ type EndpointType = "openai" | "anthropic" | "responses";
 
 interface UnderlyingProvider {
   type: EndpointType;
-  mangleRequest?: (req: ChatRequest, settings: ChatModelSettings) => void;
+  mangleRequest?: (req: ParsedChatRequest, settings: ChatModelSettings) => void;
   inputCapabilities?: { image?: boolean; file?: boolean };
 
   getLanguageModel(modelId: string): LanguageModelV4;
@@ -268,8 +268,11 @@ function createUnderlyingProvider(
         getEmbeddingModel: modelId => provider.embeddingModel(modelId),
         buildSettings: buildOpenAISettings,
         mangleRequest(req, settings) {
-          const providerOptions = (req.providerOptions ??= {});
-          const ourOptions = (providerOptions[providerDisplayName] ??= {});
+          const providerOptions = req.providerOptions;
+          if (providerOptions[providerDisplayName] === undefined) {
+            providerOptions[providerDisplayName] = {};
+          }
+          const ourOptions = providerOptions[providerDisplayName];
           if (settings.has("temperature")) req.temperature = settings.get("temperature") as number;
           if (settings.has("top_p")) req.topP = settings.get("top_p") as number;
           if (settings.has("presence_penalty")) req.presencePenalty = settings.get("presence_penalty") as number;
@@ -301,8 +304,11 @@ function createUnderlyingProvider(
         getEmbeddingModel: () => null,
         buildSettings: buildOpenAISettings,
         mangleRequest(req, settings) {
-          const providerOptions = (req.providerOptions ??= {});
-          const ourOptions = (providerOptions[providerDisplayName] ??= {});
+          const providerOptions = req.providerOptions;
+          if (providerOptions[providerDisplayName] === undefined) {
+            providerOptions[providerDisplayName] = {};
+          }
+          const ourOptions = providerOptions[providerDisplayName];
           if (settings.has("temperature")) req.temperature = settings.get("temperature") as number;
           if (settings.has("top_p")) req.topP = settings.get("top_p") as number;
           if (settings.has("presence_penalty")) req.presencePenalty = settings.get("presence_penalty") as number;
@@ -354,12 +360,19 @@ function createUnderlyingProvider(
           };
         },
         mangleRequest(req, settings) {
-          const anthropicOptions = ((req.providerOptions ??= {}).anthropic ??= {});
+          if (req.providerOptions.anthropic === undefined) {
+            req.providerOptions.anthropic = {};
+          }
+          const anthropicOptions = req.providerOptions.anthropic;
           if (settings.get("caching") as boolean) {
             anthropicOptions.cacheControl = { type: "ephemeral" };
           }
+
+          /* The following settings only apply to requests that use tools */
+          if (!("tools" in req)) return;
+
           if (settings.get("websearch") as boolean) {
-            (req.tools ??= {}).web_search = provider.tools.webSearch_20250305({
+            req.tools.web_search = provider.tools.webSearch_20250305({
               maxUses: (settings.get("maxSearchUses") as number | undefined) ?? 5,
             });
           }
@@ -677,9 +690,10 @@ export async function scanModels(
           maxContextLength,
         };
         break;
-      default:
+      default: {
         const exhaustive: any = modelType satisfies never;
         throw new Error(`Unexpected model type: ${exhaustive}`);
+      }
     }
   }
 

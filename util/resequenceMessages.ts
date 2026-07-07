@@ -1,9 +1,9 @@
-import type { ChatInputMessage, ChatRequest } from "../client/AIChatClient.ts";
+import type { ChatInputMessage, ParsedChatRequest } from "../client/AIChatClient.ts";
 import type { TextPart } from "../schema.ts";
 
-export function resequenceMessages(request: ChatRequest) {
+export function resequenceMessages(request: ParsedChatRequest) {
   const { messages } = request;
-  if (!messages || messages.length === 0) return;
+  if (messages.length === 0) return;
 
   const combinedMessages = messages.reduce((acc: ChatInputMessage[], current: ChatInputMessage) => {
     const lastMessage = acc.length === 0 ? null : acc[acc.length - 1];

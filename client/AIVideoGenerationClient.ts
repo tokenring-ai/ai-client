@@ -1,8 +1,7 @@
-import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
-import type { Experimental_VideoModelV4 } from "@ai-sdk/provider";
+import type { Experimental_VideoModelV4, SharedV4ProviderOptions } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
 import { MetricsService } from "@tokenring-ai/metrics";
-import { experimental_generateVideo as generateVideo, type GeneratedFile, type GenerateVideoResult } from "ai";
+import { type GeneratedFile, type GenerateVideoResult, experimental_generateVideo as generateVideo } from "ai";
 import { z } from "zod";
 
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
@@ -63,8 +62,7 @@ export default class AIVideoGenerationClient {
   constructor(
     private modelSpec: VideoModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.

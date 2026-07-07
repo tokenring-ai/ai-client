@@ -2,7 +2,7 @@ import { createGoogleGenerativeAI, type GoogleGenerativeAIProviderOptions } from
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
-import type { ChatModelSpec, ChatRequest } from "../client/AIChatClient.ts";
+import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
@@ -179,12 +179,11 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
         const modelList = await getModels();
         return !!modelList?.models.some(model => model.name.includes(providerModelId));
       },
-      mangleRequest(req: ChatRequest, settings: ChatModelSettings) {
-        if (settings.has("websearch")) {
-          req.tools.google_search = googleProvider.tools.googleSearch({});
+      mangleRequest(req, settings: ChatModelSettings) {
+        if (req.providerOptions.google === undefined) {
+          req.providerOptions.google = {};
         }
-
-        const googleOptions: GoogleGenerativeAIProviderOptions = ((req.providerOptions ??= {}).google ??= {});
+        const googleOptions: GoogleGenerativeAIProviderOptions = req.providerOptions.google;
 
         if (settings.has("responseModalities")) {
           const modalities = settings.get("responseModalities") as "text" | "image" | "text_and_image";
@@ -198,18 +197,36 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
             case "text_and_image":
               googleOptions.responseModalities = ["TEXT", "IMAGE"];
               break;
-            default:
+            default: {
               const exhaustive: any = modalities satisfies never;
               throw new Error(`Unexpected response modality: ${exhaustive}`);
+            }
           }
         }
 
         if (settings.has("thinkingLevel") || settings.has("thinkingBudget") || settings.has("includeThoughts")) {
-          const thinkingConfig: any = {};
-          if (settings.has("thinkingLevel")) thinkingConfig.thinkingLevel = settings.get("thinkingLevel");
-          if (settings.has("thinkingBudget")) thinkingConfig.thinkingBudget = settings.get("thinkingBudget");
-          if (settings.has("includeThoughts")) thinkingConfig.includeThoughts = settings.get("includeThoughts");
+          const thinkingConfig: NonNullable<GoogleGenerativeAIProviderOptions["thinkingConfig"]> = {};
+          if (settings.has("thinkingLevel")) {
+            thinkingConfig.thinkingLevel = settings.get("thinkingLevel") as NonNullable<GoogleGenerativeAIProviderOptions["thinkingConfig"]>["thinkingLevel"];
+          }
+          if (settings.has("thinkingBudget")) {
+            thinkingConfig.thinkingBudget = settings.get("thinkingBudget") as NonNullable<
+              GoogleGenerativeAIProviderOptions["thinkingConfig"]
+            >["thinkingBudget"];
+          }
+          if (settings.has("includeThoughts")) {
+            thinkingConfig.includeThoughts = settings.get("includeThoughts") as NonNullable<
+              GoogleGenerativeAIProviderOptions["thinkingConfig"]
+            >["includeThoughts"];
+          }
           googleOptions.thinkingConfig = thinkingConfig;
+        }
+
+        /* The following settings only apply to requests that use tools */
+        if (!("tools" in req)) return;
+
+        if (settings.has("websearch")) {
+          req.tools.google_search = googleProvider.tools.googleSearch({});
         }
       },
       inputCapabilities: modelConfig.inputCapabilities,

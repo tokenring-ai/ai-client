@@ -138,7 +138,6 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
       } catch {
         break;
       }
-      if (signal.aborted) break;
       try {
         await this.scanAndRegister();
       } catch (err) {
@@ -187,7 +186,7 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
     const filtered = this.config.modelFilter ? modelsData.data.filter(m => this.config.modelFilter!(m)) : modelsData.data;
 
     const fingerprint = filtered
-      .map(m => `${m.id}|${m.context_length}|${m.pricing?.prompt}|${m.pricing?.completion}`)
+      .map(m => `${m.id}|${m.context_length}|${m.pricing.prompt}|${m.pricing.completion}`)
       .sort()
       .join(",");
 
@@ -204,7 +203,7 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
     for (const model of models) {
       if (!model.id) continue;
 
-      const isChatModel = model.architecture?.output_modalities?.includes("text") && model.architecture?.input_modalities?.includes("text");
+      const isChatModel = model.architecture.output_modalities.includes("text") && model.architecture.input_modalities.includes("text");
       if (!isChatModel) continue;
 
       specs.push({
@@ -216,19 +215,25 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
         ...(model.topProvider?.max_completion_tokens && {
           maxCompletionTokens: model.topProvider.max_completion_tokens,
         }),
-        costPerMillionInputTokens: parsePricing(model.pricing?.prompt),
-        costPerMillionOutputTokens: parsePricing(model.pricing?.completion),
+        costPerMillionInputTokens: parsePricing(model.pricing.prompt),
+        costPerMillionOutputTokens: parsePricing(model.pricing.completion),
         inputCapabilities: {
-          image: model.architecture?.input_modalities?.includes("image"),
-          video: model.architecture?.input_modalities?.includes("video"),
-          audio: model.architecture?.input_modalities?.includes("audio"),
-          file: model.architecture?.input_modalities?.includes("file"),
+          image: model.architecture.input_modalities.includes("image"),
+          video: model.architecture.input_modalities.includes("video"),
+          audio: model.architecture.input_modalities.includes("audio"),
+          file: model.architecture.input_modalities.includes("file"),
         },
         mangleRequest(req, settings) {
-          const supported = model.supported_parameters ?? [];
+          const supported = model.supported_parameters;
 
           if (settings.has("websearch")) {
-            const plugins = (((req.providerOptions ??= {}).openrouter ??= {}).plugins ??= []) as JSONArray;
+            if (req.providerOptions.openrouter === undefined) {
+              req.providerOptions.openrouter = {};
+            }
+            if (req.providerOptions.openrouter.plugins === undefined) {
+              req.providerOptions.openrouter.plugins = [];
+            }
+            const plugins = req.providerOptions.openrouter.plugins as JSONArray;
             const webPlugin: any = { id: "web" };
 
             if (settings.has("searchEngine")) {
@@ -245,8 +250,10 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
           }
 
           if (settings.has("searchContextSize")) {
-            const webSearchOptions = ((req.providerOptions ??= {}).web_search_options ??= {});
-            webSearchOptions.search_context_size = settings.get("searchContextSize") as number;
+            if (req.providerOptions.web_search_options === undefined) {
+              req.providerOptions.web_search_options = {};
+            }
+            req.providerOptions.web_search_options.search_context_size = settings.get("searchContextSize") as number;
           }
 
           const params: Record<string, any> = {};
@@ -262,7 +269,10 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
           if (supported.includes("reasoning") && settings.has("reasoning")) params.reasoning = settings.get("reasoning");
 
           if (Object.keys(params).length > 0) {
-            Object.assign(((req.providerOptions ??= {}).openrouter ??= {}), params);
+            if (req.providerOptions.openrouter === undefined) {
+              req.providerOptions.openrouter = {};
+            }
+            Object.assign(req.providerOptions.openrouter, params);
           }
         },
         settings: {

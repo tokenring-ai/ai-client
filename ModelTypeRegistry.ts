@@ -40,36 +40,6 @@ export const ModelSettingsDefinitionSchema = z.discriminatedUnion("type", [
 
 export type SettingDefinition = z.infer<typeof ModelSettingsDefinitionSchema>;
 
-/*
-export type SettingDefinition = {
-  description: string;
-} & (
-  | {
-      type: "boolean";
-      defaultValue?: boolean | undefined;
-    }
-  | {
-      type: "number";
-      defaultValue?: number | undefined;
-      min?: number;
-      max?: number;
-    }
-  | {
-      type: "string";
-      defaultValue?: string | undefined;
-    }
-  | {
-      type: "enum";
-      defaultValue?: PrimitiveType;
-      values: PrimitiveType[];
-    }
-  | {
-      type: "array";
-      defaultValue?: PrimitiveType[] | undefined;
-    }
-);
-
- */
 export type ChatModelSettings = Map<string, PrimitiveType>;
 
 export const SerializedModelSpecSchema = z.object({
@@ -77,9 +47,7 @@ export const SerializedModelSpecSchema = z.object({
   providerDisplayName: z.string(),
 });
 
-export type ModelSpec = {
-  modelId: string;
-  providerDisplayName: string;
+export type ModelSpec = z.infer<typeof SerializedModelSpecSchema> & {
   isAvailable?: () => MaybePromise<boolean>;
   isHot?: () => MaybePromise<boolean>;
   settings?: Record<string, SettingDefinition> | undefined;

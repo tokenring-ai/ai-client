@@ -1,6 +1,6 @@
 import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
-import { type DataContent, transcribe, type TranscriptionModel } from "ai";
+import { type DataContent, type TranscriptionModel, transcribe } from "ai";
 import { z } from "zod";
 import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
 import { createModelSpecSchema, type ModelInputCapabilities, TranscriptionModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
@@ -37,8 +37,7 @@ export default class AITranscriptionClient {
   constructor(
     private readonly modelSpec: TranscriptionModelSpec,
     private settings: ChatModelSettings,
-  ) {
-  }
+  ) {}
 
   /**
    * Set settings for this client instance.
