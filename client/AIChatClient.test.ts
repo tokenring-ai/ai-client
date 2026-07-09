@@ -1,12 +1,12 @@
 import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import { describe, expect, it } from "vitest";
-import { type ChatModelSpec, normalizeChatModelSpec } from "./AIChatClient.ts";
-import { normalizeEmbeddingModelSpec } from "./AIEmbeddingClient.ts";
-import { normalizeTranscriptionModelSpec } from "./AITranscriptionClient.ts";
+import { type ChatModelSpec, ChatModelSpecSchema } from "./AIChatClient.ts";
+import { EmbeddingModelSpecSchema } from "./AIEmbeddingClient.ts";
+import { TranscriptionModelSpecSchema } from "./AITranscriptionClient.ts";
 
 describe("normalizeChatModelSpec", () => {
   it("applies default capability metadata", () => {
-    const modelSpec = normalizeChatModelSpec({
+    const modelSpec = ChatModelSpecSchema.parse({
       modelId: "test-model",
       providerDisplayName: "Test",
       impl: {} as ChatModelSpec["impl"],
@@ -22,7 +22,7 @@ describe("normalizeChatModelSpec", () => {
   });
 
   it("preserves explicit capability overrides", () => {
-    const modelSpec = normalizeChatModelSpec({
+    const modelSpec = ChatModelSpecSchema.parse({
       modelId: "test-model",
       providerDisplayName: "Test",
       impl: {} as ChatModelSpec["impl"],
@@ -40,7 +40,7 @@ describe("normalizeChatModelSpec", () => {
   });
 
   it("defaults non-chat model input capabilities to empty when omitted", () => {
-    const modelSpec = normalizeEmbeddingModelSpec({
+    const modelSpec = EmbeddingModelSpecSchema.parse({
       modelId: "embedding-model",
       providerDisplayName: "Test",
       impl: {} as any,
@@ -53,7 +53,7 @@ describe("normalizeChatModelSpec", () => {
   });
 
   it("defaults transcription models to provided audio input capabilities", () => {
-    const modelSpec = normalizeTranscriptionModelSpec({
+    const modelSpec = TranscriptionModelSpecSchema.parse({
       modelId: "transcription-model",
       providerDisplayName: "Test",
       impl: {} as any,
