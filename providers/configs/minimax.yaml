@@ -7,6 +7,17 @@ Minimax:
   noModelList: true
   models:
     chat:
+      MiniMax-M3:
+        costPerMillionInputTokens: 0.3
+        costPerMillionOutputTokens: 1.2
+        costPerMillionCachedInputTokens: 0.06
+        maxContextLength: 524288
+      MiniMax-M3-LongContent:
+        providerModelId: MiniMax-M3
+        costPerMillionInputTokens: 0.6
+        costPerMillionOutputTokens: 2.4
+        costPerMillionCachedInputTokens: 0.12
+        maxContextLength: 1048576
       MiniMax-M2.7:
         costPerMillionInputTokens: 0.3
         costPerMillionOutputTokens: 1.2
