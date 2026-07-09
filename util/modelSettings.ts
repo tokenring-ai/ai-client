@@ -1,12 +1,12 @@
-import type { ChatModelSettings } from "@tokenring-ai/ai-client/ModelTypeRegistry";
+import type { ModelSettings } from "@tokenring-ai/ai-client/ModelTypeRegistry";
 
 export function parseModelAndSettings(model: string): {
   base: string;
-  settings: ChatModelSettings;
+  settings: ModelSettings;
 } {
   const qIndex = model.indexOf("?");
   const base = qIndex >= 0 ? model.substring(0, qIndex) : model;
-  const settings: ChatModelSettings = new Map();
+  const settings: ModelSettings = new Map();
   if (qIndex >= 0) {
     for (const part of model.substring(qIndex + 1).split("&")) {
       if (!part) continue;
@@ -26,7 +26,7 @@ export function coerceFeatureValue(v: string): true | false | number | string {
   return v;
 }
 
-export function serializeModel(base: string, settings: ChatModelSettings): string {
+export function serializeModel(base: string, settings: ModelSettings): string {
   const entries = Array.from(settings.entries()).filter(([, v]) => v !== undefined);
   if (entries.length === 0) return base;
   const query = entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "boolean" ? (v ? "1" : "0") : String(v))}`).join("&");

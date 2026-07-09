@@ -1,8 +1,10 @@
 import type { OpenAIImageModelGenerationOptions, OpenAILanguageModelCompletionOptions } from "@ai-sdk/openai";
 import { createOpenAI, type OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
+import type { JSONObject } from "@ai-sdk/provider";
+import { audioMimeTypes, imageMimeTypes, textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
+import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
-import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
@@ -25,18 +27,15 @@ const ChatModelSchema = z.object({
   costPerMillionCachedInputTokens: z.number().exactOptional(),
   maxContextLength: z.number(),
   features: z.array(z.string()).exactOptional(),
-  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
+  inputCapabilities: ModelInputCapabilitiesSchema.default([]),
 });
 
 const ImageGenerationModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
-  providerOptions: z
-    .object({
-      openai: z.custom<OpenAIImageModelGenerationOptions>().exactOptional(),
-    })
-    .exactOptional(),
+  // Flat OpenAI image options from YAML (e.g. quality: high); nested under `openai` on the model spec.
+  providerOptions: z.custom<OpenAIImageModelGenerationOptions>().exactOptional(),
   costPerMegapixel: z.number(),
-  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
+  inputCapabilities: ModelInputCapabilitiesSchema.default([]),
 });
 
 const TextToSpeechModelSchema = z.object({
@@ -219,11 +218,8 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
       costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
       costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
       maxContextLength: modelConfig.maxContextLength,
-      inputCapabilities: deepClone(modelConfig.inputCapabilities, supportsAudioInput ? { audio: true, file: true } : {}),
-      ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
-        costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
-      }),
-      ...modelConfig.providerOptions,
+      inputCapabilities: dedupe([...textMimeTypes, ...imageMimeTypes, ...(supportsAudioInput ? audioMimeTypes : []), ...modelConfig.inputCapabilities]),
+      ...(modelConfig.providerOptions && { providerOptions: modelConfig.providerOptions }),
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some(model => model.id === providerModelId);
@@ -279,7 +275,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
         modelId: variantId,
         providerDisplayName: this.name,
         impl: openai.imageModel(baseModelId),
-        inputCapabilities: modelConfig.inputCapabilities,
+        inputCapabilities: dedupe([...textMimeTypes, ...imageMimeTypes, ...modelConfig.inputCapabilities]),
         async isAvailable() {
           const modelList = await getModels();
           return !!modelList?.data.some(model => model.id === baseModelId);
@@ -290,7 +286,11 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
 
           return (modelConfig.costPerMegapixel * size[0] * size[1]) / 1000000;
         },
-        ...modelConfig.providerOptions,
+        ...(modelConfig.providerOptions && {
+          providerOptions: {
+            openai: modelConfig.providerOptions as JSONObject,
+          },
+        }),
       } satisfies ImageModelSpec;
     });
   }
@@ -304,9 +304,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
           modelId,
           providerDisplayName: this.name,
           impl: openai.speech(modelId),
-          isAvailable() {
-            return true;
-          },
+          inputCapabilities: [...textMimeTypes],
           costPerMillionCharacters: modelConfig.costPerMillionCharacters,
         }) satisfies SpeechModelSpec,
     );
@@ -321,9 +319,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
           modelId,
           providerDisplayName: this.name,
           impl: openai.transcription(modelId),
-          isAvailable() {
-            return true;
-          },
+          inputCapabilities: [...audioMimeTypes],
           costPerMinute: modelConfig.costPerMinute,
         }) satisfies TranscriptionModelSpec,
     );

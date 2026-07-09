@@ -1,4 +1,5 @@
 import { createFal } from "@ai-sdk/fal";
+import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
 import { z } from "zod";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
@@ -80,9 +81,7 @@ export default class FalProvider extends ModelProvider<FalConfig> {
           modelId,
           providerDisplayName: this.name,
           impl: fal.image(modelId),
-          isAvailable() {
-            return true;
-          },
+          inputCapabilities: [...textMimeTypes],
           calculateImageCost(req) {
             const size = req.size.split("x").map(Number);
             if (!size[0] || !size[1]) throw new Error(`Invalid size: ${req.size}`);

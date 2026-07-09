@@ -1,44 +1,47 @@
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import { type RerankingModel, type RerankResult, rerank } from "ai";
 import { z } from "zod";
-import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
-import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
+import type { ModelSettings } from "../ModelTypeRegistry.ts";
+import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
 
-export type RerankingModelSpec = ModelSpec & {
-  costPerMillionInputTokens?: number;
-  impl: Exclude<RerankingModel, string>;
-  inputCapabilities?: Partial<ModelInputCapabilities>;
-  mangleRequest?: (req: { query: string; documents: string[] }, settings?: Record<string, any>) => void;
-};
+export const RerankingRequestSchema = z.object({
+  query: z.string(),
+  documents: z.array(z.string()),
+  topN: z.number().exactOptional(),
+  providerOptions: ProviderOptionsSchema.prefault({}),
+});
 
-export const RerankingModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+export type RerankingRequest = z.input<typeof RerankingRequestSchema>;
+export type ParsedRerankingRequest = z.output<typeof RerankingRequestSchema>;
+
+export const RerankingModelSpecSchema = BaseModelSpecSchema.extend({
+  impl: z.custom<Exclude<RerankingModel, string>>(),
+  mangleRequest: z.custom<(req: ParsedRerankingRequest, settings: ModelSettings) => void>().exactOptional(),
+
   costPerMillionInputTokens: z.number().exactOptional(),
 });
 
-export function normalizeRerankingModelSpec(modelSpec: RerankingModelSpec): RerankingModelSpec {
-  return RerankingModelSpecSchema.parse({
-    ...modelSpec,
-    inputCapabilities: modelSpec.inputCapabilities ?? {},
-  }) as RerankingModelSpec;
-}
+export type RerankingModelSpec = z.input<typeof RerankingModelSpecSchema>;
+export type ParsedRerankingModelSpec = z.output<typeof RerankingModelSpecSchema>;
 
 export default class AIRerankingClient {
   constructor(
     private readonly modelSpec: RerankingModelSpec,
-    private settings: ChatModelSettings,
+    private settings: ModelSettings,
   ) {}
 
   /**
    * Set settings for this client instance.
    */
-  setSettings(settings: ChatModelSettings): void {
+  setSettings(settings: ModelSettings): void {
     this.settings = new Map(settings.entries());
   }
 
   /**
    * Get a copy of the settings.
    */
-  getSettings(): ChatModelSettings {
+  getSettings(): ModelSettings {
     return new Map(this.settings.entries());
   }
 
@@ -46,20 +49,16 @@ export default class AIRerankingClient {
     return this.modelSpec.impl.modelId;
   }
 
-  rerank({ query, documents, topN }: { query: string; documents: string[]; topN?: number }): Promise<RerankResult<string>> {
-    if (this.modelSpec.mangleRequest) {
-      const req = { query, documents };
-      this.modelSpec.mangleRequest(req, this.settings);
-      query = req.query;
-      documents = req.documents;
-    }
+  rerank(request: RerankingRequest): Promise<RerankResult<string>> {
+    const parsedRequest = RerankingRequestSchema.parse(request);
+    parsedRequest.providerOptions = deepClone(this.modelSpec.providerOptions, parsedRequest.providerOptions);
+
+    this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
 
     return rerank(
       stripUndefinedKeys({
         model: this.modelSpec.impl,
-        query,
-        documents,
-        topN,
+        ...parsedRequest,
       }),
     );
   }

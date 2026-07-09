@@ -1,11 +1,12 @@
 import { perplexity } from "@ai-sdk/perplexity";
 import type { JSONObject } from "@ai-sdk/provider";
+import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
 import { z } from "zod";
 import type { ChatModelSpec, ParsedChatRequest } from "../client/AIChatClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
-import type { ChatModelSettings } from "../ModelTypeRegistry.ts";
+import type { ModelSettings } from "../ModelTypeRegistry.ts";
 import { resequenceMessages } from "../util/resequenceMessages.ts";
 
 const ChatModelSchema = z.object({
@@ -27,7 +28,7 @@ const PerplexityModelProviderConfigSchema = z.object({
 
 type PerplexityConfig = z.output<typeof PerplexityModelProviderConfigSchema>;
 
-function mangleRequest(request: ParsedChatRequest, settings: ChatModelSettings): void {
+function mangleRequest(request: ParsedChatRequest, settings: ModelSettings): void {
   if (request.providerOptions.perplexity === undefined) {
     request.providerOptions.perplexity = {};
   }
@@ -106,9 +107,7 @@ export default class PerplexityProvider extends ModelProvider<PerplexityConfig> 
           costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
           costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
           maxContextLength: modelConfig.maxContextLength,
-          isAvailable() {
-            return true;
-          },
+          inputCapabilities: [...textMimeTypes],
           settings: {
             websearch: {
               description: "Enables web search",

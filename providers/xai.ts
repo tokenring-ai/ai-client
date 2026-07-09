@@ -1,5 +1,7 @@
 import { xai } from "@ai-sdk/xai";
+import { imageMimeTypes, textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
+import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import { z } from "zod";
@@ -15,12 +17,12 @@ const ChatModelSchema = z.object({
   costPerMillionOutputTokens: z.number(),
   costPerMillionCachedInputTokens: z.number().exactOptional(),
   maxContextLength: z.number(),
-  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
+  inputCapabilities: ModelInputCapabilitiesSchema.default([]),
 });
 
 const ImageGenerationModelSchema = z.object({
   costPerImage: z.number(),
-  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
+  inputCapabilities: ModelInputCapabilitiesSchema.default([...imageMimeTypes]),
 });
 
 const VideoGenerationModelSchema = z.object({
@@ -206,7 +208,7 @@ export default class XAIProvider extends ModelProvider<XAIConfig> {
               type: "boolean",
             },
           },
-          inputCapabilities: modelConfig.inputCapabilities,
+          inputCapabilities: dedupe([...textMimeTypes, ...imageMimeTypes, ...modelConfig.inputCapabilities]),
         }) satisfies ChatModelSpec,
     );
   }
@@ -243,7 +245,7 @@ export default class XAIProvider extends ModelProvider<XAIConfig> {
           modelId,
           providerDisplayName: this.name,
           impl: xai.videoModel(modelId),
-          inputCapabilities: { image: true },
+          inputCapabilities: [...imageMimeTypes],
           async isAvailable() {
             const modelList = await getModels();
             return !!modelList?.data.some(model => model.id === modelId);

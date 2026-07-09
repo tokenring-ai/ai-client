@@ -1,3 +1,4 @@
+import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import { describe, expect, it } from "vitest";
 import { type ChatModelSpec, normalizeChatModelSpec } from "./AIChatClient.ts";
 import { normalizeEmbeddingModelSpec } from "./AIEmbeddingClient.ts";
@@ -12,17 +13,12 @@ describe("normalizeChatModelSpec", () => {
       maxContextLength: 1024,
       costPerMillionInputTokens: 0,
       costPerMillionOutputTokens: 0,
+      inputCapabilities: [],
     });
 
     expect(modelSpec.tools).toBe(true);
     expect(modelSpec.structuredOutput).toBe(true);
-    expect(modelSpec.inputCapabilities).toEqual({
-      text: true,
-      image: false,
-      video: false,
-      audio: false,
-      file: false,
-    });
+    expect(modelSpec.inputCapabilities).toEqual([]);
   });
 
   it("preserves explicit capability overrides", () => {
@@ -35,54 +31,35 @@ describe("normalizeChatModelSpec", () => {
       costPerMillionOutputTokens: 0,
       tools: false,
       structuredOutput: false,
-      inputCapabilities: {
-        image: ["image/png"],
-        file: true,
-      },
+      inputCapabilities: [...textMimeTypes, "image/png"],
     });
 
     expect(modelSpec.tools).toBe(false);
     expect(modelSpec.structuredOutput).toBe(false);
-    expect(modelSpec.inputCapabilities).toEqual({
-      text: true,
-      image: ["image/png"],
-      video: false,
-      audio: false,
-      file: true,
-    });
+    expect(modelSpec.inputCapabilities).toEqual([...textMimeTypes, "image/png"]);
   });
 
-  it("defaults non-chat model input capabilities to text only", () => {
+  it("defaults non-chat model input capabilities to empty when omitted", () => {
     const modelSpec = normalizeEmbeddingModelSpec({
       modelId: "embedding-model",
       providerDisplayName: "Test",
       impl: {} as any,
       contextLength: 1024,
       costPerMillionInputTokens: 0,
+      inputCapabilities: [...textMimeTypes],
     });
 
-    expect(modelSpec.inputCapabilities).toEqual({
-      text: true,
-      image: false,
-      video: false,
-      audio: false,
-      file: false,
-    });
+    expect(modelSpec.inputCapabilities).toEqual([...textMimeTypes]);
   });
 
-  it("defaults transcription models to audio input and no text input", () => {
+  it("defaults transcription models to provided audio input capabilities", () => {
     const modelSpec = normalizeTranscriptionModelSpec({
       modelId: "transcription-model",
       providerDisplayName: "Test",
       impl: {} as any,
+      inputCapabilities: ["audio/wav", "audio/mpeg", "audio/webm"],
     });
 
-    expect(modelSpec.inputCapabilities).toEqual({
-      text: false,
-      image: false,
-      video: false,
-      audio: true,
-      file: false,
-    });
+    expect(modelSpec.inputCapabilities).toEqual(["audio/wav", "audio/mpeg", "audio/webm"]);
   });
 });

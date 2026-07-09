@@ -1,4 +1,5 @@
 import { createElevenLabs } from "@ai-sdk/elevenlabs";
+import { audioMimeTypes, textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
 import { z } from "zod";
 import type { SpeechModelSpec } from "../client/AISpeechClient.ts";
@@ -95,9 +96,7 @@ export default class ElevenLabsProvider extends ModelProvider<ElevenLabsConfig> 
           modelId,
           providerDisplayName: this.name,
           impl: elevenlabs.speech(modelId),
-          isAvailable() {
-            return true;
-          },
+          inputCapabilities: [...textMimeTypes],
           costPerMillionCharacters: modelConfig.costPerMillionCharacters,
           settings: {
             voice: {
@@ -146,9 +145,7 @@ export default class ElevenLabsProvider extends ModelProvider<ElevenLabsConfig> 
           modelId,
           providerDisplayName: this.name,
           impl: elevenlabs.transcription(modelId),
-          isAvailable() {
-            return true;
-          },
+          inputCapabilities: [...audioMimeTypes],
           costPerMinute: modelConfig.costPerMinute,
           settings: {
             languageCode: {

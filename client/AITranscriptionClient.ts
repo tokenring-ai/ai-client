@@ -1,69 +1,62 @@
-import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { type DataContent, type TranscriptionModel, transcribe } from "ai";
 import { z } from "zod";
-import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
-import { createModelSpecSchema, type ModelInputCapabilities, TranscriptionModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
+import type { ModelSettings } from "../ModelTypeRegistry.ts";
+import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
 
 export interface TranscriptionResult {
   text: string;
 }
 
-export type TranscriptionRequest = {
-  audio: DataContent | URL;
-};
+export const TranscriptionRequestSchema = z.object({
+  audio: z.custom<DataContent | URL>(),
+  providerOptions: ProviderOptionsSchema.prefault({}),
+});
 
-export type TranscriptionModelSpec = ModelSpec & {
-  costPerMinute?: number;
-  impl: TranscriptionModel;
-  inputCapabilities?: Partial<ModelInputCapabilities>;
-  providerOptions?: SharedV4ProviderOptions;
-  /** Optional hook to adjust the request prior to sending. */
-  mangleRequest?: (req: TranscriptionRequest, settings?: Record<string, any>) => void;
-};
+export type TranscriptionRequest = z.input<typeof TranscriptionRequestSchema>;
+export type ParsedTranscriptionRequest = z.output<typeof TranscriptionRequestSchema>;
 
-export const TranscriptionModelSpecSchema = createModelSpecSchema(TranscriptionModelInputCapabilitiesSchema).extend({
+export const TranscriptionModelSpecSchema = BaseModelSpecSchema.extend({
+  impl: z.custom<TranscriptionModel>(),
+  mangleRequest: z.custom<(req: ParsedTranscriptionRequest, settings: ModelSettings) => void>().exactOptional(),
   costPerMinute: z.number().exactOptional(),
 });
 
-export function normalizeTranscriptionModelSpec(modelSpec: TranscriptionModelSpec): TranscriptionModelSpec {
-  return TranscriptionModelSpecSchema.parse({
-    ...modelSpec,
-    inputCapabilities: modelSpec.inputCapabilities ?? {},
-  }) as TranscriptionModelSpec;
-}
+export type TranscriptionModelSpec = z.input<typeof TranscriptionModelSpecSchema>;
+export type ParsedTranscriptionModelSpec = z.output<typeof TranscriptionModelSpecSchema>;
 
 export default class AITranscriptionClient {
   constructor(
     private readonly modelSpec: TranscriptionModelSpec,
-    private settings: ChatModelSettings,
+    private settings: ModelSettings,
   ) {}
 
   /**
    * Set settings for this client instance.
    */
-  setSettings(settings: ChatModelSettings): void {
+  setSettings(settings: ModelSettings): void {
     this.settings = new Map(settings.entries());
   }
 
   /**
    * Get a copy of the settings.
    */
-  getSettings(): ChatModelSettings {
+  getSettings(): ModelSettings {
     return new Map(this.settings.entries());
   }
 
   async transcribe(request: TranscriptionRequest, agent: Agent): Promise<[string, TranscriptionResult]> {
     const signal = agent.getAbortSignal();
 
-    if (this.modelSpec.mangleRequest) {
-      request = { ...request };
-      this.modelSpec.mangleRequest(request, this.settings);
-    }
+    const parsedRequest = TranscriptionRequestSchema.parse(request);
+    parsedRequest.providerOptions = deepClone(this.modelSpec.providerOptions, parsedRequest.providerOptions);
+
+    this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
+
     const result = await transcribe({
-      ...request,
+      ...parsedRequest,
       model: this.modelSpec.impl,
-      providerOptions: this.modelSpec.providerOptions ?? {},
       abortSignal: signal,
     });
 

@@ -1,7 +1,7 @@
-import type { JSONObject, LanguageModelV4Source, SharedV4Warning } from "@ai-sdk/provider";
+import type { LanguageModelV4Source, SharedV4Warning } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
-import { BaseAttachmentSchema } from "@tokenring-ai/agent/AgentEvents";
 import { MetricsService } from "@tokenring-ai/metrics";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import type { ModelMessage, ProviderMetadata } from "ai";
 import {
@@ -21,9 +21,8 @@ import {
   userModelMessageSchema,
 } from "ai";
 import { type ZodObject, z } from "zod";
-import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
-import { SerializedModelSpecSchema } from "../ModelTypeRegistry.ts";
-import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
+import type { ModelSettings } from "../ModelTypeRegistry.ts";
+import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
 
 // Use the authoritative schemas from the AI SDK for chat message validation and types.
 // These are fully validating and ensure exact compatibility + serializability.
@@ -42,7 +41,7 @@ export const BaseChatRequestSchema = z.object({
   topK: z.number().exactOptional(),
   frequencyPenalty: z.number().exactOptional(),
   presencePenalty: z.number().exactOptional(),
-  providerOptions: z.record(z.string(), z.custom<JSONObject>()).prefault({}),
+  providerOptions: ProviderOptionsSchema.prefault({}),
   instructions: z.string(),
   messages: z.array(ChatInputMessageSchema),
   parallelTools: z.boolean().exactOptional(),
@@ -86,28 +85,9 @@ export type RerankRequest = {
   topN?: number | undefined;
 };
 
-export const SerializedChatModelSpecSchema = SerializedModelSpecSchema.extend({
-  maxContextLength: z.number(),
-  maxCompletionTokens: z.number().exactOptional(),
-  costPerMillionInputTokens: z.number(),
-  costPerMillionOutputTokens: z.number(),
-  costPerMillionCachedInputTokens: z.number().exactOptional(),
-  costPerMillionReasoningTokens: z.number().exactOptional(),
-  tools: z.boolean().exactOptional(),
-  structuredOutput: z.boolean().exactOptional(),
-  webSearch: z.boolean().exactOptional(),
-  inputCapabilities: ModelInputCapabilitiesSchema.exactOptional(),
-});
-
-export type ChatModelSpec = z.input<typeof SerializedChatModelSpecSchema> &
-  ModelSpec & {
-    impl: Exclude<LanguageModel, string>;
-    mangleRequest?: (req: ParsedChatRequest, settings: ChatModelSettings) => void;
-  };
-
-export type ChatModelInputCapabilities = ModelInputCapabilities;
-
-export const ChatModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+export const ChatModelSpecSchema = BaseModelSpecSchema.extend({
+  impl: z.custom<Exclude<LanguageModel, string>>(),
+  mangleRequest: z.custom<(req: ParsedChatRequest, settings: ModelSettings) => void>().exactOptional(),
   tools: z.boolean().default(true),
   structuredOutput: z.boolean().default(true),
   webSearch: z.boolean().exactOptional(),
@@ -119,12 +99,15 @@ export const ChatModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesS
   costPerMillionReasoningTokens: z.number().exactOptional(),
 });
 
-export function normalizeChatModelSpec(modelSpec: ChatModelSpec): ChatModelSpec {
-  return ChatModelSpecSchema.parse({
-    ...modelSpec,
-    inputCapabilities: modelSpec.inputCapabilities ?? {},
-  }) as ChatModelSpec;
-}
+export type ChatModelSpec = z.input<typeof ChatModelSpecSchema>;
+export type ParsedChatModelSpec = z.output<typeof ChatModelSpecSchema>;
+
+export const SerializedChatModelSpecSchema = ChatModelSpecSchema.omit({
+  impl: true,
+  mangleRequest: true,
+  isAvailable: true,
+  isHot: true,
+});
 
 export const AIResponseCostSchema = z.object({
   input: z.number().exactOptional(),
@@ -183,20 +166,20 @@ const rerankSchema = z.object({
 export default class AIChatClient {
   constructor(
     private readonly modelSpec: ChatModelSpec,
-    private settings: ChatModelSettings,
+    private settings: ModelSettings,
   ) {}
 
   /**
    * Set settings for this client instance.
    */
-  setSettings(settings: ChatModelSettings): void {
+  setSettings(settings: ModelSettings): void {
     this.settings = new Map(settings.entries());
   }
 
   /**
    * Get a copy of the settings.
    */
-  getSettings(): ChatModelSettings {
+  getSettings(): ModelSettings {
     return new Map(this.settings.entries());
   }
 
@@ -253,6 +236,7 @@ export default class AIChatClient {
     const signal = agent.getAbortSignal();
 
     const parsedRequest = AgentRequestWithToolsSchema.parse(request);
+    parsedRequest.providerOptions = deepClone(this.modelSpec.providerOptions, parsedRequest.providerOptions);
 
     this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
 
@@ -310,22 +294,6 @@ export default class AIChatClient {
     try {
       for await (const part of stream) {
         switch (part.type) {
-          case "file":
-            {
-              flushBuffer(true);
-              const mimeType = BaseAttachmentSchema.shape.mimeType.parse(part.file.mediaType);
-              try {
-                agent.artifactOutput({
-                  name: "Generated File",
-                  encoding: "base64",
-                  mimeType,
-                  body: part.file.base64,
-                });
-              } catch {
-                agent.errorMessage(`The LLM generated a file with ${mimeType} output type, which is unsupported, and has been dropped`);
-              }
-            }
-            break;
           case "text-end":
           case "reasoning-end":
             {
@@ -391,6 +359,7 @@ export default class AIChatClient {
    */
   async textChat<TOOLS extends ToolSet>(request: AgentRequestWithTools<TOOLS>, agent: Agent): Promise<[string, AIResponse]> {
     const parsedRequest = AgentRequestWithToolsSchema.parse(request);
+    parsedRequest.providerOptions = deepClone(this.modelSpec.providerOptions, parsedRequest.providerOptions);
 
     this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
 
@@ -417,6 +386,7 @@ export default class AIChatClient {
    */
   async generateObject<T extends ZodObject>(request: GenerateRequest<T>, agent: Agent): Promise<[z.infer<T>, AIResponse]> {
     const parsedRequest = GenerateRequestSchema.parse(request);
+    parsedRequest.providerOptions = deepClone(this.modelSpec.providerOptions, parsedRequest.providerOptions);
 
     this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
 

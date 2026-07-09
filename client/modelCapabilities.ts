@@ -1,21 +1,14 @@
+import type { JSONObject } from "@ai-sdk/provider";
+import { audioMimeTypes, imageMimeTypes, textMimeTypes, videoMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import { z } from "zod";
 
-export const ModelInputCapabilitySchema = z.union([z.boolean(), z.array(z.string())]);
-export type ModelInputCapability = z.infer<typeof ModelInputCapabilitySchema>;
+export const ModelInputCapabilitiesSchema = z.array(z.enum([...textMimeTypes, ...audioMimeTypes, ...videoMimeTypes, ...imageMimeTypes]));
 
-export const ModelInputCapabilitiesSchema = z.object({
-  text: z.boolean().default(true),
-  image: ModelInputCapabilitySchema.default(false),
-  video: ModelInputCapabilitySchema.default(false),
-  audio: ModelInputCapabilitySchema.default(false),
-  file: ModelInputCapabilitySchema.default(false),
-});
 export type ModelInputCapabilities = z.infer<typeof ModelInputCapabilitiesSchema>;
 
-export const TranscriptionModelInputCapabilitiesSchema = ModelInputCapabilitiesSchema.extend({
-  text: z.boolean().default(false),
-  audio: ModelInputCapabilitySchema.default(true),
-});
+/** Provider options map: provider name → option object. */
+export const ProviderOptionsSchema = z.record(z.string(), z.custom<JSONObject>());
+export type ProviderOptions = z.infer<typeof ProviderOptionsSchema>;
 
 export const BaseModelSpecSchema = z.object({
   modelId: z.string(),
@@ -23,13 +16,7 @@ export const BaseModelSpecSchema = z.object({
   isAvailable: z.function({ input: z.tuple([]), output: z.promise(z.boolean()) }).exactOptional(),
   isHot: z.function({ input: z.tuple([]), output: z.promise(z.boolean()) }).exactOptional(),
   settings: z.record(z.string(), z.any()).exactOptional(),
+  inputCapabilities: ModelInputCapabilitiesSchema,
+  /** Default provider options merged into every request (request values win). */
+  providerOptions: ProviderOptionsSchema.exactOptional(),
 });
-
-export function createModelSpecSchema<TInputCapabilities extends z.ZodTypeAny>(inputCapabilitiesSchema: TInputCapabilities) {
-  return BaseModelSpecSchema.extend({
-    impl: z.any(),
-    mangleRequest: z.function().exactOptional(),
-    providerOptions: z.any().exactOptional(),
-    inputCapabilities: inputCapabilitiesSchema.exactOptional(),
-  }).loose();
-}

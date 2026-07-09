@@ -1,4 +1,5 @@
 import { createDeepSeek } from "@ai-sdk/deepseek";
+import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
@@ -107,6 +108,7 @@ export default class DeepSeekProvider extends ModelProvider<DeepSeekConfig> {
           costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
           costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
           maxContextLength: modelConfig.maxContextLength,
+          inputCapabilities: [...textMimeTypes],
           ...(modelConfig.costPerMillionCachedInputTokens !== undefined && {
             costPerMillionCachedInputTokens: modelConfig.costPerMillionCachedInputTokens,
           }),

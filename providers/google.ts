@@ -1,5 +1,7 @@
 import { createGoogleGenerativeAI, type GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import { audioMimeTypes, imageMimeTypes, textMimeTypes, videoMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
+import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
@@ -7,7 +9,7 @@ import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, ImageGenerationModelRegistry } from "../ModelRegistry.ts";
-import type { ChatModelSettings, SettingDefinition } from "../ModelTypeRegistry.ts";
+import type { ModelSettings, SettingDefinition } from "../ModelTypeRegistry.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
@@ -16,12 +18,12 @@ const ChatModelSchema = z.object({
   costPerMillionCachedInputTokens: z.number().exactOptional(),
   maxContextLength: z.number(),
   features: z.array(z.string()).exactOptional(),
-  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, video: true, audio: true, file: true }),
+  inputCapabilities: ModelInputCapabilitiesSchema.default([]),
 });
 
 const ImageGenerationModelSchema = z.object({
   costPerImage: z.number(),
-  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
+  inputCapabilities: ModelInputCapabilitiesSchema.default([]),
 });
 
 const GoogleModelsSchema = z.object({
@@ -179,7 +181,7 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
         const modelList = await getModels();
         return !!modelList?.models.some(model => model.name.includes(providerModelId));
       },
-      mangleRequest(req, settings: ChatModelSettings) {
+      mangleRequest(req, settings: ModelSettings) {
         if (req.providerOptions.google === undefined) {
           req.providerOptions.google = {};
         }
@@ -229,7 +231,7 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
           req.tools.google_search = googleProvider.tools.googleSearch({});
         }
       },
-      inputCapabilities: modelConfig.inputCapabilities,
+      inputCapabilities: dedupe([...textMimeTypes, ...imageMimeTypes, ...videoMimeTypes, ...audioMimeTypes, ...modelConfig.inputCapabilities]),
       settings: baseSettings,
     } satisfies ChatModelSpec;
   }
@@ -248,13 +250,10 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
           modelId,
           providerDisplayName: this.name,
           impl: googleProvider.image(modelId),
-          isAvailable() {
-            return true;
-          },
           calculateImageCost() {
             return modelConfig.costPerImage;
           },
-          inputCapabilities: modelConfig.inputCapabilities,
+          inputCapabilities: dedupe([...textMimeTypes, ...imageMimeTypes, ...modelConfig.inputCapabilities]),
         }) satisfies ImageModelSpec,
     );
   }

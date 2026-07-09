@@ -1,11 +1,11 @@
 import type { TokenRingService } from "@tokenring-ai/app/types";
-import AIChatClient, { type ChatModelSpec, normalizeChatModelSpec } from "./client/AIChatClient.ts";
-import AIEmbeddingClient, { type EmbeddingModelSpec, normalizeEmbeddingModelSpec } from "./client/AIEmbeddingClient.ts";
-import AIImageGenerationClient, { type ImageModelSpec, normalizeImageModelSpec } from "./client/AIImageGenerationClient.ts";
-import AIRerankingClient, { normalizeRerankingModelSpec, type RerankingModelSpec } from "./client/AIRerankingClient.ts";
-import AISpeechClient, { normalizeSpeechModelSpec, type SpeechModelSpec } from "./client/AISpeechClient.ts";
-import AITranscriptionClient, { normalizeTranscriptionModelSpec, type TranscriptionModelSpec } from "./client/AITranscriptionClient.ts";
-import AIVideoGenerationClient, { normalizeVideoModelSpec, type VideoModelSpec } from "./client/AIVideoGenerationClient.ts";
+import AIChatClient, { type ChatModelSpec, ChatModelSpecSchema } from "./client/AIChatClient.ts";
+import AIEmbeddingClient, { type EmbeddingModelSpec, EmbeddingModelSpecSchema } from "./client/AIEmbeddingClient.ts";
+import AIImageGenerationClient, { type ImageModelSpec, ImageModelSpecSchema } from "./client/AIImageGenerationClient.ts";
+import AIRerankingClient, { type RerankingModelSpec, RerankingModelSpecSchema } from "./client/AIRerankingClient.ts";
+import AISpeechClient, { type SpeechModelSpec, SpeechModelSpecSchema } from "./client/AISpeechClient.ts";
+import AITranscriptionClient, { type TranscriptionModelSpec, TranscriptionModelSpecSchema } from "./client/AITranscriptionClient.ts";
+import AIVideoGenerationClient, { type VideoModelSpec, VideoModelSpecSchema } from "./client/AIVideoGenerationClient.ts";
 import { ModelTypeRegistry } from "./ModelTypeRegistry.ts";
 
 export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatClient> implements TokenRingService {
@@ -17,7 +17,7 @@ export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatCl
   }
 
   override registerAllModelSpecs(modelSpecs: ChatModelSpec[]): void {
-    super.registerAllModelSpecs(modelSpecs.map(normalizeChatModelSpec));
+    super.registerAllModelSpecs(modelSpecs.map(spec => ChatModelSpecSchema.parse(spec)));
   }
 
   getCheapestModelByRequirements(requirements: string, estimatedContextLength = 10000): string | null {
@@ -44,7 +44,7 @@ export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec
   }
 
   override registerAllModelSpecs(modelSpecs: EmbeddingModelSpec[]): void {
-    super.registerAllModelSpecs(modelSpecs.map(normalizeEmbeddingModelSpec));
+    super.registerAllModelSpecs(modelSpecs.map(spec => EmbeddingModelSpecSchema.parse(spec)));
   }
 }
 
@@ -57,7 +57,7 @@ export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSp
   }
 
   override registerAllModelSpecs(modelSpecs: ImageModelSpec[]): void {
-    super.registerAllModelSpecs(modelSpecs.map(normalizeImageModelSpec));
+    super.registerAllModelSpecs(modelSpecs.map(spec => ImageModelSpecSchema.parse(spec)));
   }
 }
 
@@ -70,7 +70,7 @@ export class VideoGenerationModelRegistry extends ModelTypeRegistry<VideoModelSp
   }
 
   override registerAllModelSpecs(modelSpecs: VideoModelSpec[]): void {
-    super.registerAllModelSpecs(modelSpecs.map(normalizeVideoModelSpec));
+    super.registerAllModelSpecs(modelSpecs.map(spec => VideoModelSpecSchema.parse(spec)));
   }
 }
 
@@ -83,7 +83,7 @@ export class SpeechModelRegistry extends ModelTypeRegistry<SpeechModelSpec, AISp
   }
 
   override registerAllModelSpecs(modelSpecs: SpeechModelSpec[]): void {
-    super.registerAllModelSpecs(modelSpecs.map(normalizeSpeechModelSpec));
+    super.registerAllModelSpecs(modelSpecs.map(spec => SpeechModelSpecSchema.parse(spec)));
   }
 }
 
@@ -96,7 +96,7 @@ export class TranscriptionModelRegistry extends ModelTypeRegistry<TranscriptionM
   }
 
   override registerAllModelSpecs(modelSpecs: TranscriptionModelSpec[]): void {
-    super.registerAllModelSpecs(modelSpecs.map(normalizeTranscriptionModelSpec));
+    super.registerAllModelSpecs(modelSpecs.map(spec => TranscriptionModelSpecSchema.parse(spec)));
   }
 }
 
@@ -109,6 +109,6 @@ export class RerankingModelRegistry extends ModelTypeRegistry<RerankingModelSpec
   }
 
   override registerAllModelSpecs(modelSpecs: RerankingModelSpec[]): void {
-    super.registerAllModelSpecs(modelSpecs.map(normalizeRerankingModelSpec));
+    super.registerAllModelSpecs(modelSpecs.map(spec => RerankingModelSpecSchema.parse(spec)));
   }
 }

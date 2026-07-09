@@ -1,7 +1,9 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { JSONArray } from "@ai-sdk/provider";
 import { openrouter } from "@openrouter/ai-sdk-provider";
+import { audioMimeTypes, imageMimeTypes, textMimeTypes, videoMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
+import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
@@ -217,12 +219,12 @@ export default class OpenRouterProvider extends ModelProvider<OpenRouterConfig> 
         }),
         costPerMillionInputTokens: parsePricing(model.pricing.prompt),
         costPerMillionOutputTokens: parsePricing(model.pricing.completion),
-        inputCapabilities: {
-          image: model.architecture.input_modalities.includes("image"),
-          video: model.architecture.input_modalities.includes("video"),
-          audio: model.architecture.input_modalities.includes("audio"),
-          file: model.architecture.input_modalities.includes("file"),
-        },
+        inputCapabilities: dedupe([
+          ...textMimeTypes,
+          ...(model.architecture.input_modalities.includes("image") ? imageMimeTypes : []),
+          ...(model.architecture.input_modalities.includes("video") ? videoMimeTypes : []),
+          ...(model.architecture.input_modalities.includes("audio") ? audioMimeTypes : []),
+        ]),
         mangleRequest(req, settings) {
           const supported = model.supported_parameters;
 

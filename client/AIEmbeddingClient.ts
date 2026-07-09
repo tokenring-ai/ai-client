@@ -1,33 +1,29 @@
-import { type EmbeddingModel, type EmbedManyResult, embedMany } from "ai";
+import type { EmbeddingModelV4 } from "@ai-sdk/provider";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
+import { type EmbedManyResult, embedMany } from "ai";
 import { z } from "zod";
-import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
-import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
+import type { ModelSettings } from "../ModelTypeRegistry.ts";
+import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
 
-export type EmbeddingModelSpec = ModelSpec & {
-  contextLength: number;
-  costPerMillionInputTokens: number;
-  costPerMillionOutputTokens?: number | undefined;
-  impl: Exclude<EmbeddingModel, string>;
-  inputCapabilities?: Partial<ModelInputCapabilities>;
-  /**
-   * Optional hook to adjust the request prior to sending.
-   * Receives the runtime feature flags as the second parameter.
-   */
-  mangleRequest?: (req: { values: string[] }, settings?: Record<string, any>) => void;
-};
+export const EmbeddingRequestSchema = z.object({
+  values: z.array(z.string()),
+  providerOptions: ProviderOptionsSchema.prefault({}),
+});
 
-export const EmbeddingModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
+export type EmbeddingRequest = z.input<typeof EmbeddingRequestSchema>;
+export type ParsedEmbeddingRequest = z.output<typeof EmbeddingRequestSchema>;
+
+export const EmbeddingModelSpecSchema = BaseModelSpecSchema.extend({
+  impl: z.custom<EmbeddingModelV4>(),
+  mangleRequest: z.custom<(req: ParsedEmbeddingRequest, settings: ModelSettings) => void>().exactOptional(),
+
   contextLength: z.number(),
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number().exactOptional(),
 });
 
-export function normalizeEmbeddingModelSpec(modelSpec: EmbeddingModelSpec): EmbeddingModelSpec {
-  return EmbeddingModelSpecSchema.parse({
-    ...modelSpec,
-    inputCapabilities: modelSpec.inputCapabilities ?? {},
-  }) as EmbeddingModelSpec;
-}
+export type EmbeddingModelSpec = z.input<typeof EmbeddingModelSpecSchema>;
+export type ParsedEmbeddingModelSpec = z.output<typeof EmbeddingModelSpecSchema>;
 
 /**
  * Client for generating embeddings using the Vercel AI SDK.
@@ -35,20 +31,20 @@ export function normalizeEmbeddingModelSpec(modelSpec: EmbeddingModelSpec): Embe
 export default class AIEmbeddingClient {
   constructor(
     private readonly modelSpec: EmbeddingModelSpec,
-    private settings: ChatModelSettings,
+    private settings: ModelSettings,
   ) {}
 
   /**
    * Set settings for this client instance.
    */
-  setSettings(settings: ChatModelSettings): void {
+  setSettings(settings: ModelSettings): void {
     this.settings = new Map(settings.entries());
   }
 
   /**
    * Get a copy of the settings.
    */
-  getSettings(): ChatModelSettings {
+  getSettings(): ModelSettings {
     return new Map(this.settings.entries());
   }
 
@@ -63,18 +59,15 @@ export default class AIEmbeddingClient {
    * Generates embeddings for an array of input strings.
    * Each result includes the embedding vector and usage statistics for that input.
    */
-  async getEmbeddings({ input }: { input: string[] }): Promise<EmbedManyResult> {
-    const req = {
-      values: input,
-    };
+  async getEmbeddings(request: EmbeddingRequest): Promise<EmbedManyResult> {
+    const parsedRequest = EmbeddingRequestSchema.parse(request);
+    parsedRequest.providerOptions = deepClone(this.modelSpec.providerOptions, parsedRequest.providerOptions);
 
-    if (this.modelSpec.mangleRequest) {
-      this.modelSpec.mangleRequest(req, this.settings);
-    }
+    this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
 
     return await embedMany({
       model: this.modelSpec.impl,
-      ...req,
+      ...parsedRequest,
     });
   }
 }

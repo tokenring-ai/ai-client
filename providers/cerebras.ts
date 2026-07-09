@@ -1,4 +1,5 @@
 import { createCerebras } from "@ai-sdk/cerebras";
+import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
@@ -108,6 +109,7 @@ export default class CerebrasProvider extends ModelProvider<CerebrasConfig> {
           costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
           costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
           maxContextLength: modelConfig.maxContextLength,
+          inputCapabilities: [...textMimeTypes],
           async isAvailable() {
             const modelList = await getModels();
             return !!modelList?.data.some(model => model.id === modelId);

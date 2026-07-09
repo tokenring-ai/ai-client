@@ -3,7 +3,9 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenResponses } from "@ai-sdk/open-responses";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { EmbeddingModelV4, LanguageModelV4 } from "@ai-sdk/provider";
+import { imageMimeTypes, textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
+import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import type { MaybePromise } from "bun";
@@ -11,9 +13,10 @@ import { deepEquals } from "bun";
 import { z } from "zod";
 import type { ChatModelSpec, ParsedChatRequest } from "../client/AIChatClient.ts";
 import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
+import type { ModelInputCapabilities } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, EmbeddingModelRegistry } from "../ModelRegistry.ts";
-import type { ChatModelSettings } from "../ModelTypeRegistry.ts";
+import type { ModelSettings } from "../ModelTypeRegistry.ts";
 import { ModelSettingsDefinitionSchema, type SettingDefinition } from "../ModelTypeRegistry.ts";
 
 const ChatModelSchema = z.object({
@@ -102,8 +105,8 @@ type EndpointType = "openai" | "anthropic" | "responses";
 
 interface UnderlyingProvider {
   type: EndpointType;
-  mangleRequest?: (req: ParsedChatRequest, settings: ChatModelSettings) => void;
-  inputCapabilities?: { image?: boolean; file?: boolean };
+  mangleRequest?: (req: ParsedChatRequest, settings: ModelSettings) => void;
+  inputCapabilities: ModelInputCapabilities;
 
   getLanguageModel(modelId: string): LanguageModelV4;
 
@@ -266,6 +269,7 @@ function createUnderlyingProvider(
         type: "openai",
         getLanguageModel: modelId => provider.chatModel(modelId),
         getEmbeddingModel: modelId => provider.embeddingModel(modelId),
+        inputCapabilities: [...textMimeTypes],
         buildSettings: buildOpenAISettings,
         mangleRequest(req, settings) {
           const providerOptions = req.providerOptions;
@@ -302,6 +306,7 @@ function createUnderlyingProvider(
         type: "responses",
         getLanguageModel: modelId => provider.languageModel(modelId),
         getEmbeddingModel: () => null,
+        inputCapabilities: [...textMimeTypes],
         buildSettings: buildOpenAISettings,
         mangleRequest(req, settings) {
           const providerOptions = req.providerOptions;
@@ -337,7 +342,7 @@ function createUnderlyingProvider(
         type: "anthropic",
         getLanguageModel: modelId => provider(modelId),
         getEmbeddingModel: () => null,
-        inputCapabilities: { image: true, file: true },
+        inputCapabilities: dedupe([...textMimeTypes, ...imageMimeTypes]),
         buildSettings() {
           return {
             caching: {
@@ -530,9 +535,7 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
       settings: modelSpec.settings,
       ...(this.underlyingProvider.mangleRequest && { mangleRequest: this.underlyingProvider.mangleRequest }),
       isAvailable: async () => !!(await this.getModelList()),
-      ...(this.underlyingProvider.inputCapabilities && {
-        inputCapabilities: this.underlyingProvider.inputCapabilities,
-      }),
+      inputCapabilities: this.underlyingProvider.inputCapabilities,
     }));
   }
 
@@ -547,6 +550,7 @@ export default class GenericAIProvider extends ModelProvider<GenericModelConfig>
       impl: this.underlyingProvider.getEmbeddingModel(modelId)!,
       isAvailable: async () => !!(await this.getModelList()),
       isHot: () => true,
+      inputCapabilities: [...textMimeTypes],
     }));
   }
 

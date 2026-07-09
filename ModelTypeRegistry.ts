@@ -40,12 +40,12 @@ export const ModelSettingsDefinitionSchema = z.discriminatedUnion("type", [
 
 export type SettingDefinition = z.infer<typeof ModelSettingsDefinitionSchema>;
 
-export type ChatModelSettings = Map<string, PrimitiveType>;
-
 export const SerializedModelSpecSchema = z.object({
   modelId: z.string(),
   providerDisplayName: z.string(),
 });
+
+export type ModelSettings = Map<string, PrimitiveType>;
 
 export type ModelSpec = z.infer<typeof SerializedModelSpecSchema> & {
   isAvailable?: () => MaybePromise<boolean>;
@@ -61,7 +61,7 @@ export interface ModelStatus<T> {
 }
 
 export interface GenericAIClient {
-  setSettings?(settings: ChatModelSettings): void;
+  setSettings?(settings: ModelSettings): void;
 }
 
 /**
@@ -79,7 +79,7 @@ export class ModelTypeRegistry<T extends ModelSpec, C extends GenericAIClient> {
   /**
    * Creates a new ModelTypeRegistry instance
    */
-  constructor(private readonly AIClient: new (modelSpec: T, settings: ChatModelSettings) => C) {}
+  constructor(private readonly AIClient: new (modelSpec: T, settings: ModelSettings) => C) {}
 
   // noinspection JSUnusedGlobalSymbols
   async run(signal: AbortSignal) {

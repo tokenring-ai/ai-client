@@ -1,58 +1,36 @@
-import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import type Agent from "@tokenring-ai/agent/Agent";
 import { MetricsService } from "@tokenring-ai/metrics";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { type GeneratedFile, type GenerateImageResult, generateImage, type ImageModel } from "ai";
 import { z } from "zod";
-import type { ChatModelSettings, ModelSpec } from "../ModelTypeRegistry.ts";
-import { createModelSpecSchema, type ModelInputCapabilities, ModelInputCapabilitiesSchema } from "./modelCapabilities.ts";
+import type { ModelSettings } from "../ModelTypeRegistry.ts";
+import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
 
 type GenerateImageOptions = Parameters<typeof generateImage>["0"];
 
-export type ImageRequest = Omit<GenerateImageOptions, "model" | "providerOptions" | "abortSignal" | "size"> & {
-  size: `${number}x${number}`;
-};
-
-export type ImageModelSpec = ModelSpec & {
-  /**
-   * - Maximum context length in tokens
-   */
-  contextLength?: number | undefined;
-  /**
-   * - The AI SDK image generation model implementation.
-   */
-  impl: ImageModel;
-  inputCapabilities?: Partial<ModelInputCapabilities>;
-
-  /**
-   * - Provider-specific options for the image generation model.
-   */
-  providerOptions?: SharedV4ProviderOptions;
-  /**
-   * - A callback to calculate the image cost
-   */
-  calculateImageCost: (req: ImageRequest, res: GenerateImageResult) => number;
-
-  /**
-   * - Optional hook to adjust the request prior to sending.
-   *   Receives the runtime feature flags as the second parameter.
-   */
-  mangleRequest?: (req: ImageRequest, settings?: Record<string, any>) => void;
-};
-
-export const ImageModelSpecSchema = createModelSpecSchema(ModelInputCapabilitiesSchema).extend({
-  contextLength: z.number().exactOptional(),
-  calculateImageCost: z.function({
-    input: z.tuple([z.any(), z.any()]),
-    output: z.number(),
-  }),
+export const ImageRequestSchema = z.object({
+  prompt: z.custom<GenerateImageOptions["prompt"]>(),
+  n: z.number().exactOptional(),
+  maxImagesPerCall: z.number().exactOptional(),
+  size: z.custom<`${number}x${number}`>(),
+  aspectRatio: z.custom<`${number}:${number}`>().exactOptional(),
+  seed: z.number().exactOptional(),
+  providerOptions: ProviderOptionsSchema.prefault({}),
 });
 
-export function normalizeImageModelSpec(modelSpec: ImageModelSpec): ImageModelSpec {
-  return ImageModelSpecSchema.parse({
-    ...modelSpec,
-    inputCapabilities: modelSpec.inputCapabilities ?? {},
-  }) as ImageModelSpec;
-}
+export type ImageRequest = z.input<typeof ImageRequestSchema>;
+export type ParsedImageRequest = z.output<typeof ImageRequestSchema>;
+
+export const ImageModelSpecSchema = BaseModelSpecSchema.extend({
+  impl: z.custom<ImageModel>(),
+  mangleRequest: z.custom<(req: ParsedImageRequest, settings: ModelSettings) => void>().exactOptional(),
+
+  contextLength: z.number().exactOptional(),
+  calculateImageCost: z.custom<(req: ParsedImageRequest, res: GenerateImageResult) => number>(),
+});
+
+export type ImageModelSpec = z.input<typeof ImageModelSpecSchema>;
+export type ParsedImageModelSpec = z.output<typeof ImageModelSpecSchema>;
 
 /**
  * Client for generating images using the Vercel AI SDK's experimental image generation settings.
@@ -60,20 +38,20 @@ export function normalizeImageModelSpec(modelSpec: ImageModelSpec): ImageModelSp
 export default class AIImageGenerationClient {
   constructor(
     private modelSpec: ImageModelSpec,
-    private settings: ChatModelSettings,
+    private settings: ModelSettings,
   ) {}
 
   /**
    * Set settings for this client instance.
    */
-  setSettings(settings: ChatModelSettings): void {
+  setSettings(settings: ModelSettings): void {
     this.settings = new Map(settings.entries());
   }
 
   /**
    * Get a copy of the settings.
    */
-  getSettings(): ChatModelSettings {
+  getSettings(): ModelSettings {
     return new Map(this.settings.entries());
   }
 
@@ -90,18 +68,18 @@ export default class AIImageGenerationClient {
   async generateImage(request: ImageRequest, agent: Agent): Promise<[GeneratedFile, GenerateImageResult]> {
     const signal = agent.getAbortSignal();
 
-    if (this.modelSpec.mangleRequest) {
-      request = { ...request };
-      this.modelSpec.mangleRequest(request, this.settings);
-    }
+    const parsedRequest = ImageRequestSchema.parse(request);
+    parsedRequest.providerOptions = deepClone(this.modelSpec.providerOptions, parsedRequest.providerOptions);
+
+    this.modelSpec.mangleRequest?.(parsedRequest, this.settings);
+
     const result = await generateImage({
-      ...request,
+      ...parsedRequest,
       model: this.modelSpec.impl,
-      providerOptions: this.modelSpec.providerOptions ?? {},
       abortSignal: signal,
     });
 
-    const cost = this.modelSpec.calculateImageCost(request, result);
+    const cost = this.modelSpec.calculateImageCost(parsedRequest, result);
 
     agent.getServiceByType(MetricsService)?.addCost(`Image Generation (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, cost, agent);
 

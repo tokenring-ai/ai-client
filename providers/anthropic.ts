@@ -1,5 +1,7 @@
 import { type AnthropicProviderOptions, createAnthropic } from "@ai-sdk/anthropic";
+import { imageMimeTypes, textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
+import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
@@ -12,7 +14,7 @@ const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number(),
   maxContextLength: z.number(),
-  inputCapabilities: ModelInputCapabilitiesSchema.prefault({ text: true, image: true, file: true }),
+  inputCapabilities: ModelInputCapabilitiesSchema.default([]),
 });
 
 const AnthropicModelSchema = z.object({
@@ -156,7 +158,7 @@ export default class AnthropicProvider extends ModelProvider<AnthropicConfig> {
               max: 20,
             },
           },
-          inputCapabilities: modelConfig.inputCapabilities,
+          inputCapabilities: dedupe([...textMimeTypes, ...imageMimeTypes, ...modelConfig.inputCapabilities]),
         }) satisfies ChatModelSpec,
     );
   }
