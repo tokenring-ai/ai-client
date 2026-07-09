@@ -3,6 +3,10 @@ xAi:
   apiKeyFromEnv: XAI_API_KEY
   models:
     chat:
+      grok-4.5:
+        costPerMillionInputTokens: 2.0
+        costPerMillionOutputTokens: 6.0
+        maxContextLength: 500000
       grok-4.20-0309-reasoning:
         costPerMillionInputTokens: 2.0
         costPerMillionOutputTokens: 6.0
