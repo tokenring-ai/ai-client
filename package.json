@@ -26,8 +26,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.1"
+    "typescript": "^6.0.2"
   },
   "exports": {
     ".": "./index.ts",
@@ -37,9 +36,9 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage"
   },
   "type": "module"
 }
