@@ -2,12 +2,13 @@ import { perplexity } from "@ai-sdk/perplexity";
 import type { JSONObject } from "@ai-sdk/provider";
 import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
+import { wrapLanguageModel } from "ai";
 import { z } from "zod";
 import type { ChatModelSpec, ParsedChatRequest } from "../client/AIChatClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
 import type { ModelSettings } from "../ModelTypeRegistry.ts";
-import { resequenceMessages } from "../util/resequenceMessages.ts";
+import { strictMessageOrderMiddleware } from "../middleware/strictMessageOrder.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),
@@ -45,8 +46,6 @@ function mangleRequest(request: ParsedChatRequest, settings: ModelSettings): voi
   if (!settings.has("websearch")) {
     perplexityOptions.disable_search = true;
   }
-
-  resequenceMessages(request);
 }
 
 export default class PerplexityProvider extends ModelProvider<PerplexityConfig> {
@@ -102,7 +101,10 @@ export default class PerplexityProvider extends ModelProvider<PerplexityConfig> 
         ({
           modelId,
           providerDisplayName: this.name,
-          impl: perplexity(modelId),
+          impl: wrapLanguageModel({
+            model: perplexity(modelId),
+            middleware: strictMessageOrderMiddleware,
+          }),
           mangleRequest,
           costPerMillionInputTokens: modelConfig.costPerMillionInputTokens,
           costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,

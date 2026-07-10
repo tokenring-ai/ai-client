@@ -3,6 +3,51 @@ OpenAI:
   apiKeyFromEnv: OPENAI_API_KEY
   models:
     chat:
+      gpt-5.6-sol:
+        costPerMillionInputTokens: 5.0
+        costPerMillionCachedInputTokens: 0.5
+        costPerMillionOutputTokens: 30.0
+        maxContextLength: 272000
+        features:
+          - websearch
+      gpt-5.6-sol-long-context:
+        providerModelId: gpt-5.6-sol
+        costPerMillionInputTokens: 10.0
+        costPerMillionCachedInputTokens: 1.0
+        costPerMillionOutputTokens: 45.0
+        maxContextLength: 1000000
+        features:
+          - websearch
+      gpt-5.6-terra:
+        costPerMillionInputTokens: 2.5
+        costPerMillionCachedInputTokens: 0.25
+        costPerMillionOutputTokens: 15.0
+        maxContextLength: 272000
+        features:
+          - websearch
+      gpt-5.6-terra-long-context:
+        providerModelId: gpt-5.6-terra
+        costPerMillionInputTokens: 5.0
+        costPerMillionCachedInputTokens: 0.5
+        costPerMillionOutputTokens: 22.5
+        maxContextLength: 1000000
+        features:
+          - websearch
+      gpt-5.6-luna:
+        costPerMillionInputTokens: 1.0
+        costPerMillionCachedInputTokens: 0.1
+        costPerMillionOutputTokens: 6.0
+        maxContextLength: 272000
+        features:
+          - websearch
+      gpt-5.6-luna-long-context:
+        providerModelId: gpt-5.6-luna
+        costPerMillionInputTokens: 2.0
+        costPerMillionCachedInputTokens: 0.2
+        costPerMillionOutputTokens: 9.0
+        maxContextLength: 1000000
+        features:
+          - websearch
       gpt-4.1:
         costPerMillionInputTokens: 2.0
         costPerMillionOutputTokens: 8.0
@@ -351,5 +396,7 @@ OpenAI:
       tts-1-hd:
         costPerMillionCharacters: 30
     speechToText:
+      realtime-whisper:
+        costPerMinute: 0.017
       whisper-1:
         costPerMinute: 0.006
