@@ -3,6 +3,7 @@ import type { JSONObject } from "@ai-sdk/provider";
 import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
 import { wrapLanguageModel } from "ai";
+import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { z } from "zod";
 import type { ChatModelSpec, ParsedChatRequest } from "../client/AIChatClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
@@ -23,7 +24,10 @@ const PerplexityModelsSchema = z.object({
 
 const PerplexityModelProviderConfigSchema = z.object({
   provider: z.literal("perplexity"),
-  apiKeyFromEnv: z.string().default("PERPLEXITY_API_KEY"),
+  apiKeyFromEnv: z
+    .string()
+    .default("PERPLEXITY_API_KEY")
+    .meta({ description: "Name of the environment variable holding the Perplexity API key" } satisfies ConfigFieldMeta),
   models: PerplexityModelsSchema,
 });
 

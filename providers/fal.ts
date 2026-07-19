@@ -1,6 +1,7 @@
 import { createFal } from "@ai-sdk/fal";
 import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
+import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { z } from "zod";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
@@ -16,7 +17,10 @@ const FalModelsSchema = z.object({
 
 const FalModelProviderConfigSchema = z.object({
   provider: z.literal("fal"),
-  apiKeyFromEnv: z.string().default("FAL_API_KEY"),
+  apiKeyFromEnv: z
+    .string()
+    .default("FAL_API_KEY")
+    .meta({ description: "Name of the environment variable holding the fal.ai API key" } satisfies ConfigFieldMeta),
   models: FalModelsSchema,
 });
 

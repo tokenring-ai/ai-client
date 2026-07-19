@@ -2,6 +2,7 @@ import { groq } from "@ai-sdk/groq";
 import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
+import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
@@ -20,7 +21,10 @@ const GroqModelsSchema = z.object({
 
 const GroqModelProviderConfigSchema = z.object({
   provider: z.literal("groq"),
-  apiKeyFromEnv: z.string().default("GROQ_API_KEY"),
+  apiKeyFromEnv: z
+    .string()
+    .default("GROQ_API_KEY")
+    .meta({ description: "Name of the environment variable holding the Groq API key" } satisfies ConfigFieldMeta),
   models: GroqModelsSchema,
 });
 

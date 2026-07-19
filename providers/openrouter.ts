@@ -5,6 +5,7 @@ import { audioMimeTypes, imageMimeTypes, textMimeTypes, videoMimeTypes } from "@
 import type TokenRingApp from "@tokenring-ai/app";
 import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
+import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
@@ -12,7 +13,10 @@ import { ChatModelRegistry } from "../ModelRegistry.ts";
 
 const OpenRouterModelProviderConfigSchema = z.object({
   provider: z.literal("openrouter"),
-  apiKeyFromEnv: z.string().default("OPENROUTER_API_KEY"),
+  apiKeyFromEnv: z
+    .string()
+    .default("OPENROUTER_API_KEY")
+    .meta({ description: "Name of the environment variable holding the OpenRouter API key" } satisfies ConfigFieldMeta),
   modelFilter: z
     .function({
       input: z.tuple([z.any()]),

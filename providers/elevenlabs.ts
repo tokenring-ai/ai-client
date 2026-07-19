@@ -1,6 +1,7 @@
 import { createElevenLabs } from "@ai-sdk/elevenlabs";
 import { audioMimeTypes, textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
+import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { z } from "zod";
 import type { SpeechModelSpec } from "../client/AISpeechClient.ts";
 import type { TranscriptionModelSpec } from "../client/AITranscriptionClient.ts";
@@ -23,7 +24,10 @@ const ElevenLabsModelsSchema = z.object({
 
 const ElevenLabsModelProviderConfigSchema = z.object({
   provider: z.literal("elevenlabs"),
-  apiKeyFromEnv: z.string().default("ELEVENLABS_API_KEY"),
+  apiKeyFromEnv: z
+    .string()
+    .default("ELEVENLABS_API_KEY")
+    .meta({ description: "Name of the environment variable holding the ElevenLabs API key" } satisfies ConfigFieldMeta),
   models: ElevenLabsModelsSchema,
 });
 

@@ -3,6 +3,7 @@ import { audioMimeTypes, imageMimeTypes, textMimeTypes, videoMimeTypes } from "@
 import type TokenRingApp from "@tokenring-ai/app";
 import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
+import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
@@ -33,7 +34,10 @@ const GoogleModelsSchema = z.object({
 
 const GoogleModelProviderConfigSchema = z.object({
   provider: z.literal("google"),
-  apiKeyFromEnv: z.string().default("GOOGLE_GENERATIVE_AI_API_KEY"),
+  apiKeyFromEnv: z
+    .string()
+    .default("GOOGLE_GENERATIVE_AI_API_KEY")
+    .meta({ description: "Name of the environment variable holding the Google Generative AI API key" } satisfies ConfigFieldMeta),
   models: GoogleModelsSchema,
 });
 

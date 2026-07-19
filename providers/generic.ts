@@ -39,9 +39,9 @@ const ModelsSchema = z.object({
 const GenericModelConfigSchema = z
   .object({
     provider: z.literal("generic"),
-    endpointType: z.enum(["openai", "anthropic", "responses"]).default("openai"),
-    apiKey: z.string().exactOptional(),
-    apiKeyFromEnv: z.string().exactOptional(),
+    endpointType: z.enum(["openai", "anthropic", "responses"]).default("openai").meta({ description: "Wire protocol the endpoint speaks" }),
+    apiKey: z.string().exactOptional().meta({ sensitive: true, description: "API key sent to the endpoint (prefer Api Key From Env)" }),
+    apiKeyFromEnv: z.string().exactOptional().meta({ description: "Name of an environment variable holding the API key" }),
     models: ModelsSchema.prefault({}),
     baseURL: z.string(),
     chatEndpointURL: z.string().exactOptional(),
