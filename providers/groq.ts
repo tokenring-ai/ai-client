@@ -1,8 +1,8 @@
 import { groq } from "@ai-sdk/groq";
 import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
-import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
+import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
 import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
