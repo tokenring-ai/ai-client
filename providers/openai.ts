@@ -286,7 +286,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
         },
         ...(modelConfig.providerOptions && {
           providerOptions: {
-            openai: modelConfig.providerOptions
+            openai: modelConfig.providerOptions,
           },
         }),
       } satisfies ImageModelSpec;

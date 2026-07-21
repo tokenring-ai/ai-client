@@ -1,5 +1,4 @@
 import { perplexity } from "@ai-sdk/perplexity";
-import type { JSONObject } from "@ai-sdk/provider";
 import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
 import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
@@ -34,13 +33,14 @@ const PerplexityModelProviderConfigSchema = z.object({
 type PerplexityConfig = z.output<typeof PerplexityModelProviderConfigSchema>;
 
 function mangleRequest(request: ParsedChatRequest, settings: ModelSettings): void {
-  const perplexityOptions = request.providerOptions.perplexity ??= {};
-  if (perplexityOptions.web_search_options === undefined) {
-    perplexityOptions.web_search_options = {};
+  if (request.providerOptions.perplexity === undefined) {
+    request.providerOptions.perplexity = {};
   }
-  const webSearchOptions = perplexityOptions.web_search_options as JSONObject;
+
+  const perplexityOptions = request.providerOptions.perplexity;
 
   if (settings.has("searchContextSize")) {
+    const webSearchOptions = (perplexityOptions.web_search_options ??= {}) as Record<string, number>;
     webSearchOptions.search_context_size = settings.get("searchContextSize") as number;
   }
 
