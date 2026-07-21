@@ -34,10 +34,7 @@ const PerplexityModelProviderConfigSchema = z.object({
 type PerplexityConfig = z.output<typeof PerplexityModelProviderConfigSchema>;
 
 function mangleRequest(request: ParsedChatRequest, settings: ModelSettings): void {
-  if (request.providerOptions.perplexity === undefined) {
-    request.providerOptions.perplexity = {};
-  }
-  const perplexityOptions = request.providerOptions.perplexity;
+  const perplexityOptions = request.providerOptions.perplexity ??= {};
   if (perplexityOptions.web_search_options === undefined) {
     perplexityOptions.web_search_options = {};
   }

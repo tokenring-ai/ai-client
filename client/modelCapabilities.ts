@@ -1,4 +1,3 @@
-import type { JSONObject } from "@ai-sdk/provider";
 import { audioMimeTypes, imageMimeTypes, textMimeTypes, videoMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import { z } from "zod";
 
@@ -7,7 +6,7 @@ export const ModelInputCapabilitiesSchema = z.array(z.enum([...textMimeTypes, ..
 export type ModelInputCapabilities = z.infer<typeof ModelInputCapabilitiesSchema>;
 
 /** Provider options map: provider name → option object. */
-export const ProviderOptionsSchema = z.record(z.string(), z.custom<JSONObject>());
+export const ProviderOptionsSchema = z.record(z.string(), z.record(z.string(), z.json()));
 export type ProviderOptions = z.infer<typeof ProviderOptionsSchema>;
 
 export const BaseModelSpecSchema = z.object({

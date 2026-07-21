@@ -1,6 +1,4 @@
-import type { OpenAIImageModelGenerationOptions, OpenAILanguageModelCompletionOptions } from "@ai-sdk/openai";
 import { createOpenAI, type OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
-import type { JSONObject } from "@ai-sdk/provider";
 import { audioMimeTypes, imageMimeTypes, textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
 import type TokenRingApp from "@tokenring-ai/app";
 import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
@@ -18,11 +16,7 @@ import type { SettingDefinition } from "../ModelTypeRegistry.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
-  providerOptions: z
-    .object({
-      openai: z.custom<OpenAILanguageModelCompletionOptions>().exactOptional(),
-    })
-    .exactOptional(),
+  providerOptions: z.record(z.string(), z.json()).exactOptional(),
   costPerMillionInputTokens: z.number(),
   costPerMillionOutputTokens: z.number(),
   costPerMillionCachedInputTokens: z.number().exactOptional(),
@@ -34,7 +28,7 @@ const ChatModelSchema = z.object({
 const ImageGenerationModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
   // Flat OpenAI image options from YAML (e.g. quality: high); nested under `openai` on the model spec.
-  providerOptions: z.custom<OpenAIImageModelGenerationOptions>().exactOptional(),
+  providerOptions: z.record(z.string(), z.json()).exactOptional(),
   costPerMegapixel: z.number(),
   inputCapabilities: ModelInputCapabilitiesSchema.default([]),
 });
@@ -223,7 +217,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
       costPerMillionOutputTokens: modelConfig.costPerMillionOutputTokens,
       maxContextLength: modelConfig.maxContextLength,
       inputCapabilities: dedupe([...textMimeTypes, ...imageMimeTypes, ...(supportsAudioInput ? audioMimeTypes : []), ...modelConfig.inputCapabilities]),
-      ...(modelConfig.providerOptions && { providerOptions: modelConfig.providerOptions }),
+      ...(modelConfig.providerOptions && { providerOptions: { openai: modelConfig.providerOptions } }),
       async isAvailable() {
         const modelList = await getModels();
         return !!modelList?.data.some(model => model.id === providerModelId);
@@ -292,7 +286,7 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
         },
         ...(modelConfig.providerOptions && {
           providerOptions: {
-            openai: modelConfig.providerOptions as JSONObject,
+            openai: modelConfig.providerOptions
           },
         }),
       } satisfies ImageModelSpec;
