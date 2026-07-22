@@ -1228,8 +1228,7 @@ bun run test:coverage
 
 ```json
 {
-  "typescript": "^6.0.2",
-  "vitest": "^4.1.1"
+  "typescript": "^6.0.2"
 }
 ```
 

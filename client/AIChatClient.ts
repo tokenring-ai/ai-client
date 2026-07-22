@@ -109,13 +109,15 @@ export const SerializedChatModelSpecSchema = ChatModelSpecSchema.omit({
   isHot: true,
 });
 
-export const AIResponseCostSchema = z.object({
-  input: z.number().exactOptional(),
-  cachedInput: z.number().exactOptional(),
-  output: z.number().exactOptional(),
-  reasoning: z.number().exactOptional(),
-  total: z.number().exactOptional(),
-});
+export const AIResponseCostSchema = z
+  .object({
+    input: z.number().default(0),
+    cachedInput: z.number().default(0),
+    output: z.number().default(0),
+    reasoning: z.number().default(0),
+    total: z.number().default(0),
+  })
+  .prefault({});
 
 export type AIResponseCost = z.infer<typeof AIResponseCostSchema>;
 
@@ -129,6 +131,27 @@ export type AIResponseTiming = z.infer<typeof AIResponseTimingSchema>;
 
 const FinishReasonSchema = z.enum(["stop", "length", "content-filter", "tool-calls", "error", "other", "unknown"]);
 
+export const LanguageModelUsageSchema = z
+  .object({
+    inputTokens: z.number().default(0),
+    inputTokenDetails: z
+      .object({
+        noCacheTokens: z.number().default(0),
+        cacheReadTokens: z.number().default(0),
+        cacheWriteTokens: z.number().default(0),
+      })
+      .prefault({}),
+    outputTokens: z.number().default(0),
+    outputTokenDetails: z
+      .object({
+        textTokens: z.number().default(0),
+        reasoningTokens: z.number().default(0),
+      })
+      .prefault({}),
+    totalTokens: z.number().default(0),
+  })
+  .prefault({});
+
 export const AIResponseSchema = z.object({
   providerMetadata: z.custom<ProviderMetadata>().optional(),
   finishReason: FinishReasonSchema,
@@ -136,8 +159,8 @@ export const AIResponseSchema = z.object({
   modelId: z.string(),
   messages: z.array(ChatInputMessageSchema).exactOptional(),
   text: z.string().exactOptional(),
-  lastStepUsage: z.custom<LanguageModelUsage>(),
-  totalUsage: z.custom<LanguageModelUsage>(),
+  lastStepUsage: LanguageModelUsageSchema,
+  totalUsage: LanguageModelUsageSchema,
   cost: AIResponseCostSchema,
   timing: AIResponseTimingSchema,
   sources: z.array(z.custom<LanguageModelV4Source>()).exactOptional(),
@@ -349,7 +372,7 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
+    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total, agent);
 
     return response;
   }
@@ -376,7 +399,7 @@ export default class AIChatClient {
     const elapsedMs = Date.now() - start;
 
     const response = await this.generateResponseObject(result, elapsedMs);
-    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
+    agent.getServiceByType(MetricsService)?.addCost(`Chat (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total, agent);
 
     return [response.text ?? "", response];
   }
@@ -409,7 +432,7 @@ export default class AIChatClient {
     const response = await this.generateResponseObject(result, elapsedMs);
     agent
       .getServiceByType(MetricsService)
-      ?.addCost(`GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total ?? 0, agent);
+      ?.addCost(`GenerateObject (${this.modelSpec.providerDisplayName}:${this.modelSpec.modelId})`, response.cost.total, agent);
 
     return [result.output as z.infer<T>, response];
   }
@@ -423,8 +446,9 @@ export default class AIChatClient {
   ): Promise<AIResponse> {
     const responseData = await result.response;
 
-    const totalUsage = "totalUsage" in result ? await result.totalUsage : result.usage;
-    const lastStepUsage = await result.usage;
+    const totalUsage = await result.usage;
+    const lastStep = "steps" in result ? (await result.steps)[0] : undefined;
+    const lastStepUsage = lastStep?.usage ?? totalUsage;
 
     const warnings = await result.warnings;
 
@@ -433,8 +457,8 @@ export default class AIChatClient {
       modelId: responseData.modelId,
       messages: "messages" in responseData ? responseData.messages : [],
       finishReason: await result.finishReason,
-      lastStepUsage,
-      totalUsage,
+      lastStepUsage: LanguageModelUsageSchema.parse(lastStepUsage),
+      totalUsage: LanguageModelUsageSchema.parse(totalUsage),
       cost: this.calculateCost(totalUsage),
       timing: this.calculateTiming(elapsedMs, totalUsage),
       ...("sources" in result && {
