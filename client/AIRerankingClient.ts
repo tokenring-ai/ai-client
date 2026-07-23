@@ -2,8 +2,8 @@ import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import { type RerankingModel, type RerankResult, rerank } from "ai";
 import { z } from "zod";
-import type { ModelSettings } from "../ModelTypeRegistry.ts";
-import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
+import type { ModelSettings } from "../schema.client.ts";
+import { BaseModelSpecSchema, ProviderOptionsSchema } from "../schema.client.ts";
 
 export const RerankingRequestSchema = z.object({
   query: z.string(),

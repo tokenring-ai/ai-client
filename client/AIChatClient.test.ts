@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { textMimeTypes } from "@tokenring-ai/agent/AgentEvents";
-import { type ChatModelSpec, ChatModelSpecSchema } from "./AIChatClient.ts";
+import type { ChatModelSpec } from "../schema.client.ts";
+import { ChatModelSpecSchema } from "../schema.client.ts";
 import { EmbeddingModelSpecSchema } from "./AIEmbeddingClient.ts";
 import { TranscriptionModelSpecSchema } from "./AITranscriptionClient.ts";
 

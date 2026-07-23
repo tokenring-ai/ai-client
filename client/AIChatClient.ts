@@ -9,7 +9,6 @@ import {
   type GenerateObjectResult,
   type GenerateTextResult,
   generateText,
-  type LanguageModel,
   type LanguageModelUsage,
   modelMessageSchema,
   Output,
@@ -21,8 +20,8 @@ import {
   userModelMessageSchema,
 } from "ai";
 import { type ZodObject, z } from "zod";
-import type { ModelSettings } from "../ModelTypeRegistry.ts";
-import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
+import type { AIResponseCost, AIResponseTiming, ChatModelSpec, ModelSettings } from "../schema.client.ts";
+import { AIResponseCostSchema, AIResponseTimingSchema, LanguageModelUsageSchema, ProviderOptionsSchema } from "../schema.client.ts";
 
 // Use the authoritative schemas from the AI SDK for chat message validation and types.
 // These are fully validating and ensure exact compatibility + serializability.
@@ -85,73 +84,7 @@ export type RerankRequest = {
   topN?: number | undefined;
 };
 
-export const ChatModelSpecSchema = BaseModelSpecSchema.extend({
-  impl: z.custom<Exclude<LanguageModel, string>>(),
-  mangleRequest: z.custom<(req: ParsedChatRequest, settings: ModelSettings) => void>().exactOptional(),
-  tools: z.boolean().default(true),
-  structuredOutput: z.boolean().default(true),
-  webSearch: z.boolean().exactOptional(),
-  maxCompletionTokens: z.number().exactOptional(),
-  maxContextLength: z.number(),
-  costPerMillionInputTokens: z.number(),
-  costPerMillionOutputTokens: z.number(),
-  costPerMillionCachedInputTokens: z.number().exactOptional(),
-  costPerMillionReasoningTokens: z.number().exactOptional(),
-});
-
-export type ChatModelSpec = z.input<typeof ChatModelSpecSchema>;
-export type ParsedChatModelSpec = z.output<typeof ChatModelSpecSchema>;
-
-export const SerializedChatModelSpecSchema = ChatModelSpecSchema.omit({
-  impl: true,
-  mangleRequest: true,
-  isAvailable: true,
-  isHot: true,
-});
-
-export const AIResponseCostSchema = z
-  .object({
-    input: z.number().default(0),
-    cachedInput: z.number().default(0),
-    output: z.number().default(0),
-    reasoning: z.number().default(0),
-    total: z.number().default(0),
-  })
-  .prefault({});
-
-export type AIResponseCost = z.infer<typeof AIResponseCostSchema>;
-
-export const AIResponseTimingSchema = z.object({
-  elapsedMs: z.number(),
-  tokensPerSec: z.number().exactOptional(),
-  totalTokens: z.number().exactOptional(),
-});
-
-export type AIResponseTiming = z.infer<typeof AIResponseTimingSchema>;
-
 const FinishReasonSchema = z.enum(["stop", "length", "content-filter", "tool-calls", "error", "other", "unknown"]);
-
-export const LanguageModelUsageSchema = z
-  .object({
-    inputTokens: z.number().default(0),
-    inputTokenDetails: z
-      .object({
-        noCacheTokens: z.number().default(0),
-        cacheReadTokens: z.number().default(0),
-        cacheWriteTokens: z.number().default(0),
-      })
-      .prefault({}),
-    outputTokens: z.number().default(0),
-    outputTokenDetails: z
-      .object({
-        textTokens: z.number().default(0),
-        reasoningTokens: z.number().default(0),
-      })
-      .prefault({}),
-    totalTokens: z.number().default(0),
-  })
-  .prefault({});
-
 export const AIResponseSchema = z.object({
   providerMetadata: z.custom<ProviderMetadata>().optional(),
   finishReason: FinishReasonSchema,
@@ -166,10 +99,8 @@ export const AIResponseSchema = z.object({
   sources: z.array(z.custom<LanguageModelV4Source>()).exactOptional(),
   warnings: z.array(z.custom<SharedV4Warning>()).exactOptional(),
 });
-
 export type AIResponse = z.infer<typeof AIResponseSchema>;
-
-const rerankSchema = z.object({
+export const rerankSchema = z.object({
   rankings: z
     .array(
       z.object({
@@ -180,7 +111,6 @@ const rerankSchema = z.object({
     )
     .describe("Ranked list of documents ordered by relevance (most relevant first)"),
 });
-
 /**
  * Chat client that relies on the Vercel AI SDK instead of the OpenAI SDK.
  * It keeps the identical public interface so it can be used as a drop-in

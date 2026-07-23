@@ -5,12 +5,11 @@ import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
-import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, ImageGenerationModelRegistry } from "../ModelRegistry.ts";
-import type { ModelSettings, SettingDefinition } from "../ModelTypeRegistry.ts";
+import type { ChatModelSpec, ModelSettings, SettingDefinition } from "../schema.client.ts";
+import { ModelInputCapabilitiesSchema } from "../schema.client.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
@@ -23,7 +22,7 @@ const ChatModelSchema = z.object({
 });
 
 const ImageGenerationModelSchema = z.object({
-  costPerImage: z.number(),
+  costPerMegapixel: z.number(),
   inputCapabilities: ModelInputCapabilitiesSchema.default([]),
 });
 
@@ -254,8 +253,9 @@ export default class GoogleProvider extends ModelProvider<GoogleConfig> {
           modelId,
           providerDisplayName: this.name,
           impl: googleProvider.image(modelId),
-          calculateImageCost() {
-            return modelConfig.costPerImage;
+          calculateImageCost(req) {
+            const approximateMegapixels = req.widthAndHeight ? (req.widthAndHeight.width * req.widthAndHeight.height) / 1000000 : 1;
+            return modelConfig.costPerMegapixel * approximateMegapixels;
           },
           inputCapabilities: dedupe([...textMimeTypes, ...imageMimeTypes, ...modelConfig.inputCapabilities]),
         }) satisfies ImageModelSpec,

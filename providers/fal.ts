@@ -87,9 +87,8 @@ export default class FalProvider extends ModelProvider<FalConfig> {
           impl: fal.image(modelId),
           inputCapabilities: [...textMimeTypes],
           calculateImageCost(req) {
-            const size = req.size.split("x").map(Number);
-            if (!size[0] || !size[1]) throw new Error(`Invalid size: ${req.size}`);
-            return (modelConfig.costPerMegapixel * size[0] * size[1]) / 1000000;
+            const approximateMegapixels = req.widthAndHeight ? (req.widthAndHeight.width * req.widthAndHeight.height) / 1000000 : 1;
+            return modelConfig.costPerMegapixel * approximateMegapixels;
           },
         }) satisfies ImageModelSpec,
     );

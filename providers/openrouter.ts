@@ -7,9 +7,10 @@ import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
+
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
+import type { ChatModelSpec } from "../schema.client.ts";
 
 const OpenRouterModelProviderConfigSchema = z.object({
   provider: z.literal("openrouter"),

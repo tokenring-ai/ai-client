@@ -6,12 +6,12 @@ import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import { z } from "zod";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 import type { VideoModelSpec } from "../client/AIVideoGenerationClient.ts";
-import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, ImageGenerationModelRegistry, VideoGenerationModelRegistry } from "../ModelRegistry.ts";
+import type { ChatModelSpec } from "../schema.client.ts";
+import { ModelInputCapabilitiesSchema } from "../schema.client.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),

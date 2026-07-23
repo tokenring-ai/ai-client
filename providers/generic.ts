@@ -11,13 +11,12 @@ import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import type { MaybePromise } from "bun";
 import { deepEquals } from "bun";
 import { z } from "zod";
-import type { ChatModelSpec, ParsedChatRequest } from "../client/AIChatClient.ts";
+import type { ParsedChatRequest } from "../client/AIChatClient.ts";
 import type { EmbeddingModelSpec } from "../client/AIEmbeddingClient.ts";
-import type { ModelInputCapabilities } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, EmbeddingModelRegistry } from "../ModelRegistry.ts";
-import type { ModelSettings } from "../ModelTypeRegistry.ts";
-import { ModelSettingsDefinitionSchema, type SettingDefinition } from "../ModelTypeRegistry.ts";
+import type { ChatModelSpec, ModelInputCapabilities, ModelSettings, SettingDefinition } from "../schema.client.ts";
+import { ModelSettingsDefinitionSchema } from "../schema.client.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number().optional(),

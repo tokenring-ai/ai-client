@@ -2,8 +2,8 @@ import type Agent from "@tokenring-ai/agent/Agent";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { generateSpeech, type SpeechModel, type SpeechResult } from "ai";
 import { z } from "zod";
-import type { ModelSettings } from "../ModelTypeRegistry.ts";
-import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
+import type { ModelSettings } from "../schema.client.ts";
+import { BaseModelSpecSchema, ProviderOptionsSchema } from "../schema.client.ts";
 
 export const SpeechRequestSchema = z.object({
   text: z.string(),

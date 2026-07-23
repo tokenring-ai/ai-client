@@ -12,7 +12,7 @@ import {
 import packageJSON from "./package.json" with { type: "json" };
 import { reconfigureProviders } from "./providers.ts";
 import aiClientRPC from "./rpc/ai-client.ts";
-import { AIPackageConfigSchema } from "./schema.ts";
+import { AIPackageConfigSchema } from "./schema.server.ts";
 
 export default {
   name: packageJSON.name,

@@ -5,14 +5,13 @@ import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { dedupe } from "@tokenring-ai/utility/array/dedupe";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
 import type { ImageModelSpec } from "../client/AIImageGenerationClient.ts";
 import type { SpeechModelSpec } from "../client/AISpeechClient.ts";
 import type { TranscriptionModelSpec } from "../client/AITranscriptionClient.ts";
-import { ModelInputCapabilitiesSchema } from "../client/modelCapabilities.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry, ImageGenerationModelRegistry, SpeechModelRegistry, TranscriptionModelRegistry } from "../ModelRegistry.ts";
-import type { SettingDefinition } from "../ModelTypeRegistry.ts";
+import type { ChatModelSpec, SettingDefinition } from "../schema.client.ts";
+import { ModelInputCapabilitiesSchema } from "../schema.client.ts";
 
 const ChatModelSchema = z.object({
   providerModelId: z.string().exactOptional(),
@@ -279,10 +278,8 @@ export default class OpenAIProvider extends ModelProvider<OpenAIConfig> {
           return !!modelList?.data.some(model => model.id === baseModelId);
         },
         calculateImageCost(req) {
-          const size = req.size.split("x").map(Number);
-          if (!size[0] || !size[1]) throw new Error(`Invalid size: ${req.size}`);
-
-          return (modelConfig.costPerMegapixel * size[0] * size[1]) / 1000000;
+          const approximateMegapixels = req.widthAndHeight ? (req.widthAndHeight.width * req.widthAndHeight.height) / 1000000 : 1;
+          return modelConfig.costPerMegapixel * approximateMegapixels;
         },
         ...(modelConfig.providerOptions && {
           providerOptions: {

@@ -4,11 +4,11 @@ import type TokenRingApp from "@tokenring-ai/app";
 import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { wrapLanguageModel } from "ai";
 import { z } from "zod";
-import type { ChatModelSpec, ParsedChatRequest } from "../client/AIChatClient.ts";
+import type { ParsedChatRequest } from "../client/AIChatClient.ts";
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
-import type { ModelSettings } from "../ModelTypeRegistry.ts";
 import { strictMessageOrderMiddleware } from "../middleware/strictMessageOrder.ts";
+import type { ChatModelSpec, ModelSettings } from "../schema.client.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),

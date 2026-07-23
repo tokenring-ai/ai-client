@@ -1,4 +1,4 @@
-import type { ModelSettings } from "@tokenring-ai/ai-client/ModelTypeRegistry";
+import type { ModelSettings } from "../schema.client.ts";
 
 export function parseModelAndSettings(model: string): {
   base: string;

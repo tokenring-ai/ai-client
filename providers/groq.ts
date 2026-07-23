@@ -4,9 +4,10 @@ import type TokenRingApp from "@tokenring-ai/app";
 import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import cachedDataRetriever from "@tokenring-ai/utility/http/cachedDataRetriever";
 import { z } from "zod";
-import type { ChatModelSpec } from "../client/AIChatClient.ts";
+
 import { ModelProvider } from "../ModelProvider.ts";
 import { ChatModelRegistry } from "../ModelRegistry.ts";
+import type { ChatModelSpec } from "../schema.client.ts";
 
 const ChatModelSchema = z.object({
   costPerMillionInputTokens: z.number(),

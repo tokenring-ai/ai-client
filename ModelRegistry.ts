@@ -1,12 +1,15 @@
 import type { TokenRingService } from "@tokenring-ai/app/types";
-import AIChatClient, { type ChatModelSpec, ChatModelSpecSchema } from "./client/AIChatClient.ts";
+import AIChatClient from "./client/AIChatClient.ts";
 import AIEmbeddingClient, { type EmbeddingModelSpec, EmbeddingModelSpecSchema } from "./client/AIEmbeddingClient.ts";
-import AIImageGenerationClient, { type ImageModelSpec, ImageModelSpecSchema } from "./client/AIImageGenerationClient.ts";
+import type { ParsedImageModelSpec } from "./client/AIImageGenerationClient.ts";
+import AIImageGenerationClient, { type ImageModelSpec } from "./client/AIImageGenerationClient.ts";
 import AIRerankingClient, { type RerankingModelSpec, RerankingModelSpecSchema } from "./client/AIRerankingClient.ts";
 import AISpeechClient, { type SpeechModelSpec, SpeechModelSpecSchema } from "./client/AISpeechClient.ts";
 import AITranscriptionClient, { type TranscriptionModelSpec, TranscriptionModelSpecSchema } from "./client/AITranscriptionClient.ts";
-import AIVideoGenerationClient, { type VideoModelSpec, VideoModelSpecSchema } from "./client/AIVideoGenerationClient.ts";
+import AIVideoGenerationClient, { type ParsedVideoModelSpec, type VideoModelSpec, VideoModelSpecSchema } from "./client/AIVideoGenerationClient.ts";
 import { ModelTypeRegistry } from "./ModelTypeRegistry.ts";
+import type { ChatModelSpec } from "./schema.client.ts";
+import { ChatModelSpecSchema, ImageModelSpecSchema } from "./schema.client.ts";
 
 export class ChatModelRegistry extends ModelTypeRegistry<ChatModelSpec, AIChatClient> implements TokenRingService {
   readonly name = "ChatModelRegistry";
@@ -48,7 +51,7 @@ export class EmbeddingModelRegistry extends ModelTypeRegistry<EmbeddingModelSpec
   }
 }
 
-export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSpec, AIImageGenerationClient> implements TokenRingService {
+export class ImageGenerationModelRegistry extends ModelTypeRegistry<ParsedImageModelSpec, AIImageGenerationClient> implements TokenRingService {
   readonly name = "ImageGenerationModelRegistry";
   description = "Model registry for image generation models";
 
@@ -61,7 +64,7 @@ export class ImageGenerationModelRegistry extends ModelTypeRegistry<ImageModelSp
   }
 }
 
-export class VideoGenerationModelRegistry extends ModelTypeRegistry<VideoModelSpec, AIVideoGenerationClient> implements TokenRingService {
+export class VideoGenerationModelRegistry extends ModelTypeRegistry<ParsedVideoModelSpec, AIVideoGenerationClient> implements TokenRingService {
   readonly name = "VideoGenerationModelRegistry";
   description = "Model registry for video generation models";
 

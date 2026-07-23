@@ -15,7 +15,7 @@ import OpenAIProvider from "./providers/openai.ts";
 import OpenRouterProvider from "./providers/openrouter.ts";
 import PerplexityProvider from "./providers/perplexity.ts";
 import XAIProvider from "./providers/xai.ts";
-import type { ParsedAIPackageConfig } from "./schema.ts";
+import type { ParsedAIPackageConfig } from "./schema.server.ts";
 
 type AnyProviderClass = new (name: string, config: any, app: TokenRingApp) => ModelProvider<any>;
 

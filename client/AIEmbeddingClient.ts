@@ -2,8 +2,8 @@ import type { EmbeddingModelV4 } from "@ai-sdk/provider";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { type EmbedManyResult, embedMany } from "ai";
 import { z } from "zod";
-import type { ModelSettings } from "../ModelTypeRegistry.ts";
-import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
+import type { ModelSettings } from "../schema.client.ts";
+import { BaseModelSpecSchema, ProviderOptionsSchema } from "../schema.client.ts";
 
 export const EmbeddingRequestSchema = z.object({
   values: z.array(z.string()),

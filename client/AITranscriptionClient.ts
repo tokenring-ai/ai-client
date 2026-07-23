@@ -2,8 +2,8 @@ import type Agent from "@tokenring-ai/agent/Agent";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import { type DataContent, type TranscriptionModel, transcribe } from "ai";
 import { z } from "zod";
-import type { ModelSettings } from "../ModelTypeRegistry.ts";
-import { BaseModelSpecSchema, ProviderOptionsSchema } from "./modelCapabilities.ts";
+import type { ModelSettings } from "../schema.client.ts";
+import { BaseModelSpecSchema, ProviderOptionsSchema } from "../schema.client.ts";
 
 export interface TranscriptionResult {
   text: string;
